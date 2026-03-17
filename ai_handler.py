@@ -1,7 +1,8 @@
 import os
+import re
 import asyncio
 from groq import AsyncGroq
-from hypixel_api import HypixelAPI
+from hypixel_api import HypixelAPI, HOTM_XP
 from knowledge_base import KnowledgeBase
 
 PRICE_KEYWORDS = [
@@ -9,7 +10,13 @@ PRICE_KEYWORDS = [
     "how much", "profit", "flip", "instabuy", "instasell"
 ]
 
-MAX_DISCORD_LEN = 1900  # leave buffer under 2000
+MAX_DISCORD_LEN = 1900
+
+# Matches patterns like "24 enchanted melon", "x655 diamond", "655x enchanted diamond"
+QTY_PATTERN = re.compile(
+    r"\bx?(\d+)x?\s+([a-z][a-z\s]{2,40}?)(?:\s*\?|$|,|\band\b)",
+    re.IGNORECASE
+)
 
 
 class AIHandler:
@@ -17,34 +24,162 @@ class AIHandler:
         self.groq = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
         self.hypixel = HypixelAPI(os.getenv("HYPIXEL_API_KEY", ""))
         self.knowledge = KnowledgeBase()
-        self.semaphore = asyncio.Semaphore(5)  # max 5 concurrent AI calls
-        self.model = "llama-3.3-70b-versatile"  # best free Groq model
+        self.semaphore = asyncio.Semaphore(5)
+        self.model = "llama-3.3-70b-versatile"
+
+    def _extract_username(self, question: str) -> str | None:
+        """Extract a Minecraft username from patterns like 'my account is X', 'ign X', 'ign: X'."""
+        patterns = [
+            r"(?:my\s+)?(?:account|ign|username|user|name)\s+(?:is\s+)?([A-Za-z0-9_]{3,16})",
+            r"(?:for|check)\s+([A-Za-z0-9_]{3,16})\b",
+        ]
+        for pat in patterns:
+            m = re.search(pat, question, re.IGNORECASE)
+            if m:
+                return m.group(1)
+        return None
+
+    def _extract_profile_name(self, question: str) -> str | None:
+        """Extract profile name from question, e.g. 'on my Coconut profile'."""
+        m = re.search(r'\b(?:on\s+(?:my\s+)?|profile\s+)([A-Za-z]+)\b', question, re.IGNORECASE)
+        if m:
+            candidate = m.group(1)
+            # Common Skyblock profile names
+            profile_names = {
+                "apple", "banana", "blueberry", "coconut", "cucumber", "grapes",
+                "kiwi", "lemon", "lime", "mango", "orange", "papaya", "peach",
+                "pear", "pineapple", "pomegranate", "raspberry", "strawberry",
+                "tomato", "watermelon", "zucchini",
+            }
+            if candidate.lower() in profile_names:
+                return candidate
+        return None
+
+    async def _handle_player_question(self, question: str, username: str) -> str | None:
+        """
+        Handle any question about a specific player.
+        Fetches full profile, injects as AI context, lets AI answer.
+        For HotM commission calculations, handles directly in code.
+        """
+        q = question.lower()
+        profile_name = self._extract_profile_name(question)
+
+        data = await self.hypixel.get_player_data(username, profile_name)
+        if not data:
+            return f"Couldn't find player **{username}** — check the spelling."
+
+        # ── HotM commission calc (code path, no AI needed) ─────────────────
+        if "hotm" in q or "heart of the mountain" in q:
+            if "commission" in q or "how many" in q or "till" in q or "to" in q:
+                lvl = data["hotm_level"]
+                xp = data["hotm_xp"]
+                profile = data["profile_name"]
+
+                if lvl >= 10:
+                    return f"**{username}** ({profile}) is already **HotM 10**! ({xp:,.0f} XP)"
+
+                target_match = re.search(r"hotm\s*(\d+)", q)
+                target = int(target_match.group(1)) if target_match else 10
+                target = min(max(target, lvl + 1), 10)
+
+                xp_needed = max(0, HOTM_XP[target] - xp)
+                tier = 2 if ("tier 2" in q or "t2" in q) else 3 if ("tier 3" in q or "t3" in q) else 1
+                commissions = self.hypixel.commissions_needed(xp_needed, tier)
+                from hypixel_api import COMMISSION_XP
+                xp_per = COMMISSION_XP[tier]
+
+                return (
+                    f"**{username}** ({profile}) — HotM **{lvl}** → **{target}**\n"
+                    f"XP needed: **{xp_needed:,.0f}** ({xp:,.0f} / {HOTM_XP[target]:,.0f})\n"
+                    f"Tier {tier} commissions: **{commissions:,}** ({xp_per:,} XP each)"
+                )
+
+        # ── General player question — inject stats as AI context ────────────
+        summary = data.get("summary", "No data available.")
+        system = (
+            "You are a Hypixel Skyblock expert. Answer the question about this player using ONLY "
+            "the stats provided. Be concise (1-3 lines). Do not make up stats not listed.\n\n"
+            f"{summary}"
+        )
+        try:
+            resp = await self.groq.chat.completions.create(
+                model=self.model,
+                messages=[
+                    {"role": "system", "content": system},
+                    {"role": "user", "content": question},
+                ],
+                max_tokens=300,
+                temperature=0.0,
+            )
+            return resp.choices[0].message.content.strip()
+        except Exception as e:
+            return f"AI error: {e}"
 
     def _needs_live_data(self, question: str) -> bool:
-        q = question.lower()
-        return any(kw in q for kw in PRICE_KEYWORDS)
+        return any(kw in question.lower() for kw in PRICE_KEYWORDS)
+
+    def _extract_qty_item(self, question: str) -> tuple[int, str] | None:
+        """Try to extract a quantity + item name from the question."""
+        m = QTY_PATTERN.search(question)
+        if m:
+            qty = int(m.group(1))
+            item = m.group(2).strip()
+            return qty, item
+        return None
+
+    def _extract_search_phrases(self, question: str) -> list[str]:
+        stopwords = {
+            "what", "is", "the", "a", "an", "of", "for", "how", "much",
+            "does", "do", "cost", "price", "worth", "buy", "sell", "total",
+            "many", "coins", "get", "me", "i", "to", "in", "and", "or",
+            "bazaar", "profit", "per", "each", "are", "can", "you", "if",
+            "whats", "would", "be", "x", "my", "have"
+        }
+        words = re.sub(r"[^\w\s]", "", question.lower()).split()
+        cleaned = [w.rstrip("s") if len(w) > 4 else w for w in words if w not in stopwords]
+
+        phrases = set()
+        for i in range(len(cleaned)):
+            for j in range(i + 1, min(i + 4, len(cleaned) + 1)):
+                phrase = " ".join(cleaned[i:j])
+                if len(phrase) >= 3:
+                    phrases.add(phrase)
+        return list(phrases)
+
+    async def _find_best_bazaar_match(self, item_name: str) -> dict | None:
+        """Search bazaar and return the closest matching item."""
+        # Try exact match first, then partial
+        norm = item_name.upper().replace(" ", "_")
+        exact = await self.hypixel.get_bazaar_item(norm)
+        if exact:
+            return exact
+
+        # Try stripping trailing S (plurals)
+        results = await self.hypixel.search_bazaar(item_name)
+        if results:
+            # Prefer the result whose ID most closely matches the query
+            norm_query = norm.rstrip("S")
+            for r in results:
+                if r["id"].rstrip("S") == norm_query:
+                    return r
+            return results[0]  # fallback to first match
+
+        return None
 
     async def _build_live_context(self, question: str) -> str:
         if not os.getenv("HYPIXEL_API_KEY"):
             return ""
 
-        # Pull every word/phrase combo (1-3 words) and search bazaar
-        words = question.split()
-        seen = set()
+        phrases = self._extract_search_phrases(question)
         results = {}
 
-        for i in range(len(words)):
-            for j in range(i + 1, min(i + 4, len(words) + 1)):
-                phrase = " ".join(words[i:j])
-                if phrase in seen or len(phrase) < 3:
-                    continue
-                seen.add(phrase)
-                try:
-                    matches = await self.hypixel.search_bazaar(phrase)
-                    for m in matches:
-                        results[m["id"]] = m
-                except Exception:
-                    pass
+        for phrase in phrases:
+            try:
+                matches = await self.hypixel.search_bazaar(phrase)
+                for m in matches:
+                    results[m["id"]] = m
+            except Exception:
+                pass
 
         if not results:
             return ""
@@ -52,33 +187,69 @@ class AIHandler:
         lines = ["Current Bazaar prices (live):"]
         for item in list(results.values())[:20]:
             lines.append(
-                f"  {item['id']}: buy {item['buy']:,.1f} | sell {item['sell']:,.1f} coins"
+                f"  {item['id']}: instabuy {item['buy']:,.1f} | instasell {item['sell']:,.1f} coins"
             )
         return "\n".join(lines)
 
     async def get_response(self, question: str) -> str:
         async with self.semaphore:
+            price_question = self._needs_live_data(question)
+
+            # --- Player data path ---
+            username = self._extract_username(question)
+            if username:
+                try:
+                    result = await self._handle_player_question(question, username)
+                    if result:
+                        return result
+                except Exception as e:
+                    return f"Error fetching player data: {e}"
+
+            # --- Fast path: quantity × item calculation, bypass AI entirely ---
+            if price_question and os.getenv("HYPIXEL_API_KEY"):
+                parsed = self._extract_qty_item(question)
+                if parsed:
+                    qty, item_name = parsed
+                    try:
+                        match = await self._find_best_bazaar_match(item_name)
+                        if match:
+                            use_sell = any(w in question.lower() for w in ["sell", "instasell"])
+                            price = match["sell"] if use_sell else match["buy"]
+                            total = price * qty
+                            label = "instasell" if use_sell else "instabuy"
+                            return (
+                                f"**{qty}x {match['id'].replace('_', ' ').title()}** = "
+                                f"**{total:,.1f} coins** ({label} @ {price:,.1f} each)"
+                            )
+                    except Exception:
+                        pass  # fall through to AI
+
+            # --- Normal AI path ---
             static_ctx = self.knowledge.get_relevant_knowledge(question)
             live_ctx = ""
 
-            if self._needs_live_data(question):
+            if price_question:
                 try:
                     live_ctx = await self._build_live_context(question)
                 except Exception as e:
                     live_ctx = f"(Live price fetch failed: {e})"
 
             system = (
-                "You are a Hypixel Skyblock expert assistant. "
-                "Answer questions accurately and concisely. "
-                "Show calculations when asked about costs or quantities. "
-                "Format coin amounts with commas (e.g. 1,234,567 coins). "
-                "If unsure, say so rather than guessing."
+                "You are a Hypixel Skyblock assistant. Be extremely concise.\n\n"
+                "RULES:\n"
+                "- For price/cost questions: one line answer only. Example: '24x Enchanted Melon = 8,023 coins'\n"
+                "- NEVER invent or guess prices. Only use the live data provided.\n"
+                "- If no live data is provided, say you don't have current prices.\n"
+                "- For non-price questions: 1-3 sentences max.\n"
+                "- Format coin amounts with commas."
             )
 
             if static_ctx:
-                system += f"\n\nRelevant game info:\n{static_ctx}"
+                system += f"\n\nGame info:\n{static_ctx}"
             if live_ctx:
                 system += f"\n\n{live_ctx}"
+            elif price_question:
+                system += "\n\nNo live Bazaar data found. Do NOT guess prices."
 
             try:
                 resp = await self.groq.chat.completions.create(
@@ -87,11 +258,10 @@ class AIHandler:
                         {"role": "system", "content": system},
                         {"role": "user", "content": question},
                     ],
-                    max_tokens=600,
-                    temperature=0.2,
+                    max_tokens=300,
+                    temperature=0.0,
                 )
                 text = resp.choices[0].message.content.strip()
-                # Trim to Discord limit
                 if len(text) > MAX_DISCORD_LEN:
                     text = text[:MAX_DISCORD_LEN] + "…"
                 return text
