@@ -46,6 +46,10 @@ FILE_KEYWORDS = {
                        "instabuy", "instasell", "trade", "market"],
     "bestiary.md":    ["bestiary", "bestiaries", "mob kill", "mob grind", "kill count",
                        "grind mob", "grind mobs", "mob farming", "monster grind", "mob family"],
+    "obtaining.md":   ["recipe", "craft", "how to make", "how to get", "ingredients", "forge",
+                       "how do i get", "where do i get", "how to obtain", "divan recipe",
+                       "hyperion recipe", "necron recipe", "dragon armor recipe", "livid dagger",
+                       "how to craft", "forged", "dungeon drop", "dragon fragment"],
     "general.md":     ["fairy soul", "essence", "magic find", "kuudra", "how to", "guide",
                        "tip", "beginner", "what is"],
 }
