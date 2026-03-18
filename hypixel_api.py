@@ -128,20 +128,55 @@ class HypixelAPI:
 
         return results[:6]
 
-    async def get_item_gem_slots(self, item_id: str) -> dict:
+    async def get_item_gem_slots(self, item_id: str) -> list[dict]:
         """
-        Fetch gem slot types for an item from the Hypixel items API.
-        Returns dict of {gem_type: count}, e.g. {"AMBER": 2, "JADE": 2, "TOPAZ": 1}
+        Fetch full gemstone slot data for an item from the Hypixel items API.
+        Returns list of slot dicts: [{slot_type, costs: [{type, item_id/coins, amount}]}]
+        slot_type may be a specific gem type (AMBER, JADE) or UNIVERSAL/COMBAT/etc.
         """
         items_data = await self.get_all_items()
         item = items_data.get(item_id, {})
-        slots = item.get("gemstone_slots", [])
-        counts: dict = {}
+        return item.get("gemstone_slots", [])
+
+    async def _price_unlock_costs(self, slots: list[dict], baz: dict) -> tuple[float, list[str]]:
+        """
+        Calculate total cost to unlock all gem slots.
+        Returns (total_coins, list_of_detail_strings).
+        Items not on Bazaar are fetched from coflnet.
+        """
+        def baz_price(bid: str) -> float:
+            p = baz.get("products", {}).get(bid, {})
+            return p.get("quick_status", {}).get("buyPrice", 0)
+
+        total = 0.0
+        details = []
+        # Track items needed across all slots
+        coin_costs: float = 0.0
+        item_costs: dict[str, int] = {}  # item_id -> total count needed
+
         for slot in slots:
-            t = slot.get("slot_type", "")
-            if t and t not in ("UNIVERSAL", "COMBAT", "DEFENSIVE", "MINING", "SPEED"):
-                counts[t] = counts.get(t, 0) + 1
-        return counts
+            for cost in slot.get("costs", []):
+                if cost.get("type") == "COINS":
+                    coin_costs += cost.get("coins", 0)
+                elif cost.get("type") == "ITEM":
+                    iid = cost["item_id"]
+                    amt = cost.get("amount", 1)
+                    item_costs[iid] = item_costs.get(iid, 0) + amt
+
+        if coin_costs:
+            total += coin_costs
+            details.append(f"coins: {coin_costs:,.0f}")
+
+        for iid, count in item_costs.items():
+            price = baz_price(iid)
+            if not price:
+                price = await self.get_reforge_stone_price(iid)  # coflnet fallback
+            cost_total = price * count
+            total += cost_total
+            name = iid.replace("_", " ").title()
+            details.append(f"{name} ×{count}: {cost_total:,.0f}")
+
+        return total, details
 
     async def get_hypermaxed_price(self, item_id: str, reforge_stone_id: str = None) -> dict | None:
         """
@@ -151,11 +186,12 @@ class HypixelAPI:
         - 5x Fuming Potato Books
         - 1x Recombobulator 3000
         - 1x Art of Peace
-        - Perfect gemstones for each actual slot (fetched from items API)
-        - Reforge stone (optional, e.g. JADERALD for Jaded)
+        - Gemstone slot unlock costs (coins + required items per slot)
+        - Perfect gemstones for each slot
+        - Reforge stone (optional)
         Returns itemised cost dict.
         """
-        lbin, baz, gem_slots = await asyncio.gather(
+        lbin, baz, raw_slots = await asyncio.gather(
             self.get_lowest_bin(),
             self.get_bazaar(),
             self.get_item_gem_slots(item_id),
@@ -190,8 +226,31 @@ class HypixelAPI:
             "art_of_peace":        {"qty": 1,  "unit": aop,        "total": aop},
         }
 
-        # Add per-gem-type costs from actual item slots
-        for gem_type, count in gem_slots.items():
+        # ── Gemstone slot unlock costs ────────────────────────────────────────
+        # Slots with no costs list (or empty costs) are free to unlock
+        locked_slots = [s for s in raw_slots if s.get("costs")]
+        free_slots   = [s for s in raw_slots if not s.get("costs")]
+
+        if locked_slots:
+            unlock_total, unlock_details = await self._price_unlock_costs(locked_slots, baz)
+            if unlock_total > 0:
+                breakdown["slot_unlocking"] = {
+                    "qty":     len(locked_slots),
+                    "unit":    unlock_total / len(locked_slots),
+                    "total":   unlock_total,
+                    "details": unlock_details,  # extra info for display
+                }
+
+        # ── Perfect gem costs ─────────────────────────────────────────────────
+        # Count typed gem slots (skip UNIVERSAL/COMBAT/etc which need a decision)
+        GENERIC_TYPES = {"UNIVERSAL", "COMBAT", "DEFENSIVE", "MINING", "SPEED"}
+        gem_counts: dict[str, int] = {}
+        for slot in raw_slots:
+            t = slot.get("slot_type", "")
+            if t and t not in GENERIC_TYPES:
+                gem_counts[t] = gem_counts.get(t, 0) + 1
+
+        for gem_type, count in gem_counts.items():
             gem_id = f"PERFECT_{gem_type}_GEM"
             price = baz_price(gem_id)
             if price > 0:
@@ -199,17 +258,18 @@ class HypixelAPI:
                     "qty": count, "unit": price, "total": price * count
                 }
 
-        # Reforge stone — fetched from coflnet (not in lowestbin)
+        # ── Reforge stone ─────────────────────────────────────────────────────
         if reforge_stone_id:
             stone_price = await self.get_reforge_stone_price(reforge_stone_id)
             breakdown["reforge_stone"] = {"qty": 1, "unit": stone_price, "total": stone_price}
 
         total = sum(v["total"] for v in breakdown.values())
         return {
-            "item_id": item_id,
-            "gem_slots": gem_slots,
-            "breakdown": breakdown,
-            "total": total,
+            "item_id":    item_id,
+            "gem_counts": gem_counts,
+            "free_slots": len(free_slots),
+            "breakdown":  breakdown,
+            "total":      total,
         }
 
     async def get_armor_set_prices(self, set_id_prefix: str) -> dict | None:
