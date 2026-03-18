@@ -326,6 +326,8 @@ class AIHandler:
                     live_ctx = await self._build_live_context(question)
                 except Exception as e:
                     live_ctx = f"(Live price fetch failed: {e})"
+
+            if self._needs_ah_data(question):
                 try:
                     ah_ctx = await self._build_ah_context(question)
                 except Exception:
