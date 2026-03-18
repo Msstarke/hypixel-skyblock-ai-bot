@@ -104,6 +104,105 @@ class HypixelAPI:
 
         return results[:6]
 
+    async def get_bazaar_flips(self, min_margin_pct: float = 1.5, min_volume: int = 5_000, top_n: int = 15) -> list[dict]:
+        """
+        Find top Bazaar order-flip opportunities.
+        Strategy: place buy order near instasell, sell order near instabuy.
+        Profit = instabuy - instasell - 1.25% tax.
+        Ranked by net_margin_pct × weekly_liquidity.
+        """
+        data = await self.get_bazaar()
+        if not data:
+            return []
+
+        TAX = 1.25  # sell order tax %
+        flips = []
+
+        for item_id, product in data.get("products", {}).items():
+            qs = product.get("quick_status", {})
+            buy  = qs.get("buyPrice", 0)   # instabuy price (you pay)
+            sell = qs.get("sellPrice", 0)  # instasell price (you receive)
+            buy_week  = qs.get("buyMovingWeek", 0)
+            sell_week = qs.get("sellMovingWeek", 0)
+            buy_orders  = qs.get("buyOrders", 0)
+            sell_orders = qs.get("sellOrders", 0)
+
+            if buy <= 0 or sell <= 0 or buy <= sell:
+                continue
+
+            margin = buy - sell
+            margin_pct = (margin / buy) * 100
+            net_pct = margin_pct - TAX  # after 1.25% sell tax
+            weekly_vol = min(buy_week, sell_week)  # liquidity = bottleneck side
+
+            if net_pct < min_margin_pct or weekly_vol < min_volume or margin < 100:
+                continue
+
+            # Score: reward high margin AND high volume equally
+            score = net_pct * (weekly_vol / 100_000)
+
+            flips.append({
+                "id": item_id,
+                "name": item_id.replace("_", " ").title(),
+                "buy": round(buy, 1),
+                "sell": round(sell, 1),
+                "margin": round(margin, 1),
+                "margin_pct": round(net_pct, 2),
+                "weekly_vol": int(weekly_vol),
+                "buy_orders": buy_orders,
+                "sell_orders": sell_orders,
+                "score": score,
+            })
+
+        flips.sort(key=lambda x: x["score"], reverse=True)
+        return flips[:top_n]
+
+    async def get_ah_flips(self, min_margin_pct: float = 10.0, min_margin_coins: int = 50_000, top_n: int = 10) -> list[dict]:
+        """
+        Find AH BIN flip opportunities:
+        Buy at lowest BIN, relist at median recently-sold price.
+        Only shows items where BIN is significantly below recent median.
+        """
+        from collections import defaultdict
+
+        lbin, ended = await asyncio.gather(self.get_lowest_bin(), self.get_auctions_ended())
+        if not lbin or not ended:
+            return []
+
+        # Build median sale price per item ID from ended auctions
+        sales: dict[str, list] = defaultdict(list)
+        for auction in ended.get("auctions", []):
+            item_id = auction.get("item_name", "").upper().replace(" ", "_")
+            if item_id:
+                sales[item_id].append(auction["price"])
+
+        medians: dict[str, float] = {}
+        for item_id, prices in sales.items():
+            prices.sort()
+            medians[item_id] = prices[len(prices) // 2]
+
+        flips = []
+        for item_id, bin_price in lbin.items():
+            median = medians.get(item_id)
+            if not median or bin_price <= 0:
+                continue
+            margin = median - bin_price
+            margin_pct = (margin / bin_price) * 100
+            if margin_pct < min_margin_pct or margin < min_margin_coins:
+                continue
+            flips.append({
+                "id": item_id,
+                "name": item_id.replace("_", " ").title(),
+                "bin": round(bin_price),
+                "median_sold": round(median),
+                "margin": round(margin),
+                "margin_pct": round(margin_pct, 1),
+                "sales_count": len(sales[item_id]),
+            })
+
+        flips.sort(key=lambda x: x["margin"], reverse=True)
+        return flips[:top_n]
+
     async def search_bazaar(self, query: str) -> list[dict]:
         data = await self.get_bazaar()
         if not data:
