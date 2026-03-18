@@ -7,7 +7,9 @@ from knowledge_base import KnowledgeBase
 
 PRICE_KEYWORDS = [
     "cost", "price", "worth", "buy", "sell", "bazaar", "coins",
-    "how much", "profit", "flip", "instabuy", "instasell"
+    "how much", "profit", "flip", "instabuy", "instasell",
+    "cheapest", "cheap", "expensive", "auction", " ah ", "on ah",
+    "lowest", "highest", "median", "average",
 ]
 
 MAX_DISCORD_LEN = 1900
