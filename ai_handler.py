@@ -259,6 +259,8 @@ class AIHandler:
 
             if static_ctx:
                 system += f"\n\nGame info:\n{static_ctx}"
+            if item_ctx:
+                system += f"\n\n{item_ctx}"
             if live_ctx:
                 system += f"\n\n{live_ctx}"
             elif price_question:
