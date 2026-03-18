@@ -168,6 +168,37 @@ class AIHandler:
 
         return None
 
+    async def _build_item_context(self, question: str) -> str:
+        """Search the Hypixel items API for items mentioned in the question."""
+        stopwords = {"what", "is", "the", "a", "an", "recipe", "for", "craft", "how", "to",
+                     "make", "ingredients", "of", "get", "whats", "me", "tell", "about",
+                     "stats", "item", "info", "and", "or", "in"}
+        words = re.sub(r"[^\w\s']", "", question.lower()).split()
+        candidates = set()
+
+        # Try multi-word phrases (up to 4 words)
+        for i in range(len(words)):
+            for j in range(i + 1, min(i + 5, len(words) + 1)):
+                phrase = " ".join(words[i:j])
+                if not all(w in stopwords for w in phrase.split()) and len(phrase) > 3:
+                    candidates.add(phrase)
+
+        found = {}
+        for phrase in sorted(candidates, key=len, reverse=True):  # try longer phrases first
+            item = await self.hypixel.find_item(phrase)
+            if item and item["id"] not in found:
+                found[item["id"]] = item
+            if len(found) >= 3:
+                break
+
+        if not found:
+            return ""
+
+        lines = ["Item data from Hypixel API:"]
+        for item in found.values():
+            lines.append(self.hypixel.format_item_info(item))
+        return "\n".join(lines)
+
     async def _build_live_context(self, question: str) -> str:
         if not os.getenv("HYPIXEL_API_KEY"):
             return ""
