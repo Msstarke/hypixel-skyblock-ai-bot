@@ -136,8 +136,7 @@ class HypixelAPI:
                     item_id = item_id + suffix
                     break
 
-        if not base:
-            return None
+        # base may be 0 if not on AH — still show upgrade costs
 
         hpb_price  = baz_price("HOT_POTATO_BOOK")
         fhpb_price = baz_price("FUMING_POTATO_BOOK")
