@@ -595,17 +595,23 @@ class AIHandler:
                             break
                 except Exception:
                     pass
+            # Warn if knowledge base came back empty (high hallucination risk)
+            kb_empty = len(static_ctx.strip()) < 100
             system = (
                 "You are a Hypixel Skyblock assistant. Answer ONLY using the knowledge base provided below.\n\n"
                 "STRICT RULES:\n"
                 "- ONLY reference items, mechanics, setups, and numbers that appear in the knowledge base below.\n"
-                "- Do NOT use your general training knowledge. If it is not in the knowledge base, do not say it.\n"
-                "- If the question is not about Hypixel Skyblock, reply ONLY: 'I only answer Hypixel Skyblock questions.'\n"
+                "- Do NOT use your general training knowledge about Hypixel Skyblock item names, stats, or prices. EVER.\n"
+                "- If an item name or setup is not explicitly listed in the knowledge base, do NOT mention it.\n"
+                + ("- WARNING: The knowledge base returned little or no relevant content for this question. "
+                   "If you cannot answer strictly from the knowledge base, reply: "
+                   "'I don't have enough info on that in my knowledge base yet.'\n"
+                   if kb_empty else "")
+                + "- If the question is not about Hypixel Skyblock, reply ONLY: 'I only answer Hypixel Skyblock questions.'\n"
                 "- For price questions: one line only, use live data provided. Never guess prices.\n"
-                "- For budget questions (e.g. 'best X for 5M'): use the live AH/Bazaar prices provided to recommend what fits the budget. Show item name, key stats, and current price.\n"
-                "- If the exact item is not found in the live data, say 'I couldn't find [item] on the Bazaar/AH.' Do NOT list similar items.\n"
+                "- For budget questions (e.g. 'best X for 5M'): recommend only items listed in the knowledge base that fit the budget. Show item name + key stats.\n"
                 "- Be extremely concise. No intro, no filler, no 'great question', no explanations unless asked.\n"
-                "- For 'best X' questions: just list the item name + key stats. Example: 'Armor of Divan — +150 Mining Fortune, +1800 Mining Speed'\n"
+                "- For 'best X' questions: list item name + key stats only. Example: 'Strong Dragon — +100 Strength, full set ~5M'\n"
                 "- Never say 'In Hypixel Skyblock...' or 'The best option is...' — just give the answer directly.\n"
                 "- Format coin amounts with commas.\n\n"
                 f"KNOWLEDGE BASE:\n{static_ctx}"
