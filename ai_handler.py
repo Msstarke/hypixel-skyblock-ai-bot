@@ -23,11 +23,8 @@ QTY_PATTERN = re.compile(
 
 class AIHandler:
     def __init__(self):
-        self.client = AsyncOpenAI(
-            base_url="https://openrouter.ai/api/v1",
-            api_key=os.getenv("OPENROUTER_API_KEY"),
-        )
-        self.model = "deepseek/deepseek-chat:free"
+        self.client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+        self.model = "llama-3.3-70b-versatile"
         self.hypixel = HypixelAPI(os.getenv("HYPIXEL_API_KEY", ""))
         self.knowledge = KnowledgeBase()
         self.semaphore = asyncio.Semaphore(5)
