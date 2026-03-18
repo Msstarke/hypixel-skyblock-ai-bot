@@ -295,15 +295,22 @@ class AIHandler:
                 # ── Dynamic reforge selection ────────────────────────────────
                 desired_stat = self._detect_desired_stat(question)
 
-                # Fetch lbin first so we can pass item price + stone prices to picker
+                # Fetch lbin for item price, coflnet for stone prices
                 lbin = await self.hypixel.get_lowest_bin()
                 item_price = lbin.get(item_id, 0)
+
+                # Fetch stone prices from coflnet for all known stones
+                from reforges import REFORGES
+                stone_ids = {d["stone"] for d in REFORGES.values() if d.get("stone")}
+                stone_prices = {}
+                for sid in stone_ids:
+                    stone_prices[sid] = await self.hypixel.get_reforge_stone_price(sid)
 
                 reforge = pick_reforge(
                     item_id,
                     desired_stat=desired_stat,
                     item_price=item_price,
-                    stone_prices=lbin,
+                    stone_prices=stone_prices,
                 )
                 stone_id    = reforge["stone"]    if reforge else None
                 reforge_name = reforge["name"]    if reforge else None
