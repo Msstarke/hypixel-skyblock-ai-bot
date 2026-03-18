@@ -604,6 +604,12 @@ class AIHandler:
                     pass
             # Warn if knowledge base came back empty (high hallucination risk)
             kb_empty = len(static_ctx.strip()) < 100
+            cata_level = self._extract_cata_level(question)
+            cata_note = (
+                f"- The user has stated their Catacombs level is {cata_level}. "
+                f"ONLY recommend items/content they can use or access at Cata {cata_level}. "
+                f"If an item requires a higher Cata level, skip it.\n"
+            ) if cata_level is not None else ""
             system = (
                 "You are a Hypixel Skyblock assistant. Answer ONLY using the knowledge base provided below.\n\n"
                 "STRICT RULES:\n"
@@ -614,11 +620,12 @@ class AIHandler:
                    "If you cannot answer strictly from the knowledge base, reply: "
                    "'I don't have enough info on that in my knowledge base yet.'\n"
                    if kb_empty else "")
+                + cata_note
                 + "- If the question is not about Hypixel Skyblock, reply ONLY: 'I only answer Hypixel Skyblock questions.'\n"
-                "- For price questions: one line only, use live data provided. Never guess prices.\n"
-                "- For budget questions (e.g. 'best X for 5M'): recommend only items listed in the knowledge base that fit the budget. Show item name + key stats.\n"
+                "- For price questions: use the live AH prices provided — NEVER use the static price ranges in the knowledge base.\n"
+                "- For budget questions: recommend only items from the knowledge base that fit within the stated budget using live prices. Show item name, key stats, and the live price.\n"
                 "- Be extremely concise. No intro, no filler, no 'great question', no explanations unless asked.\n"
-                "- For 'best X' questions: list item name + key stats only. Example: 'Strong Dragon — +100 Strength, full set ~5M'\n"
+                "- For 'best X' questions: list item name + key stats + live price. Example: 'Strong Dragon — +100 Strength — 4,200,000 coins'\n"
                 "- Never say 'In Hypixel Skyblock...' or 'The best option is...' — just give the answer directly.\n"
                 "- Format coin amounts with commas.\n\n"
                 f"KNOWLEDGE BASE:\n{static_ctx}"
