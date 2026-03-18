@@ -4,10 +4,14 @@ from pathlib import Path
 KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
 
 FILE_KEYWORDS = {
-    "skills.md":      ["skill", "farming", "mining", "combat", "fishing", "foraging",
+    "mining.md":      ["mining", "pickaxe", "drill", "hotm", "heart of the mountain",
+                       "dwarven mines", "crystal hollows", "mining armor", "mining pet",
+                       "mining setup", "divan", "mineral armor", "pickonimbus", "scatha",
+                       "mithril golem", "silverfish pet", "bal pet", "gemstone gauntlet",
+                       "powder", "commission", "glacite", "best mining"],
+    "skills.md":      ["skill", "farming", "combat", "fishing", "foraging",
                        "enchanting", "alchemy", "taming", "carpentry", "runecrafting",
-                       "xp", "level up", "skill level", "skill xp", "mining setup",
-                       "pickaxe", "drill", "hotm", "powder", "commission"],
+                       "xp", "level up", "skill level", "skill xp"],
     "dungeons.md":    ["dungeon", "floor", "catacombs", "class", "archer", "berserk", "healer",
                        "mage", "tank", "secret", "boss", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
                        "m1", "m2", "m3", "m4", "m5", "m6", "m7", "master mode", "scoring"],
