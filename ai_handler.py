@@ -293,6 +293,7 @@ class AIHandler:
             # --- Normal AI path ---
             static_ctx = self.knowledge.get_relevant_knowledge(question)
             live_ctx = ""
+            ah_ctx = ""
             item_ctx = ""
 
             # Item/recipe lookup from Hypixel items API
@@ -308,6 +309,10 @@ class AIHandler:
                     live_ctx = await self._build_live_context(question)
                 except Exception as e:
                     live_ctx = f"(Live price fetch failed: {e})"
+                try:
+                    ah_ctx = await self._build_ah_context(question)
+                except Exception:
+                    pass
 
             system = (
                 "You are a Hypixel Skyblock-only assistant. You ONLY answer questions about Hypixel Skyblock.\n\n"
@@ -327,8 +332,10 @@ class AIHandler:
                 system += f"\n\n{item_ctx}"
             if live_ctx:
                 system += f"\n\n{live_ctx}"
-            elif price_question:
-                system += "\n\nNo live Bazaar data found. Do NOT guess prices."
+            if ah_ctx:
+                system += f"\n\n{ah_ctx}"
+            if price_question and not live_ctx and not ah_ctx:
+                system += "\n\nNo live price data found. Do NOT guess prices."
 
             try:
                 resp = await self.groq.chat.completions.create(
