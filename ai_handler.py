@@ -244,14 +244,14 @@ class AIHandler:
 
     # Known items with their AH item IDs and gemstone slot counts
     ITEM_UPGRADE_MAP = {
-        "divan helmet":        ("ARMOR_OF_DIVAN_HELMET",     5, "JASPER"),
-        "divan chestplate":    ("ARMOR_OF_DIVAN_CHESTPLATE", 5, "JASPER"),
-        "divan leggings":      ("ARMOR_OF_DIVAN_LEGGINGS",   5, "JASPER"),
-        "divan boots":         ("ARMOR_OF_DIVAN_BOOTS",      5, "JASPER"),
-        "glacite helmet":      ("GLACITE_HELMET",            0, "JASPER"),
-        "glacite chestplate":  ("GLACITE_CHESTPLATE",        0, "JASPER"),
-        "glacite leggings":    ("GLACITE_LEGGINGS",          0, "JASPER"),
-        "glacite boots":       ("GLACITE_BOOTS",             0, "JASPER"),
+        "divan helmet":        ("DIVAN_HELMET",     5, "JASPER"),
+        "divan chestplate":    ("DIVAN_CHESTPLATE", 5, "JASPER"),
+        "divan leggings":      ("DIVAN_LEGGINGS",   5, "JASPER"),
+        "divan boots":         ("DIVAN_BOOTS",      5, "JASPER"),
+        "glacite helmet":      ("GLACITE_HELMET",   0, "JASPER"),
+        "glacite chestplate":  ("GLACITE_CHESTPLATE", 0, "JASPER"),
+        "glacite leggings":    ("GLACITE_LEGGINGS", 0, "JASPER"),
+        "glacite boots":       ("GLACITE_BOOTS",    0, "JASPER"),
         "hyperion":            ("HYPERION",                  3, "JASPER"),
         "terminator":          ("TERMINATOR",                3, "JASPER"),
         "necron helmet":       ("NECRONS_HELMET",            3, "JASPER"),
