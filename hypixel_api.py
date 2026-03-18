@@ -213,7 +213,7 @@ class HypixelAPI:
             p = baz.get("products", {}).get(bid, {})
             return p.get("quick_status", {}).get("buyPrice", 0)
 
-        # Base item from AH — try lowestbin first, then coflnet (dungeon items often missing from lbin)
+        # Base item from AH — try lowestbin, then auction averages (covers dungeon items), then coflnet
         base = lbin.get(item_id, 0)
         if not base:
             for suffix in ["_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS"]:
@@ -223,7 +223,9 @@ class HypixelAPI:
                     item_id = item_id + suffix
                     break
         if not base:
-            base = await self.get_reforge_stone_price(item_id)  # reuses coflnet fetcher
+            base = avg.get(item_id, 0)
+        if not base:
+            base = await self.get_reforge_stone_price(item_id)  # coflnet last resort
 
         hpb_price  = baz_price("HOT_POTATO_BOOK")
         fhpb_price = baz_price("FUMING_POTATO_BOOK")
