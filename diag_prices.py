@@ -59,9 +59,9 @@ async def main():
         for item in ITEMS:
             status, data = await fetch(session, COFLNET_URL.format(item))
             if isinstance(data, dict):
-                print(f"  {item}: HTTP {status} → {data}")
+                print(f"  {item}: HTTP {status} -> {data}")
             else:
-                print(f"  {item}: HTTP {status} → {repr(data)[:80]}")
+                print(f"  {item}: HTTP {status} -> {repr(data)[:80]}")
         print()
 
 asyncio.run(main())
