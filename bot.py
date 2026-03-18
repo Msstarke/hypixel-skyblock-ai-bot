@@ -140,12 +140,23 @@ async def help_command(ctx: commands.Context):
         inline=False
     )
     embed.add_field(
+        name="!flips",
+        value="Top Bazaar flip opportunities ranked by margin × liquidity.",
+        inline=False
+    )
+    embed.add_field(
+        name="!flips ah",
+        value="Top AH BIN snipe opportunities (buy cheap, relist at median).",
+        inline=False
+    )
+    embed.add_field(
         name="Examples",
         value=(
             "`!ai what's the total cost of 655 enchanted diamonds?`\n"
             "`!ai how much profit per hour does a t11 wheat minion make?`\n"
             "`!ai what's the best reforge for berserker armor?`\n"
-            "`!bazaar enchanted diamond`"
+            "`!bazaar enchanted diamond`\n"
+            "`!flips` / `!flips ah`"
         ),
         inline=False
     )
