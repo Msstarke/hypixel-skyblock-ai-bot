@@ -242,6 +242,54 @@ class AIHandler:
             )
         return "\n".join(lines)
 
+    # Known items with their AH item IDs and gemstone slot counts
+    ITEM_UPGRADE_MAP = {
+        "divan helmet":        ("ARMOR_OF_DIVAN_HELMET",     5, "JASPER"),
+        "divan chestplate":    ("ARMOR_OF_DIVAN_CHESTPLATE", 5, "JASPER"),
+        "divan leggings":      ("ARMOR_OF_DIVAN_LEGGINGS",   5, "JASPER"),
+        "divan boots":         ("ARMOR_OF_DIVAN_BOOTS",      5, "JASPER"),
+        "glacite helmet":      ("GLACITE_HELMET",            0, "JASPER"),
+        "glacite chestplate":  ("GLACITE_CHESTPLATE",        0, "JASPER"),
+        "glacite leggings":    ("GLACITE_LEGGINGS",          0, "JASPER"),
+        "glacite boots":       ("GLACITE_BOOTS",             0, "JASPER"),
+        "hyperion":            ("HYPERION",                  3, "JASPER"),
+        "terminator":          ("TERMINATOR",                3, "JASPER"),
+        "necron helmet":       ("NECRONS_HELMET",            3, "JASPER"),
+        "necron chestplate":   ("NECRONS_CHESTPLATE",        3, "JASPER"),
+        "necron leggings":     ("NECRONS_LEGGINGS",          3, "JASPER"),
+        "necron boots":        ("NECRONS_BOOTS",             3, "JASPER"),
+        "storm helmet":        ("STORM_HELMET",              3, "JASPER"),
+        "storm chestplate":    ("STORM_CHESTPLATE",          3, "JASPER"),
+        "storm leggings":      ("STORM_LEGGINGS",            3, "JASPER"),
+        "storm boots":         ("STORM_BOOTS",               3, "JASPER"),
+    }
+
+    async def _handle_hypermax_question(self, question: str) -> str | None:
+        """Detect hypermaxed/maxed item questions and return full upgrade cost breakdown."""
+        q = question.lower()
+        hypermax_kws = ["hypermaxed", "hypermax", "maxed out", "fully maxed", "max out", "fully upgraded", "max price"]
+        if not any(kw in q for kw in hypermax_kws):
+            return None
+
+        for name, (item_id, gem_slots, gem_type) in self.ITEM_UPGRADE_MAP.items():
+            if name in q or name.replace(" ", "") in q.replace(" ", ""):
+                result = await self.hypixel.get_hypermaxed_price(item_id, gem_slots, gem_type)
+                if not result:
+                    return f"Couldn't find `{item_id}` on the AH right now."
+
+                lines = [f"**Hypermaxed {name.title()}** — Total: **{result['total']:,.0f} coins**\n"]
+                for label, data in result["breakdown"].items():
+                    if data["total"] == 0:
+                        continue
+                    label_fmt = label.replace("_", " ").title()
+                    if data["qty"] > 1:
+                        lines.append(f"  {label_fmt} ×{data['qty']}: {data['total']:,.0f} ({data['unit']:,.0f} each)")
+                    else:
+                        lines.append(f"  {label_fmt}: {data['total']:,.0f}")
+                return "\n".join(lines)
+
+        return None
+
     # Known armor set ID prefixes
     ARMOR_SETS = {
         "armor of divan": "ARMOR_OF_DIVAN",
