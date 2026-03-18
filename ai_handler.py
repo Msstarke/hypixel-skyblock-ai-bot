@@ -220,8 +220,14 @@ class AIHandler:
         if not results:
             return ""
 
+        # Only keep the top 5 closest matches by ID length similarity
+        def match_score(item):
+            q = question.lower().replace(" ", "_")
+            return len(set(item["id"].lower().split("_")) & set(q.split("_")))
+
+        top = sorted(results.values(), key=match_score, reverse=True)[:5]
         lines = ["Current Bazaar prices (live):"]
-        for item in list(results.values())[:20]:
+        for item in top:
             lines.append(
                 f"  {item['id']}: instabuy {item['buy']:,.1f} | instasell {item['sell']:,.1f} coins"
             )
