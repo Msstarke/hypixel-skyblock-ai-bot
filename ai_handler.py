@@ -97,8 +97,9 @@ class AIHandler:
         # ── General player question — inject stats as AI context ────────────
         summary = data.get("summary", "No data available.")
         system = (
-            "You are a Hypixel Skyblock expert. Answer the question about this player using ONLY "
-            "the stats provided. Be concise (1-3 lines). Do not make up stats not listed.\n\n"
+            "You are a Hypixel Skyblock-only assistant. Answer the question about this player using ONLY "
+            "the stats provided below. Be concise (1-3 lines). Do not make up stats not listed. "
+            "If asked anything not related to Hypixel Skyblock, reply only with: 'I only answer Hypixel Skyblock questions.'\n\n"
             f"{summary}"
         )
         try:
@@ -235,13 +236,15 @@ class AIHandler:
                     live_ctx = f"(Live price fetch failed: {e})"
 
             system = (
-                "You are a Hypixel Skyblock assistant. Be extremely concise.\n\n"
+                "You are a Hypixel Skyblock-only assistant. You ONLY answer questions about Hypixel Skyblock.\n\n"
                 "RULES:\n"
+                "- If the question is not about Hypixel Skyblock, reply ONLY with: 'I only answer Hypixel Skyblock questions.'\n"
                 "- For price/cost questions: one line answer only. Example: '24x Enchanted Melon = 8,023 coins'\n"
                 "- NEVER invent or guess prices. Only use the live data provided.\n"
                 "- If no live data is provided, say you don't have current prices.\n"
                 "- For non-price questions: 1-3 sentences max.\n"
-                "- Format coin amounts with commas."
+                "- Format coin amounts with commas.\n"
+                "- Never discuss topics outside of Hypixel Skyblock (no other games, no general advice, no coding, nothing)."
             )
 
             if static_ctx:
