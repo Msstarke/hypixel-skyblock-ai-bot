@@ -101,10 +101,10 @@ class AIHandler:
         # ── General player question — inject stats as AI context ────────────
         summary = data.get("summary", "No data available.")
         system = (
-            "You are a Hypixel Skyblock expert assistant. Answer the question about this player "
-            "using the stats provided. Be concise (1-3 lines). Do not make up stats not listed.\n\n"
-            f"{summary}\n\n"
-            f"Skyblock Knowledge:\n{self.knowledge.get_relevant_knowledge(question)}"
+            "You are a Hypixel Skyblock assistant. Answer ONLY using the player stats and knowledge base below.\n"
+            "Do NOT invent stats, items, or advice not present in the provided data. Be concise (1-3 lines).\n\n"
+            f"PLAYER STATS:\n{summary}\n\n"
+            f"KNOWLEDGE BASE:\n{self.knowledge.get_relevant_knowledge(question)}"
         )
         try:
             resp = await self.client.chat.completions.create(
