@@ -284,13 +284,12 @@ class AIHandler:
         # Normalize query: remove apostrophes/punctuation for matching
         q_norm = re.sub(r"['\s]+", " ", q).strip()
 
-        for name, (item_id, gem_slots, gem_type) in self.ITEM_UPGRADE_MAP.items():
+        for name, item_id in self.ITEM_UPGRADE_MAP.items():
             name_norm = re.sub(r"['\s]+", " ", name).strip()
-            # Also try without trailing 's' (divans -> divan)
             if (name_norm in q_norm
                     or name_norm.rstrip("s") in q_norm
                     or name_norm in q_norm.replace("divans", "divan")):
-                result = await self.hypixel.get_hypermaxed_price(item_id, gem_slots, gem_type)
+                result = await self.hypixel.get_hypermaxed_price(item_id)
                 if not result:
                     return f"Couldn't fetch upgrade prices right now, try again."
 
