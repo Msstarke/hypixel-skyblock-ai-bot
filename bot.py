@@ -1,8 +1,9 @@
 import os
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from ai_handler import AIHandler
+from bazaar_tracker import BazaarTracker, SNAPSHOT_INTERVAL
 
 load_dotenv()
 
@@ -11,6 +12,7 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 ai = AIHandler()
+tracker = BazaarTracker()
 
 # Optional: restrict to specific channel IDs
 ALLOWED_CHANNELS = set()
@@ -19,10 +21,24 @@ if raw.strip():
     ALLOWED_CHANNELS = {int(c.strip()) for c in raw.split(",") if c.strip().isdigit()}
 
 
+@tasks.loop(seconds=SNAPSHOT_INTERVAL)
+async def snapshot_bazaar():
+    """Snapshot all Bazaar prices every 5 minutes for trend analysis."""
+    try:
+        data = await ai.hypixel.get_bazaar()
+        if data:
+            products = data.get("products", {})
+            tracker.save_snapshot(products)
+            print(f"[tracker] Snapshot saved — {len(products)} products")
+    except Exception as e:
+        print(f"[tracker] Snapshot failed: {e}")
+
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print(f"Serving {len(bot.guilds)} guild(s)")
+    snapshot_bazaar.start()
 
 
 @bot.command(name="ai")
