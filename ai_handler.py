@@ -136,7 +136,11 @@ class AIHandler:
                       "for 5", "for 6", "for 7", "for 8", "for 9", "million", " mil",
                       "cheapest", "cheap", "how much is", "how much does", "ah price",
                       "auction price", "bin price", "lowest bin",
-                      "best reforge", "reforge for", "reforge stone"]
+                      "best reforge", "reforge for", "reforge stone",
+                      "best mining", "best armor", "best weapon", "best sword",
+                      "best setup", "best pet", "best dungeon", "best mage",
+                      "best berserk", "best archer", "best tank", "best healer",
+                      "whats the best", "what is the best", "recommend"]
         return self._needs_live_data(q) or any(kw in q for kw in budget_kws)
 
     def _extract_qty_item(self, question: str) -> tuple[int, str] | None:
