@@ -23,13 +23,17 @@ QTY_PATTERN = re.compile(
 
 class AIHandler:
     def __init__(self):
-        self.groq = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+        self.client = AsyncOpenAI(
+            base_url="https://generativelanguage.googleapis.com/v1beta/openai/",
+            api_key=os.getenv("GEMINI_API_KEY"),
+        )
+        self.model = "gemini-2.0-flash"
         self.hypixel = HypixelAPI(os.getenv("HYPIXEL_API_KEY", ""))
         self.knowledge = KnowledgeBase()
         self.semaphore = asyncio.Semaphore(5)
-        self.model = "llama-3.3-70b-versatile"
-        # Lazy import to avoid circular dependency — tracker set by bot.py after init
         self.tracker = None
+        # Pre-load full knowledge into memory (1M context = dump everything)
+        self._full_knowledge = self.knowledge.get_all_knowledge()
 
     def _extract_username(self, question: str) -> str | None:
         """Extract a Minecraft username only from explicit patterns like 'my account is X', 'ign X'."""
