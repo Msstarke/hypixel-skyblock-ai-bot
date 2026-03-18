@@ -440,8 +440,8 @@ class AIHandler:
                 hypermax = await self._handle_hypermax_question(question)
                 if hypermax:
                     return hypermax
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[hypermax error] {e}")
 
             # --- Fast path: quantity × item calculation, bypass AI entirely ---
             if price_question and os.getenv("HYPIXEL_API_KEY"):
