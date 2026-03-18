@@ -158,7 +158,12 @@ class AIHandler:
             "does", "do", "cost", "price", "worth", "buy", "sell", "total",
             "many", "coins", "get", "me", "i", "to", "in", "and", "or",
             "bazaar", "profit", "per", "each", "are", "can", "you", "if",
-            "whats", "would", "be", "x", "my", "have"
+            "whats", "would", "be", "x", "my", "have",
+            # Dungeon class names — not item names, produce garbage AH results
+            "berserk", "berserker", "mage", "archer", "healer", "tank",
+            # Generic adjectives that are not item names
+            "best", "good", "great", "cheap", "budget", "early", "late", "mid",
+            "setup", "build", "guide", "class", "use",
         }
         words = re.sub(r"[^\w\s]", "", question.lower()).split()
         cleaned = [w.rstrip("s") if len(w) > 4 else w for w in words if w not in stopwords]
