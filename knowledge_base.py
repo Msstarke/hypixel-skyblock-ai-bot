@@ -106,12 +106,13 @@ class KnowledgeBase:
 
     def get_relevant_knowledge(self, question: str, max_chars: int = 25000) -> str:
         q = question.lower()
-        q_words = set(re.sub(r"[^\w\s]", "", q).split())
+        q_norm = re.sub(r"[^\w\s]", "", q)
+        q_words = set(q_norm.split())
 
         # Pick top matching files (up to 3)
         file_scores: dict[str, int] = {}
         for fname, keywords in FILE_KEYWORDS.items():
-            score = sum(1 for kw in keywords if kw in q)
+            score = sum(1 for kw in keywords if kw in q_norm)
             if score:
                 file_scores[fname] = score
 
