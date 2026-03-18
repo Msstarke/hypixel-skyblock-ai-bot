@@ -78,10 +78,13 @@ async def bazaar_command(ctx: commands.Context, *, item: str = None):
 
 
 @bot.command(name="flips")
-async def flips_command(ctx: commands.Context, mode: str = "baz"):
+async def flips_command(ctx: commands.Context, mode: str = "baz", *, extra: str = ""):
     """
-    !flips       — Top Bazaar order flips (margin × liquidity ranked)
-    !flips ah    — Top AH BIN snipe opportunities
+    !flips            — Top Bazaar flips (uses historical data if available)
+    !flips ah         — Top AH BIN snipe opportunities
+    !flips trend <item> — Price trend for a specific item
+    !flips surges     — Items with demand spikes right now
+    !flips volatile   — Most price-volatile items (risky/opportunity)
     """
     if ALLOWED_CHANNELS and ctx.channel.id not in ALLOWED_CHANNELS:
         return
@@ -89,12 +92,86 @@ async def flips_command(ctx: commands.Context, mode: str = "baz"):
     mode = mode.lower()
 
     async with ctx.typing():
+        # ── Trend lookup ──────────────────────────────────────────────────────
+        if mode == "trend":
+            item_id = extra.upper().replace(" ", "_") if extra else ""
+            if not item_id:
+                await ctx.reply("Usage: `!flips trend <item name>` e.g. `!flips trend enchanted diamond`")
+                return
+            history = tracker.get_history(item_id, hours=24)
+            if not history:
+                await ctx.reply(f"No history data for `{item_id}` yet. Data accumulates every 5 minutes.")
+                return
+            trend = tracker.get_trend(item_id, hours=6)
+            arrow = {"rising": "📈", "falling": "📉", "stable": "➡️"}.get(trend["direction"], "❓")
+            embed = discord.Embed(
+                title=f"{arrow} {item_id.replace('_', ' ').title()} — Price Trend",
+                color=0x3498DB,
+            )
+            embed.add_field(name="6h Trend", value=f"{trend['direction'].title()} ({trend['pct_change']:+.2f}%)", inline=True)
+            embed.add_field(name="Avg Buy", value=f"{trend.get('avg_buy', 0):,.1f}", inline=True)
+            embed.add_field(name="Avg Sell", value=f"{trend.get('avg_sell', 0):,.1f}", inline=True)
+            embed.add_field(name="Data Points (24h)", value=str(len(history)), inline=True)
+            history_text = tracker.format_history_for_ai(item_id, hours=24)
+            if history_text:
+                embed.add_field(name="Sample Snapshots", value=f"```{history_text}```", inline=False)
+            await ctx.reply(embed=embed)
+            return
+
+        # ── Demand surges ─────────────────────────────────────────────────────
+        if mode == "surges":
+            surges = tracker.get_demand_surges(hours=3)
+            if not surges:
+                await ctx.reply("No significant demand surges detected in the last 3 hours. Data builds up over time.")
+                return
+            embed = discord.Embed(
+                title="🚀 Demand Surges (Last 3h)",
+                description="Items with a spike in buy order volume — potential price increase incoming.",
+                color=0x9B59B6,
+            )
+            for s in surges[:8]:
+                embed.add_field(
+                    name=s["name"],
+                    value=(
+                        f"Surge: **+{s['surge_pct']}%** | Peak vol: **{s['peak_vol']:,}** "
+                        f"(avg: {s['avg_vol']:,})\n"
+                        f"Avg buy: **{s['avg_buy']:,}** | Avg sell: **{s['avg_sell']:,}**"
+                    ),
+                    inline=False,
+                )
+            embed.set_footer(text="Volume spike = players buying heavily = price may rise soon")
+            await ctx.reply(embed=embed)
+            return
+
+        # ── Volatile items ────────────────────────────────────────────────────
+        if mode == "volatile":
+            vol_items = tracker.get_volatile_items(hours=6)
+            if not vol_items:
+                await ctx.reply("No volatile items detected in the last 6 hours yet. Data accumulates every 5 minutes.")
+                return
+            embed = discord.Embed(
+                title="⚡ Most Volatile Items (6h)",
+                description="High price swing = risky but can be timed for profit.",
+                color=0xE74C3C,
+            )
+            for v in vol_items[:8]:
+                embed.add_field(
+                    name=v["name"],
+                    value=(
+                        f"Swing: **{v['swing_pct']}%** | Low: {v['min']:,} → High: {v['max']:,}\n"
+                        f"Avg buy: {v['avg_buy']:,} | Avg sell: {v['avg_sell']:,}"
+                    ),
+                    inline=False,
+                )
+            await ctx.reply(embed=embed)
+            return
+
+        # ── AH flips ──────────────────────────────────────────────────────────
         if mode in ("ah", "auction"):
             flips = await ai.hypixel.get_ah_flips()
             if not flips:
                 await ctx.reply("No AH flip data available right now. Try again in a moment.")
                 return
-
             embed = discord.Embed(
                 title="🏷️ Top AH BIN Flip Opportunities",
                 description="Buy at lowest BIN → relist at recent median sold price.",
@@ -104,39 +181,50 @@ async def flips_command(ctx: commands.Context, mode: str = "baz"):
                 embed.add_field(
                     name=f["name"],
                     value=(
-                        f"Buy BIN: **{f['bin']:,}** coins\n"
-                        f"Median sold: **{f['median_sold']:,}** coins\n"
+                        f"Buy BIN: **{f['bin']:,}** | Median sold: **{f['median_sold']:,}**\n"
                         f"Profit: **+{f['margin']:,}** ({f['margin_pct']}%) | {f['sales_count']} recent sales"
                     ),
                     inline=False,
                 )
             embed.set_footer(text="Data: Hypixel ended auctions + moulberry.codes BIN • Use !flips for Bazaar flips")
             await ctx.reply(embed=embed)
+            return
 
-        else:  # bazaar
+        # ── Bazaar flips (smart if history available, else live) ──────────────
+        age = tracker.last_snapshot_age()
+        use_smart = age is not None and age < 1800  # have data < 30 min old
+
+        if use_smart:
+            flips = tracker.get_smart_flips()
+            title = "📈 Top Bazaar Flips (Historical Analysis)"
+            desc = "Ranked by margin% × liquidity × trend. Uses 6h avg prices."
+            footer = f"Based on historical data ({age // 60}m old) • !flips ah | !flips surges | !flips volatile"
+        else:
             flips = await ai.hypixel.get_bazaar_flips()
-            if not flips:
-                await ctx.reply("No Bazaar flip data available right now. Try again in a moment.")
-                return
+            title = "📈 Top Bazaar Flip Opportunities"
+            desc = "Live snapshot. Historical analysis starts after ~15 min of data collection."
+            footer = "Use !flips ah for AH flips | !flips surges | !flips volatile"
 
-            embed = discord.Embed(
-                title="📈 Top Bazaar Flip Opportunities",
-                description="Place buy order → sell order. Profit after 1.25% tax.",
-                color=0x2ECC71,
+        if not flips:
+            await ctx.reply("No Bazaar flip data available right now. Try again in a moment.")
+            return
+
+        embed = discord.Embed(title=title, description=desc, color=0x2ECC71)
+        for f in flips[:10]:
+            trend_icon = {"rising": "📈", "falling": "📉", "stable": "➡️"}.get(f.get("trend", ""), "")
+            trend_str = f" {trend_icon} {f['trend']} ({f['trend_pct']:+.1f}%)" if f.get("trend") else ""
+            embed.add_field(
+                name=f["name"],
+                value=(
+                    f"Buy: **{f['buy']:,.1f}** | Sell: **{f['sell']:,.1f}**\n"
+                    f"Margin: **+{f['margin']:,.1f}** ({f['margin_pct']}% net) | "
+                    f"Vol: **{f['weekly_vol']:,}**/wk | Orders: {f['buy_orders']}B/{f['sell_orders']}S"
+                    + (f"\n{trend_str}" if trend_str else "")
+                ),
+                inline=False,
             )
-            for f in flips[:10]:
-                vol_fmt = f"{f['weekly_vol']:,}"
-                embed.add_field(
-                    name=f["name"],
-                    value=(
-                        f"Instabuy: **{f['buy']:,}** | Instasell: **{f['sell']:,}**\n"
-                        f"Margin: **+{f['margin']:,}** ({f['margin_pct']}% net) | "
-                        f"Weekly vol: **{vol_fmt}** | Orders: {f['buy_orders']}B / {f['sell_orders']}S"
-                    ),
-                    inline=False,
-                )
-            embed.set_footer(text="Ranked by margin% × weekly liquidity • Use !flips ah for Auction House flips")
-            await ctx.reply(embed=embed)
+        embed.set_footer(text=footer)
+        await ctx.reply(embed=embed)
 
 
 @bot.command(name="skyblock")
