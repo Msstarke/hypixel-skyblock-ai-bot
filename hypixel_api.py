@@ -62,7 +62,14 @@ class HypixelAPI:
     async def get_auction_averages(self) -> dict:
         """Fetch average AH prices from moulberry.codes — includes bid auctions, so covers dungeon items."""
         data = await self._get(AUCTION_AVERAGES_URL, "auction_averages", params={}, ttl=AH_CACHE_TTL)
-        return data or {}
+        if data:
+            return data
+        # Fallback URL variant
+        try:
+            alt = await self._get("https://moulberry.codes/auction_averages.json", "auction_averages_alt", params={}, ttl=AH_CACHE_TTL)
+            return alt or {}
+        except Exception:
+            return {}
 
     async def get_reforge_stone_price(self, stone_id: str) -> float:
         """
