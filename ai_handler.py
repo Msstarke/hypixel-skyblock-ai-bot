@@ -292,28 +292,39 @@ class AIHandler:
             name_words = name.split()
             # All words in the item name must appear in the question (prefix match for plurals)
             if all(any(qt.startswith(nw) for qt in q_tokens) for nw in name_words):
-                # Look up recommended reforge for this item
-                reforge_info = self.RECOMMENDED_REFORGES.get(item_id)
-                reforge_name, stone_id = reforge_info if reforge_info else (None, None)
+                # ── Dynamic reforge selection ────────────────────────────────
+                desired_stat = self._detect_desired_stat(question)
+
+                # Fetch lbin first so we can pass item price + stone prices to picker
+                lbin = await self.hypixel.get_lowest_bin()
+                item_price = lbin.get(item_id, 0)
+
+                reforge = pick_reforge(
+                    item_id,
+                    desired_stat=desired_stat,
+                    item_price=item_price,
+                    stone_prices=lbin,
+                )
+                stone_id    = reforge["stone"]    if reforge else None
+                reforge_name = reforge["name"]    if reforge else None
 
                 result = await self.hypixel.get_hypermaxed_price(item_id, reforge_stone_id=stone_id)
                 if not result:
-                    return f"Couldn't fetch upgrade prices right now, try again."
+                    return "Couldn't fetch upgrade prices right now, try again."
 
-                # Parse exclusions from question: "without hot potato", "no recomb", "without jaded", etc.
+                # Parse exclusions: "without hot potato", "no recomb", "without jaded", etc.
                 exclude_map = {
-                    "hot potato":       "hot_potato_books",
-                    "hpb":              "hot_potato_books",
-                    "fuming potato":    "fuming_potato_books",
-                    "fuming":           "fuming_potato_books",
-                    "fhpb":             "fuming_potato_books",
-                    "recomb":           "recombobulator_3000",
-                    "recombobulator":   "recombobulator_3000",
-                    "art of peace":     "art_of_peace",
-                    "aop":              "art_of_peace",
-                    "reforge":          "reforge_stone",
+                    "hot potato":     "hot_potato_books",
+                    "hpb":            "hot_potato_books",
+                    "fuming potato":  "fuming_potato_books",
+                    "fuming":         "fuming_potato_books",
+                    "fhpb":           "fuming_potato_books",
+                    "recomb":         "recombobulator_3000",
+                    "recombobulator": "recombobulator_3000",
+                    "art of peace":   "art_of_peace",
+                    "aop":            "art_of_peace",
+                    "reforge":        "reforge_stone",
                 }
-                # Also allow excluding by reforge name (e.g. "without jaded")
                 if reforge_name:
                     exclude_map[reforge_name] = "reforge_stone"
 
@@ -322,18 +333,27 @@ class AIHandler:
                     if phrase in q:
                         excluded.add(key)
 
-                # Recalculate total excluding removed items
                 total = sum(
                     v["total"] for k, v in result["breakdown"].items()
                     if k not in excluded
                 )
 
                 base_price = result["breakdown"]["base_item"]["total"]
-                base_note = f"{base_price:,.0f} (lowest BIN)" if base_price > 0 else "not found on AH"
-                excl_note = f" *(excl. {', '.join(e.replace('_', ' ') for e in excluded)})*" if excluded else ""
-                reforge_label = f" + {reforge_name.title()} reforge" if reforge_name and "reforge_stone" not in excluded else ""
-                lines = [f"**Hypermaxed {name.title()}**{reforge_label}{excl_note} — Total: **{total:,.0f} coins**\n",
-                         f"  Base item: {base_note}"]
+                base_note  = f"{base_price:,.0f} (lowest BIN)" if base_price > 0 else "not found on AH"
+                excl_note  = f" *(excl. {', '.join(e.replace('_', ' ') for e in excluded)})*" if excluded else ""
+
+                # Reforge header note
+                if reforge and "reforge_stone" not in excluded:
+                    stat_str = ", ".join(f"+{v} {k.replace('_', ' ').title()}" for k, v in reforge["stats"].items())
+                    afford_warn = " ⚠️ expensive relative to item" if not reforge["affordable"] else ""
+                    reforge_label = f" + **{reforge_name.title()}** reforge ({stat_str}){afford_warn}"
+                else:
+                    reforge_label = ""
+
+                lines = [
+                    f"**Hypermaxed {name.title()}**{reforge_label}{excl_note} — Total: **{total:,.0f} coins**\n",
+                    f"  Base item: {base_note}",
+                ]
                 for label, data in result["breakdown"].items():
                     if label == "base_item" or data["total"] == 0 or label in excluded:
                         continue
