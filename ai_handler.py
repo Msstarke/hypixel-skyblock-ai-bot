@@ -318,6 +318,20 @@ class AIHandler:
                 except Exception:
                     pass
 
+            # Inject historical trend data if tracker has data and question involves a specific item
+            hist_ctx = ""
+            if self.tracker and price_question:
+                try:
+                    phrases = self._extract_search_phrases(question)
+                    for phrase in phrases[:3]:
+                        item_id = phrase.upper().replace(" ", "_")
+                        history = self.tracker.format_history_for_ai(item_id, hours=24)
+                        if history:
+                            hist_ctx += history + "\n"
+                            break
+                except Exception:
+                    pass
+
             system = (
                 "You are a Hypixel Skyblock-only assistant. You ONLY answer questions about Hypixel Skyblock.\n\n"
                 "RULES:\n"
