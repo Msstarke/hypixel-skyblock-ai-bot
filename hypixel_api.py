@@ -58,6 +58,28 @@ class HypixelAPI:
         data = await self._get(LOWEST_BIN_URL, "lowest_bin", params={}, ttl=AH_CACHE_TTL)
         return data or {}
 
+    async def get_reforge_stone_price(self, stone_id: str) -> float:
+        """
+        Fetch AH price for a reforge stone via coflnet.
+        Reforge stones are regular AH items (not BIN), so they're not in lowestbin.
+        Returns the buy price (what you'd pay), or 0 if not found.
+        """
+        cache_key = f"coflnet_{stone_id}"
+        if self._cache_valid(cache_key, AH_CACHE_TTL):
+            return self._cache[cache_key]["data"]
+        url = COFLNET_PRICE_URL.format(item_id=stone_id)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        price = data.get("buy", 0) or data.get("sell", 0)
+                        self._cache[cache_key] = {"data": price, "ts": time.time()}
+                        return price
+        except Exception:
+            pass
+        return 0
+
     async def search_ah(self, query: str) -> list[dict]:
         """
         Search for an item across AH sources:
