@@ -332,7 +332,10 @@ class AIHandler:
 
             if self._needs_ah_data(question):
                 try:
-                    ah_ctx = await self._build_ah_context(question)
+                    # Extract item IDs mentioned in knowledge (ALL_CAPS_WITH_UNDERSCORES)
+                    kb_ids = re.findall(r'\b[A-Z][A-Z0-9_]{3,}\b', static_ctx)
+                    kb_ids = list(dict.fromkeys(kb_ids))[:10]  # dedupe, top 10
+                    ah_ctx = await self._build_ah_context(question, extra_ids=kb_ids)
                 except Exception:
                     pass
 
