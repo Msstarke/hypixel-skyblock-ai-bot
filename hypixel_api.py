@@ -501,20 +501,8 @@ class HypixelAPI:
             if req_parts:
                 lines.append(f"Requirements: {', '.join(req_parts)}")
 
-        # Recipe (crafting table)
-        recipe = item.get("recipe")
-        if recipe:
-            slots = []
-            for row in ["A", "B", "C"]:
-                for col in ["1", "2", "3"]:
-                    slot = recipe.get(f"{row}{col}", "")
-                    if slot:
-                        item_id, count = slot.split(":") if ":" in slot else (slot, "1")
-                        slots.append(f"{item_id.replace('_', ' ').title()} x{count}")
-            if slots:
-                lines.append(f"Recipe: {', '.join(slots)}")
-        elif item.get("crafttext"):
-            lines.append(f"Craft note: {item['crafttext']}")
+        # Recipe — Hypixel items API does NOT provide recipe data. Flag it so the AI doesn't guess.
+        lines.append("Recipe: NOT AVAILABLE in items API — do not guess the recipe")
 
         # Gemstone slots
         gem_slots = item.get("gemstone_slots", [])
