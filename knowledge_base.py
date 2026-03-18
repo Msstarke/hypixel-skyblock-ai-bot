@@ -74,7 +74,7 @@ def _split_sections(text: str) -> list[tuple[str, str]]:
 
 
 def _score_section(heading: str, content: str, q_words: set) -> int:
-    text = (heading + " " + content[:300]).lower()
+    text = re.sub(r"[^\w\s]", "", (heading + " " + content[:300]).lower())
     score = 0
     for w in q_words:
         if len(w) < 3:
