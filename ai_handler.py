@@ -107,7 +107,7 @@ class AIHandler:
             "You are a Hypixel Skyblock expert assistant. Answer the question about this player "
             "using the stats provided. Be concise (1-3 lines). Do not make up stats not listed.\n\n"
             f"{summary}\n\n"
-            f"Skyblock Knowledge:\n{self._full_knowledge}"
+            f"Skyblock Knowledge:\n{self.knowledge.get_relevant_knowledge(question)}"
         )
         try:
             resp = await self.client.chat.completions.create(
