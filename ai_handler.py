@@ -362,11 +362,20 @@ class AIHandler:
                     f"**Hypermaxed {name.title()}**{reforge_label}{excl_note} — Total: **{total:,.0f} coins**\n",
                     f"  Base item: {base_note}",
                 ]
+                free = result.get("free_slots", 0)
                 for label, data in result["breakdown"].items():
                     if label == "base_item" or data["total"] == 0 or label in excluded:
                         continue
                     if label == "reforge_stone" and reforge_name:
                         label_fmt = f"{reforge_name.title()} Reforge Stone"
+                    elif label == "slot_unlocking":
+                        slot_note = f" ({free} free)" if free else ""
+                        label_fmt = f"Gem Slot Unlocking ×{data['qty']}{slot_note}"
+                        # Append detail breakdown as sub-line
+                        lines.append(f"  {label_fmt}: {data['total']:,.0f}")
+                        for detail in data.get("details", []):
+                            lines.append(f"    ↳ {detail}")
+                        continue
                     else:
                         label_fmt = label.replace("_", " ").title()
                     if data["qty"] > 1:
