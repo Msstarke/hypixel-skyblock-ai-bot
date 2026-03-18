@@ -105,6 +105,62 @@ class HypixelAPI:
 
         return results[:6]
 
+    async def get_hypermaxed_price(self, item_id: str, gemstone_slots: int = 0, gem_type: str = "JASPER") -> dict | None:
+        """
+        Calculate total cost of a hypermaxed item:
+        - Base item (lowest BIN from AH)
+        - 10x Hot Potato Books (Bazaar)
+        - 5x Fuming Potato Books (Bazaar)
+        - 1x Recombobulator 3000 (Bazaar)
+        - 1x Art of Peace (Bazaar, optional)
+        - N gemstone slots filled with Perfect gemstones (Bazaar)
+        Returns itemised cost dict.
+        """
+        lbin = await self.get_lowest_bin()
+        baz = await self.get_bazaar()
+        if not baz:
+            return None
+
+        def baz_price(item_id: str) -> float:
+            p = baz.get("products", {}).get(item_id, {})
+            return p.get("quick_status", {}).get("buyPrice", 0)
+
+        # Base item from AH
+        base = lbin.get(item_id, 0)
+        if not base:
+            # try common suffixes
+            for suffix in ["", "_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS"]:
+                price = lbin.get(item_id + suffix, 0)
+                if price:
+                    base = price
+                    item_id = item_id + suffix
+                    break
+
+        if not base:
+            return None
+
+        hpb_price  = baz_price("HOT_POTATO_BOOK")
+        fhpb_price = baz_price("FUMING_POTATO_BOOK")
+        recomb     = baz_price("RECOMBOBULATOR_3000")
+        aop        = baz_price("ART_OF_PEACE")
+        gem_id     = f"PERFECT_{gem_type}_GEM"
+        gem_price  = baz_price(gem_id)
+
+        breakdown = {
+            "base_item":             {"qty": 1,              "unit": base,       "total": base},
+            "hot_potato_books":      {"qty": 10,             "unit": hpb_price,  "total": hpb_price * 10},
+            "fuming_potato_books":   {"qty": 5,              "unit": fhpb_price, "total": fhpb_price * 5},
+            "recombobulator_3000":   {"qty": 1,              "unit": recomb,     "total": recomb},
+            "art_of_peace":          {"qty": 1,              "unit": aop,        "total": aop},
+        }
+        if gemstone_slots > 0 and gem_price > 0:
+            breakdown[f"perfect_{gem_type.lower()}_gems"] = {
+                "qty": gemstone_slots, "unit": gem_price, "total": gem_price * gemstone_slots
+            }
+
+        total = sum(v["total"] for v in breakdown.values())
+        return {"item_id": item_id, "breakdown": breakdown, "total": total}
+
     async def get_armor_set_prices(self, set_id_prefix: str) -> dict | None:
         """
         Fetch lowest BIN price for each piece of an armor set.
