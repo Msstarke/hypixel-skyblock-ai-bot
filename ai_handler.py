@@ -25,7 +25,7 @@ QTY_PATTERN = re.compile(
 class AIHandler:
     def __init__(self):
         self.client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
-        self.model = "deepseek-r1-distill-llama-70b"
+        self.model = "qwen-3-32b"
         self.hypixel = HypixelAPI(os.getenv("HYPIXEL_API_KEY", ""))
         self.knowledge = KnowledgeBase()
         self.semaphore = asyncio.Semaphore(5)
