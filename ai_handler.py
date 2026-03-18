@@ -427,7 +427,6 @@ class AIHandler:
     # Known armor set ID prefixes
     ARMOR_SETS = {
         "armor of divan": "ARMOR_OF_DIVAN",
-        "divan": "DIVAN",
         "glacite": "GLACITE",
         "mineral": "MINERAL",
         "aurora": "AURORA",
