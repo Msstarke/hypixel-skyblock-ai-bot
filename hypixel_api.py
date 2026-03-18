@@ -4,6 +4,7 @@ from typing import Optional
 
 BAZAAR_URL = "https://api.hypixel.net/v2/skyblock/bazaar"
 AUCTIONS_ENDED_URL = "https://api.hypixel.net/v2/skyblock/auctions_ended"
+LOWEST_BIN_URL = "https://moulberry.codes/lowestbin.json"
 MOJANG_URL = "https://api.mojang.com/users/profiles/minecraft"
 PROFILES_URL = "https://api.hypixel.net/v2/skyblock/profiles"
 ITEMS_URL = "https://api.hypixel.net/resources/skyblock/items"  # no API key needed
@@ -11,6 +12,7 @@ ITEMS_CACHE_TTL = 3600  # 1 hour — items rarely change
 
 CACHE_TTL = 300  # 5 minutes
 PLAYER_CACHE_TTL = 120  # 2 minutes for player data
+AH_CACHE_TTL = 120    # 2 minutes for AH data
 
 # Cumulative HotM XP required per level (source: SkyCrypt leveling.js)
 # Increments: 3k, 9k, 25k, 60k, 100k, 150k, 210k, 290k, 400k
