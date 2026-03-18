@@ -164,6 +164,8 @@ class AIHandler:
             # Generic adjectives that are not item names
             "best", "good", "great", "cheap", "budget", "early", "late", "mid",
             "setup", "build", "guide", "class", "use",
+            # Generic item categories — too broad for AH search, armor set context handles them
+            "armor", "weapon", "sword", "bow", "item", "gear", "piece", "set",
         }
         words = re.sub(r"[^\w\s]", "", question.lower()).split()
         cleaned = [w.rstrip("s") if len(w) > 4 else w for w in words if w not in stopwords]
