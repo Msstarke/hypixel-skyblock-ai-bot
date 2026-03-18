@@ -61,6 +61,68 @@ async def bazaar_command(ctx: commands.Context, *, item: str = None):
     await ctx.reply("\n".join(lines))
 
 
+@bot.command(name="flips")
+async def flips_command(ctx: commands.Context, mode: str = "baz"):
+    """
+    !flips       — Top Bazaar order flips (margin × liquidity ranked)
+    !flips ah    — Top AH BIN snipe opportunities
+    """
+    if ALLOWED_CHANNELS and ctx.channel.id not in ALLOWED_CHANNELS:
+        return
+
+    mode = mode.lower()
+
+    async with ctx.typing():
+        if mode in ("ah", "auction"):
+            flips = await ai.hypixel.get_ah_flips()
+            if not flips:
+                await ctx.reply("No AH flip data available right now. Try again in a moment.")
+                return
+
+            embed = discord.Embed(
+                title="🏷️ Top AH BIN Flip Opportunities",
+                description="Buy at lowest BIN → relist at recent median sold price.",
+                color=0xE67E22,
+            )
+            for f in flips[:8]:
+                embed.add_field(
+                    name=f["name"],
+                    value=(
+                        f"Buy BIN: **{f['bin']:,}** coins\n"
+                        f"Median sold: **{f['median_sold']:,}** coins\n"
+                        f"Profit: **+{f['margin']:,}** ({f['margin_pct']}%) | {f['sales_count']} recent sales"
+                    ),
+                    inline=False,
+                )
+            embed.set_footer(text="Data: Hypixel ended auctions + moulberry.codes BIN • Use !flips for Bazaar flips")
+            await ctx.reply(embed=embed)
+
+        else:  # bazaar
+            flips = await ai.hypixel.get_bazaar_flips()
+            if not flips:
+                await ctx.reply("No Bazaar flip data available right now. Try again in a moment.")
+                return
+
+            embed = discord.Embed(
+                title="📈 Top Bazaar Flip Opportunities",
+                description="Place buy order → sell order. Profit after 1.25% tax.",
+                color=0x2ECC71,
+            )
+            for f in flips[:10]:
+                vol_fmt = f"{f['weekly_vol']:,}"
+                embed.add_field(
+                    name=f["name"],
+                    value=(
+                        f"Instabuy: **{f['buy']:,}** | Instasell: **{f['sell']:,}**\n"
+                        f"Margin: **+{f['margin']:,}** ({f['margin_pct']}% net) | "
+                        f"Weekly vol: **{vol_fmt}** | Orders: {f['buy_orders']}B / {f['sell_orders']}S"
+                    ),
+                    inline=False,
+                )
+            embed.set_footer(text="Ranked by margin% × weekly liquidity • Use !flips ah for Auction House flips")
+            await ctx.reply(embed=embed)
+
+
 @bot.command(name="skyblock")
 async def help_command(ctx: commands.Context):
     embed = discord.Embed(
