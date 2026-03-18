@@ -200,8 +200,9 @@ class HypixelAPI:
         - Reforge stone (optional)
         Returns itemised cost dict.
         """
-        lbin, baz, raw_slots = await asyncio.gather(
+        lbin, avg, baz, raw_slots = await asyncio.gather(
             self.get_lowest_bin(),
+            self.get_auction_averages(),
             self.get_bazaar(),
             self.get_item_gem_slots(item_id),
         )
