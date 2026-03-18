@@ -336,19 +336,18 @@ class AIHandler:
                     pass
 
             system = (
-                "You are a Hypixel Skyblock-only assistant. You ONLY answer questions about Hypixel Skyblock.\n\n"
+                "You are a Hypixel Skyblock expert assistant. You ONLY answer questions about Hypixel Skyblock.\n\n"
                 "RULES:\n"
                 "- If the question is not about Hypixel Skyblock, reply ONLY with: 'I only answer Hypixel Skyblock questions.'\n"
                 "- For price/cost questions: one line answer only. Example: '24x Enchanted Melon = 8,023 coins'\n"
                 "- NEVER invent or guess prices. Only use the live data provided.\n"
                 "- If no live data is provided, say you don't have current prices.\n"
-                "- For non-price questions: 1-3 sentences max.\n"
+                "- For non-price questions: answer accurately using the knowledge base. 1-5 sentences.\n"
                 "- Format coin amounts with commas.\n"
-                "- Never discuss topics outside of Hypixel Skyblock (no other games, no general advice, no coding, nothing)."
+                "- Never discuss topics outside of Hypixel Skyblock.\n\n"
+                f"Skyblock Knowledge Base:\n{self._full_knowledge}"
             )
 
-            if static_ctx:
-                system += f"\n\nGame info:\n{static_ctx}"
             if item_ctx:
                 system += f"\n\n{item_ctx}"
             if live_ctx:
@@ -361,13 +360,13 @@ class AIHandler:
                 system += "\n\nNo live price data found. Do NOT guess prices."
 
             try:
-                resp = await self.groq.chat.completions.create(
+                resp = await self.client.chat.completions.create(
                     model=self.model,
                     messages=[
                         {"role": "system", "content": system},
                         {"role": "user", "content": question},
                     ],
-                    max_tokens=300,
+                    max_tokens=400,
                     temperature=0.0,
                 )
                 text = resp.choices[0].message.content.strip()
