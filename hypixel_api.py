@@ -93,18 +93,21 @@ class HypixelAPI:
         """
         Search for an item across AH sources:
         1. Lowest BIN (active listings)
-        2. Recently ended auctions (last ~24h sales)
+        2. Auction averages (covers dungeon/bid auction items)
+        3. Recently ended auctions (last ~60s)
         Returns list of {source, item_id, price, name}
         """
         query_norm = query.upper().replace(" ", "_").replace("'", "")
         query_lower = query.lower().replace("'", "")
         results = []
+        seen_ids: set = set()
 
         # 1. Lowest BIN prices
         lbin = await self.get_lowest_bin()
         lbin_matches = {k: v for k, v in lbin.items()
                         if query_norm in k or query_lower in k.lower().replace("_", " ")}
         for item_id, price in sorted(lbin_matches.items(), key=lambda x: x[1])[:5]:
+            seen_ids.add(item_id)
             results.append({
                 "source": "Lowest BIN",
                 "item_id": item_id,
@@ -112,18 +115,31 @@ class HypixelAPI:
                 "name": item_id.replace("_", " ").title(),
             })
 
-        # 2. Recently ended auctions — find recent sales for this item
+        # 2. Auction averages — catches dungeon items and bid-only auctions
+        if len(results) < 3:
+            avg = await self.get_auction_averages()
+            avg_matches = {k: v for k, v in avg.items()
+                           if (query_norm in k or query_lower in k.lower().replace("_", " "))
+                           and k not in seen_ids}
+            for item_id, price in sorted(avg_matches.items(), key=lambda x: x[1])[:3]:
+                seen_ids.add(item_id)
+                results.append({
+                    "source": "AH average",
+                    "item_id": item_id,
+                    "price": price,
+                    "name": item_id.replace("_", " ").title(),
+                })
+
+        # 3. Recently ended auctions (last ~60s from Hypixel API)
         ended = await self.get_auctions_ended()
         if ended:
             auctions = ended.get("auctions", [])
-            # Filter by item name match
             matches = [
                 a for a in auctions
                 if query_lower in a.get("item_name", "").lower() or
                    query_norm in a.get("item_lore", "")
             ]
             if matches:
-                # Get median/avg price from recent sales
                 prices = sorted(a["price"] for a in matches)
                 median = prices[len(prices) // 2]
                 results.append({
