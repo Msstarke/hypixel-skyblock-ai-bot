@@ -455,13 +455,13 @@ class AIHandler:
         "maxor": "MAXOR",
     }
 
-    async def _build_armor_set_context(self, question: str) -> str:
-        """Fetch full set prices for any armor sets mentioned in the question."""
-        q = question.lower()
+    async def _build_armor_set_context(self, question: str, kb_text: str = "") -> str:
+        """Fetch full set prices for armor sets mentioned in the question OR knowledge base."""
+        search_text = question.lower() + " " + kb_text.lower()
         lines = []
         checked = set()
         for name, prefix in self.ARMOR_SETS.items():
-            if name in q and prefix not in checked:
+            if name in search_text and prefix not in checked:
                 checked.add(prefix)
                 try:
                     prices = await self.hypixel.get_armor_set_prices(prefix)
@@ -473,6 +473,8 @@ class AIHandler:
                         lines.append(f"{name.title()} full set: {total:,.0f} coins ({pieces})")
                 except Exception:
                     pass
+            if len(checked) >= 8:  # cap to avoid too many API calls
+                break
         return ("Current AH set prices:\n" + "\n".join(lines)) if lines else ""
 
     async def _build_ah_context(self, question: str, extra_ids: list[str] = None) -> str:
