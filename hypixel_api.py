@@ -165,14 +165,24 @@ class HypixelAPI:
 
         return results[:6]
 
+    # Map from AH item IDs (used for price lookups) to the Hypixel items API IDs
+    # (some items like Armor of Divan use different IDs in each system)
+    _ITEMS_API_ID_MAP = {
+        "ARMOR_OF_DIVAN_HELMET":      "DIVAN_HELMET",
+        "ARMOR_OF_DIVAN_CHESTPLATE":  "DIVAN_CHESTPLATE",
+        "ARMOR_OF_DIVAN_LEGGINGS":    "DIVAN_LEGGINGS",
+        "ARMOR_OF_DIVAN_BOOTS":       "DIVAN_BOOTS",
+    }
+
     async def get_item_gem_slots(self, item_id: str) -> list[dict]:
         """
         Fetch full gemstone slot data for an item from the Hypixel items API.
         Returns list of slot dicts: [{slot_type, costs: [{type, item_id/coins, amount}]}]
         slot_type may be a specific gem type (AMBER, JADE) or UNIVERSAL/COMBAT/etc.
         """
+        api_id = self._ITEMS_API_ID_MAP.get(item_id, item_id)
         items_data = await self.get_all_items()
-        item = items_data.get(item_id, {})
+        item = items_data.get(api_id, {})
         return item.get("gemstone_slots", [])
 
     async def _price_unlock_costs(self, slots: list[dict], baz: dict) -> tuple[float, list[str]]:
