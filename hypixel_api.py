@@ -5,6 +5,7 @@ from typing import Optional
 
 BAZAAR_URL = "https://api.hypixel.net/v2/skyblock/bazaar"
 AUCTIONS_ENDED_URL = "https://api.hypixel.net/v2/skyblock/auctions_ended"
+ACTIVE_AUCTIONS_URL = "https://api.hypixel.net/v2/skyblock/auctions"
 LOWEST_BIN_URL = "https://moulberry.codes/lowestbin.json"
 COFLNET_PRICE_URL = "https://sky.coflnet.com/api/item/price/{item_id}/current"
 MOJANG_URL = "https://api.mojang.com/users/profiles/minecraft"
@@ -15,6 +16,28 @@ ITEMS_CACHE_TTL = 3600  # 1 hour — items rarely change
 CACHE_TTL = 300  # 5 minutes
 PLAYER_CACHE_TTL = 120  # 2 minutes for player data
 AH_CACHE_TTL = 120    # 2 minutes for AH data
+ACTIVE_AH_CACHE_TTL = 900  # 15 minutes — bid-only item scan
+
+# Search terms for bid-only items in the active AH (item_name substring matches)
+# Used when no BIN or coflnet price is found
+BID_ONLY_SEARCH_TERMS: dict[str, list[str]] = {
+    "NECRONS_HELMET":      ["necron", "helmet"],
+    "NECRONS_CHESTPLATE":  ["necron", "chestplate"],
+    "NECRONS_LEGGINGS":    ["necron", "leggings"],
+    "NECRONS_BOOTS":       ["necron", "boots"],
+    "STORM_HELMET":        ["storm", "helmet"],
+    "STORM_CHESTPLATE":    ["storm", "chestplate"],
+    "STORM_LEGGINGS":      ["storm", "leggings"],
+    "STORM_BOOTS":         ["storm", "boots"],
+    "MAXOR_HELMET":        ["maxor", "helmet"],
+    "MAXOR_CHESTPLATE":    ["maxor", "chestplate"],
+    "MAXOR_LEGGINGS":      ["maxor", "leggings"],
+    "MAXOR_BOOTS":         ["maxor", "boots"],
+    "GOLDOR_HELMET":       ["goldor", "helmet"],
+    "GOLDOR_CHESTPLATE":   ["goldor", "chestplate"],
+    "GOLDOR_LEGGINGS":     ["goldor", "leggings"],
+    "GOLDOR_BOOTS":        ["goldor", "boots"],
+}
 
 # Cumulative HotM XP required per level (source: SkyCrypt leveling.js)
 # Increments: 3k, 9k, 25k, 60k, 100k, 150k, 210k, 290k, 400k
