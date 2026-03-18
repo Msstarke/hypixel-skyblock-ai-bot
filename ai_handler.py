@@ -299,12 +299,13 @@ class AIHandler:
                 lbin = await self.hypixel.get_lowest_bin()
                 item_price = lbin.get(item_id, 0)
 
-                # Fetch stone prices from coflnet for all known stones
+                # Batch-fetch all stone prices from coflnet in parallel
                 from reforges import REFORGES
-                stone_ids = {d["stone"] for d in REFORGES.values() if d.get("stone")}
-                stone_prices = {}
-                for sid in stone_ids:
-                    stone_prices[sid] = await self.hypixel.get_reforge_stone_price(sid)
+                stone_ids = list({d["stone"] for d in REFORGES.values() if d.get("stone")})
+                prices_list = await asyncio.gather(
+                    *[self.hypixel.get_reforge_stone_price(sid) for sid in stone_ids]
+                )
+                stone_prices = dict(zip(stone_ids, prices_list))
 
                 reforge = pick_reforge(
                     item_id,
