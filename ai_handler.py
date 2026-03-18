@@ -229,6 +229,15 @@ class AIHandler:
             # --- Normal AI path ---
             static_ctx = self.knowledge.get_relevant_knowledge(question)
             live_ctx = ""
+            item_ctx = ""
+
+            # Item/recipe lookup from Hypixel items API
+            item_keywords = ["recipe", "craft", "how to make", "ingredients", "what is", "stats", "item info"]
+            if any(kw in question.lower() for kw in item_keywords):
+                try:
+                    item_ctx = await self._build_item_context(question)
+                except Exception:
+                    pass
 
             if price_question:
                 try:
