@@ -133,24 +133,48 @@ class HypixelAPI:
         if item.get("npc_sell_price"):
             lines.append(f"NPC sell price: {item['npc_sell_price']:,} coins")
 
+        # Stats
+        stats = item.get("stats", {})
+        if stats:
+            stat_str = " | ".join(f"{k.replace('_', ' ').title()}: +{v}" for k, v in stats.items())
+            lines.append(f"Stats: {stat_str}")
+
+        # Requirements
+        reqs = item.get("requirements", [])
+        if reqs:
+            req_parts = []
+            for r in reqs:
+                if r.get("type") == "HEART_OF_THE_MOUNTAIN":
+                    req_parts.append(f"HotM {r.get('tier', '?')}")
+                elif r.get("type") == "SKILL":
+                    req_parts.append(f"{r.get('skill', '').title()} {r.get('level', '?')}")
+                elif r.get("type") == "SLAYER":
+                    req_parts.append(f"{r.get('slayer_boss_type', '').title()} Slayer {r.get('level', '?')}")
+                elif r.get("type") == "DUNGEON_SKILL":
+                    req_parts.append(f"Catacombs {r.get('level', '?')}")
+            if req_parts:
+                lines.append(f"Requirements: {', '.join(req_parts)}")
+
+        # Recipe (crafting table)
         recipe = item.get("recipe")
         if recipe:
-            # Recipe is a 3x3 grid: A1-C3
             slots = []
             for row in ["A", "B", "C"]:
                 for col in ["1", "2", "3"]:
                     slot = recipe.get(f"{row}{col}", "")
                     if slot:
                         item_id, count = slot.split(":") if ":" in slot else (slot, "1")
-                        name = item_id.replace("_", " ").title()
-                        slots.append(f"{name} x{count}")
+                        slots.append(f"{item_id.replace('_', ' ').title()} x{count}")
             if slots:
                 lines.append(f"Recipe: {', '.join(slots)}")
         elif item.get("crafttext"):
-            lines.append(f"Craft info: {item['crafttext']}")
+            lines.append(f"Craft note: {item['crafttext']}")
 
-        if item.get("museum"):
-            lines.append("Museum: Yes")
+        # Gemstone slots
+        gem_slots = item.get("gemstone_slots", [])
+        if gem_slots:
+            slot_types = [s.get("slot_type", "").title() for s in gem_slots]
+            lines.append(f"Gemstone slots: {', '.join(slot_types)}")
 
         return "\n".join(lines)
 
