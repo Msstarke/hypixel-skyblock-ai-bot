@@ -352,6 +352,8 @@ class AIHandler:
                 system += f"\n\n{live_ctx}"
             if ah_ctx:
                 system += f"\n\n{ah_ctx}"
+            if hist_ctx:
+                system += f"\n\nHistorical price data:\n{hist_ctx}"
             if price_question and not live_ctx and not ah_ctx:
                 system += "\n\nNo live price data found. Do NOT guess prices."
 
