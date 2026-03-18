@@ -106,19 +106,19 @@ class AIHandler:
         # ── General player question — inject stats as AI context ────────────
         summary = data.get("summary", "No data available.")
         system = (
-            "You are a Hypixel Skyblock-only assistant. Answer the question about this player using ONLY "
-            "the stats provided below. Be concise (1-3 lines). Do not make up stats not listed. "
-            "If asked anything not related to Hypixel Skyblock, reply only with: 'I only answer Hypixel Skyblock questions.'\n\n"
-            f"{summary}"
+            "You are a Hypixel Skyblock expert assistant. Answer the question about this player "
+            "using the stats provided. Be concise (1-3 lines). Do not make up stats not listed.\n\n"
+            f"{summary}\n\n"
+            f"Skyblock Knowledge:\n{self._full_knowledge}"
         )
         try:
-            resp = await self.groq.chat.completions.create(
+            resp = await self.client.chat.completions.create(
                 model=self.model,
                 messages=[
                     {"role": "system", "content": system},
                     {"role": "user", "content": question},
                 ],
-                max_tokens=300,
+                max_tokens=400,
                 temperature=0.0,
             )
             return resp.choices[0].message.content.strip()
