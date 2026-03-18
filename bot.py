@@ -273,10 +273,8 @@ async def help_command(ctx: commands.Context):
 async def reload_knowledge(ctx: commands.Context):
     """Reload knowledge files from disk (owner only)."""
     ai.knowledge.reload()
-    ai._full_knowledge = ai.knowledge.get_all_knowledge()
     files = ai.knowledge.list_files()
-    total_kb = len(ai._full_knowledge) // 1024
-    await ctx.reply(f"Reloaded {len(files)} knowledge files ({total_kb} KB loaded into context): {', '.join(files)}")
+    await ctx.reply(f"Reloaded {len(files)} knowledge files: {', '.join(files)}")
 
 
 @bot.event
