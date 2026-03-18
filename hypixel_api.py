@@ -131,12 +131,15 @@ class HypixelAPI:
                 })
 
         # 3. Recently ended auctions (last ~60s from Hypixel API)
+        # Use spaced version too: "storm_chestplate" → "storm chestplate" to match item names
+        query_spaced = query_lower.replace("_", " ")
         ended = await self.get_auctions_ended()
         if ended:
             auctions = ended.get("auctions", [])
             matches = [
                 a for a in auctions
-                if query_lower in a.get("item_name", "").lower() or
+                if query_spaced in a.get("item_name", "").lower() or
+                   query_lower in a.get("item_name", "").lower() or
                    query_norm in a.get("item_lore", "")
             ]
             if matches:
