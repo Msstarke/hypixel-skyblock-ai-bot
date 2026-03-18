@@ -120,7 +120,7 @@ class HypixelAPI:
                 counts[t] = counts.get(t, 0) + 1
         return counts
 
-    async def get_hypermaxed_price(self, item_id: str) -> dict | None:
+    async def get_hypermaxed_price(self, item_id: str, reforge_stone_id: str = None) -> dict | None:
         """
         Calculate total cost of a hypermaxed item using live prices:
         - Base item (lowest BIN from AH)
@@ -129,6 +129,7 @@ class HypixelAPI:
         - 1x Recombobulator 3000
         - 1x Art of Peace
         - Perfect gemstones for each actual slot (fetched from items API)
+        - Reforge stone (optional, e.g. JADERALD for Jaded)
         Returns itemised cost dict.
         """
         lbin, baz, gem_slots = await asyncio.gather(
