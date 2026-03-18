@@ -1,9 +1,26 @@
 import os
 import re
 import asyncio
-from groq import AsyncGroq
+from openai import AsyncOpenAI
 from hypixel_api import HypixelAPI, HOTM_XP
 from knowledge_base import KnowledgeBase
+
+# ── AI backend config ─────────────────────────────────────────────────────────
+# Set AI_BACKEND=ollama in .env to use local Ollama, otherwise uses Groq (cloud)
+_BACKEND = os.getenv("AI_BACKEND", "groq").lower()
+
+if _BACKEND == "ollama":
+    _CLIENT = AsyncOpenAI(
+        base_url=os.getenv("OLLAMA_URL", "http://localhost:11434/v1"),
+        api_key="ollama",
+    )
+    _MODEL = os.getenv("AI_MODEL", "llama3.1:8b")
+else:
+    _CLIENT = AsyncOpenAI(
+        base_url="https://api.groq.com/openai/v1",
+        api_key=os.getenv("GROQ_API_KEY"),
+    )
+    _MODEL = os.getenv("AI_MODEL", "llama-3.3-70b-versatile")
 
 PRICE_KEYWORDS = [
     "cost", "price", "worth", "buy", "sell", "bazaar", "coins",
