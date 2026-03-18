@@ -578,7 +578,12 @@ class AIHandler:
 
             if self._needs_ah_data(question):
                 try:
-                    kb_ids = re.findall(r'\b[A-Z][A-Z0-9_]{3,}\b', static_ctx)
+                    # Only extract IDs from curated "Item IDs for price lookups:" lines
+                    # to avoid flooding with false positives from large wiki dump files
+                    kb_ids = []
+                    for line in static_ctx.splitlines():
+                        if "item ids for price lookups" in line.lower():
+                            kb_ids.extend(re.findall(r'\b[A-Z][A-Z0-9_]{4,}\b', line))
                     kb_ids = list(dict.fromkeys(kb_ids))[:20]
                     ah_ctx = await self._build_ah_context(question, extra_ids=kb_ids)
                 except Exception:
