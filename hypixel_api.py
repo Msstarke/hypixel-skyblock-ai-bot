@@ -32,8 +32,8 @@ class HypixelAPI:
         if self._cache_valid(cache_key, ttl):
             return self._cache[cache_key]["data"]
         if params is None:
-            params = {}
-        if self.api_key:
+            params = {"key": self.api_key} if self.api_key else {}
+        elif self.api_key and "key" not in params:
             params["key"] = self.api_key
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
