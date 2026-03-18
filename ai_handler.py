@@ -251,10 +251,10 @@ class AIHandler:
     # Known items with their AH item IDs and gemstone slot counts
     # Maps item name aliases → Hypixel item ID (gem slots fetched live from API)
     ITEM_UPGRADE_MAP = {
-        "divan helmet":       "DIVAN_HELMET",
-        "divan chestplate":   "DIVAN_CHESTPLATE",
-        "divan leggings":     "DIVAN_LEGGINGS",
-        "divan boots":        "DIVAN_BOOTS",
+        "divan helmet":       "ARMOR_OF_DIVAN_HELMET",
+        "divan chestplate":   "ARMOR_OF_DIVAN_CHESTPLATE",
+        "divan leggings":     "ARMOR_OF_DIVAN_LEGGINGS",
+        "divan boots":        "ARMOR_OF_DIVAN_BOOTS",
         "glacite helmet":     "GLACITE_HELMET",
         "glacite chestplate": "GLACITE_CHESTPLATE",
         "glacite leggings":   "GLACITE_LEGGINGS",
