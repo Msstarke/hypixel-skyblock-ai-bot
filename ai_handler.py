@@ -242,9 +242,12 @@ class AIHandler:
             )
         return "\n".join(lines)
 
-    async def _build_ah_context(self, question: str) -> str:
+    async def _build_ah_context(self, question: str, extra_ids: list[str] = None) -> str:
         """Search AH (lowest BIN + ended auctions) for items mentioned in the question."""
         phrases = self._extract_search_phrases(question)
+        # Also search any explicit item IDs passed in (e.g. from knowledge base)
+        if extra_ids:
+            phrases = list(extra_ids) + phrases
         seen_ids: set = set()
         lines = []
 
