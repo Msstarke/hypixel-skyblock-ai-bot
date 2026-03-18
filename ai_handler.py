@@ -357,7 +357,7 @@ class AIHandler:
                 )
 
                 base_price = result["breakdown"]["base_item"]["total"]
-                base_note  = f"{base_price:,.0f} (lowest BIN)" if base_price > 0 else "not found on AH"
+                base_note  = f"{base_price:,.0f} (lowest BIN)" if base_price > 0 else "price unavailable — bid-only AH item, add manually"
                 excl_note  = f" *(excl. {', '.join(e.replace('_', ' ') for e in excluded)})*" if excluded else ""
 
                 # Reforge header note
