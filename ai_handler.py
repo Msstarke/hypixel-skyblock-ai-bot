@@ -393,7 +393,8 @@ class AIHandler:
                         lines.append(f"  {label_fmt}: {data['total']:,.0f}")
                 return "\n".join(lines)
 
-        return None
+        # Hypermax keywords were present but no item in ITEM_UPGRADE_MAP matched
+        return "I don't recognize that item for a hypermax calculation. Supported items: Divan armor, Glacite armor, Necron armor, Storm armor, Aurora armor, Terror armor, Hyperion, Terminator, Livid Dagger."
 
     def _detect_desired_stat(self, question: str) -> str | None:
         """Extract a desired stat from phrases like 'with more intelligence', 'for mage', 'i want str'."""
