@@ -73,7 +73,10 @@ class HypixelAPI:
                 async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
                     if resp.status == 200:
                         data = await resp.json()
-                        price = data.get("buy", 0) or data.get("sell", 0)
+                        # coflnet returns buy/sell for bazaar items, lbin/median for AH items
+                        price = (data.get("buy") or data.get("sell") or
+                                 data.get("lbin") or data.get("median") or
+                                 data.get("min") or 0)
                         self._cache[cache_key] = {"data": price, "ts": time.time()}
                         return price
         except Exception:
