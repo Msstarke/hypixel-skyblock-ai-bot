@@ -277,7 +277,8 @@ class AIHandler:
     async def _handle_hypermax_question(self, question: str) -> str | None:
         """Detect hypermaxed/maxed item questions and return full upgrade cost breakdown."""
         q = question.lower()
-        hypermax_kws = ["hypermaxed", "hypermax", "maxed out", "fully maxed", "max out", "fully upgraded", "max price"]
+        hypermax_kws = ["hypermaxed", "hypermax", "hyper max", "maxed out", "fully maxed",
+                        "max out", "fully upgraded", "max price", "max cost"]
         if not any(kw in q for kw in hypermax_kws):
             return None
 
