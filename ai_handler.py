@@ -1,7 +1,7 @@
 import os
 import re
 import asyncio
-from groq import AsyncGroq
+from openai import AsyncOpenAI
 from hypixel_api import HypixelAPI, HOTM_XP
 from knowledge_base import KnowledgeBase
 
