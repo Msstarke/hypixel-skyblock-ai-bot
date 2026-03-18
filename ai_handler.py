@@ -361,6 +361,7 @@ class AIHandler:
                 "- Do NOT use your general training knowledge. If it is not in the knowledge base, do not say it.\n"
                 "- If the question is not about Hypixel Skyblock, reply ONLY: 'I only answer Hypixel Skyblock questions.'\n"
                 "- For price questions: one line only, use live data provided. Never guess prices.\n"
+                "- For budget questions (e.g. 'best X for 5M'): use the live AH/Bazaar prices provided to recommend what fits the budget. Show item name, key stats, and current price.\n"
                 "- If the exact item is not found in the live data, say 'I couldn't find [item] on the Bazaar/AH.' Do NOT list similar items.\n"
                 "- Be extremely concise. No intro, no filler, no 'great question', no explanations unless asked.\n"
                 "- For 'best X' questions: just list the item name + key stats. Example: 'Armor of Divan — +150 Mining Fortune, +1800 Mining Speed'\n"
