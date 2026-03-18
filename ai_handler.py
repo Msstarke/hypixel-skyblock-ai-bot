@@ -578,12 +578,12 @@ class AIHandler:
             if self._needs_ah_data(question):
                 try:
                     kb_ids = re.findall(r'\b[A-Z][A-Z0-9_]{3,}\b', static_ctx)
-                    kb_ids = list(dict.fromkeys(kb_ids))[:10]
+                    kb_ids = list(dict.fromkeys(kb_ids))[:20]
                     ah_ctx = await self._build_ah_context(question, extra_ids=kb_ids)
                 except Exception:
                     pass
                 try:
-                    set_ctx = await self._build_armor_set_context(question)
+                    set_ctx = await self._build_armor_set_context(question, kb_text=static_ctx)
                     if set_ctx:
                         ah_ctx = (ah_ctx + "\n\n" + set_ctx).strip()
                 except Exception:
