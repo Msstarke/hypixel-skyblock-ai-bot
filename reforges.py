@@ -227,16 +227,7 @@ def pick_reforge(
         stone_price = stone_prices.get(stone_id, 0) if stone_id else 0
         affordable  = True
 
-        # Flag as unaffordable if stone costs more than 50% of item value
-        # Hard-unaffordable if stone costs more than the item itself (e.g. jaded on glacite)
-        if item_price > 0 and stone_price > 0:
-            if stone_price > item_price:
-                affordable = False
-                score = score * 0.1  # heavily penalise so cheaper reforge wins
-            elif stone_price > item_price * 0.5:
-                affordable = False
-
-        # Score
+        # Score first
         if desired_stat:
             stat_key = STAT_ALIASES.get(desired_stat.lower(), desired_stat.lower().replace(" ", "_"))
             score = data["stats"].get(stat_key, 0)
@@ -245,6 +236,15 @@ def pick_reforge(
                 score = max(data["stats"].values()) if data["stats"] else 0
             else:
                 score = 0
+
+        # Flag as unaffordable if stone costs more than 50% of item value
+        # Hard-penalise if stone costs more than the item itself (e.g. jaded on glacite helmet)
+        if item_price > 0 and stone_price > 0:
+            if stone_price > item_price:
+                affordable = False
+                score = score * 0.1  # heavily penalise so cheaper reforge wins
+            elif stone_price > item_price * 0.5:
+                affordable = False
 
         if score > 0:
             candidates.append({
