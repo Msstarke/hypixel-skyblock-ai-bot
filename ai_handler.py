@@ -391,6 +391,14 @@ class AIHandler:
                 except Exception as e:
                     return f"Error fetching player data: {e}"
 
+            # --- Hypermax price calculator ---
+            try:
+                hypermax = await self._handle_hypermax_question(question)
+                if hypermax:
+                    return hypermax
+            except Exception:
+                pass
+
             # --- Fast path: quantity × item calculation, bypass AI entirely ---
             if price_question and os.getenv("HYPIXEL_API_KEY"):
                 parsed = self._extract_qty_item(question)
