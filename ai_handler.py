@@ -289,7 +289,7 @@ class AIHandler:
                 lines = [f"**Hypermaxed {name.title()}** — Total: **{result['total']:,.0f} coins**\n",
                          f"  Base item: {base_note}"]
                 for label, data in result["breakdown"].items():
-                    if data["total"] == 0:
+                    if label == "base_item" or data["total"] == 0:
                         continue
                     label_fmt = label.replace("_", " ").title()
                     if data["qty"] > 1:
