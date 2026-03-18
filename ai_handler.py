@@ -294,12 +294,36 @@ class AIHandler:
                 if not result:
                     return f"Couldn't fetch upgrade prices right now, try again."
 
+                # Parse exclusions from question: "without hot potato", "no recomb", etc.
+                exclude_map = {
+                    "hot potato":       "hot_potato_books",
+                    "hpb":              "hot_potato_books",
+                    "fuming potato":    "fuming_potato_books",
+                    "fuming":           "fuming_potato_books",
+                    "fhpb":             "fuming_potato_books",
+                    "recomb":           "recombobulator_3000",
+                    "recombobulator":   "recombobulator_3000",
+                    "art of peace":     "art_of_peace",
+                    "aop":              "art_of_peace",
+                }
+                excluded = set()
+                for phrase, key in exclude_map.items():
+                    if phrase in q:
+                        excluded.add(key)
+
+                # Recalculate total excluding removed items
+                total = sum(
+                    v["total"] for k, v in result["breakdown"].items()
+                    if k not in excluded
+                )
+
                 base_price = result["breakdown"]["base_item"]["total"]
                 base_note = f"{base_price:,.0f} (lowest BIN)" if base_price > 0 else "not found on AH"
-                lines = [f"**Hypermaxed {name.title()}** — Total: **{result['total']:,.0f} coins**\n",
+                excl_note = f" *(excl. {', '.join(e.replace('_', ' ') for e in excluded)})*" if excluded else ""
+                lines = [f"**Hypermaxed {name.title()}**{excl_note} — Total: **{total:,.0f} coins**\n",
                          f"  Base item: {base_note}"]
                 for label, data in result["breakdown"].items():
-                    if label == "base_item" or data["total"] == 0:
+                    if label == "base_item" or data["total"] == 0 or label in excluded:
                         continue
                     label_fmt = label.replace("_", " ").title()
                     if data["qty"] > 1:
