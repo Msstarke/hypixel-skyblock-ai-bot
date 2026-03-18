@@ -333,6 +333,7 @@ class AIHandler:
                 except Exception:
                     pass
 
+            static_ctx = self.knowledge.get_relevant_knowledge(question)
             system = (
                 "You are a Hypixel Skyblock expert assistant. You ONLY answer questions about Hypixel Skyblock.\n\n"
                 "RULES:\n"
@@ -343,7 +344,7 @@ class AIHandler:
                 "- For non-price questions: answer accurately using the knowledge base. 1-5 sentences.\n"
                 "- Format coin amounts with commas.\n"
                 "- Never discuss topics outside of Hypixel Skyblock.\n\n"
-                f"Skyblock Knowledge Base:\n{self._full_knowledge}"
+                f"Skyblock Knowledge Base:\n{static_ctx}"
             )
 
             if item_ctx:
