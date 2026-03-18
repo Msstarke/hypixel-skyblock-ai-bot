@@ -111,17 +111,14 @@ class HypixelAPI:
         Returns dict of {gem_type: count}, e.g. {"AMBER": 2, "JADE": 2, "TOPAZ": 1}
         """
         items_data = await self.get_all_items()
-        item_list = list(items_data.values()) if items_data else []
-        for item in item_list:
-            if item.get("id") == item_id:
-                slots = item.get("gemstone_slots", [])
-                counts: dict = {}
-                for slot in slots:
-                    t = slot.get("slot_type", "")
-                    if t and t not in ("UNIVERSAL", "COMBAT", "DEFENSIVE", "MINING", "SPEED"):
-                        counts[t] = counts.get(t, 0) + 1
-                return counts
-        return {}
+        item = items_data.get(item_id, {})
+        slots = item.get("gemstone_slots", [])
+        counts: dict = {}
+        for slot in slots:
+            t = slot.get("slot_type", "")
+            if t and t not in ("UNIVERSAL", "COMBAT", "DEFENSIVE", "MINING", "SPEED"):
+                counts[t] = counts.get(t, 0) + 1
+        return counts
 
     async def get_hypermaxed_price(self, item_id: str) -> dict | None:
         """
