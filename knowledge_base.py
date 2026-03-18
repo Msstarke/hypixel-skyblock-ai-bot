@@ -143,7 +143,7 @@ class KnowledgeBase:
             for (heading, body), score in scored:
                 if score == 0:
                     continue
-                chunk = (f"**{heading}**\n{body}" if heading else body)[:3000]
+                chunk = (f"**{heading}**\n{body}" if heading else body)[:5000]
                 if used + len(chunk) > budget:
                     break
                 file_parts.append(chunk)
