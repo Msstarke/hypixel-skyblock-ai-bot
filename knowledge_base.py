@@ -4,6 +4,11 @@ from pathlib import Path
 KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
 
 FILE_KEYWORDS = {
+    "mining_guide.md": ["mining", "pickaxe", "drill", "hotm", "heart of the mountain",
+                       "dwarven mines", "crystal hollows", "mining armor", "mining pet",
+                       "mining setup", "divan", "mineral armor", "pickonimbus", "scatha",
+                       "mithril golem", "silverfish pet", "bal pet", "gemstone",
+                       "powder", "commission", "glacite", "best mining", "mining guide"],
     "mining.md":      ["mining", "pickaxe", "drill", "hotm", "heart of the mountain",
                        "dwarven mines", "crystal hollows", "mining armor", "mining pet",
                        "mining setup", "divan", "mineral armor", "pickonimbus", "scatha",
