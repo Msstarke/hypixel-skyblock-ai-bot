@@ -13,6 +13,7 @@ intents.message_content = True
 bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 ai = AIHandler()
 tracker = BazaarTracker()
+ai.tracker = tracker  # share tracker with AI handler for context injection
 
 # Optional: restrict to specific channel IDs
 ALLOWED_CHANNELS = set()
