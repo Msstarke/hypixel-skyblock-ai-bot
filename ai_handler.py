@@ -224,6 +224,39 @@ class AIHandler:
             )
         return "\n".join(lines)
 
+    async def _build_ah_context(self, question: str) -> str:
+        """Search AH (lowest BIN + ended auctions) for items mentioned in the question."""
+        phrases = self._extract_search_phrases(question)
+        seen_ids: set = set()
+        lines = []
+
+        for phrase in phrases:
+            try:
+                results = await self.hypixel.search_ah(phrase)
+                for r in results:
+                    item_id = r["item_id"]
+                    if item_id in seen_ids:
+                        continue
+                    seen_ids.add(item_id)
+                    if r["source"].startswith("Lowest BIN"):
+                        lines.append(f"  {r['name']} (BIN): {r['price']:,.1f} coins")
+                    else:
+                        low = r.get("low", r["price"])
+                        high = r.get("high", r["price"])
+                        src = r["source"]
+                        lines.append(
+                            f"  {r['name']} (AH {src}): "
+                            f"median {r['price']:,.1f} | low {low:,.1f} | high {high:,.1f} coins"
+                        )
+            except Exception:
+                pass
+            if len(seen_ids) >= 6:
+                break
+
+        if not lines:
+            return ""
+        return "Auction House prices (live):\n" + "\n".join(lines)
+
     async def get_response(self, question: str) -> str:
         async with self.semaphore:
             price_question = self._needs_live_data(question)
