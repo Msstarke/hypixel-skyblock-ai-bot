@@ -283,13 +283,15 @@ class AIHandler:
             return None
 
         # Normalize query: remove apostrophes/punctuation for matching
-        q_norm = re.sub(r"['\s]+", " ", q).strip()
+        # Normalize: remove apostrophes, collapse spaces, strip possessives (divans→divan)
+        q_norm = re.sub(r"'s?\b", "", q)
+        q_norm = re.sub(r"\s+", " ", q_norm).strip()
 
         for name, item_id in self.ITEM_UPGRADE_MAP.items():
-            name_norm = re.sub(r"['\s]+", " ", name).strip()
-            if (name_norm in q_norm
-                    or name_norm.rstrip("s") in q_norm
-                    or name_norm in q_norm.replace("divans", "divan")):
+            name_words = name.split()
+            # Match if all words of the item name appear (in order) in the question
+            pattern = r"\b" + r"\w*\s+".join(re.escape(w) for w in name_words) + r"\w*\b"
+            if re.search(pattern, q_norm):
                 result = await self.hypixel.get_hypermaxed_price(item_id)
                 if not result:
                     return f"Couldn't fetch upgrade prices right now, try again."
