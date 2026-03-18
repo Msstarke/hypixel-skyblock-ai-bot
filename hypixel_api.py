@@ -105,6 +105,30 @@ class HypixelAPI:
 
         return results[:6]
 
+    async def get_armor_set_prices(self, set_id_prefix: str) -> dict | None:
+        """
+        Fetch lowest BIN price for each piece of an armor set.
+        set_id_prefix: e.g. 'ARMOR_OF_DIVAN', 'GLACITE', 'MINERAL'
+        Returns {helmet, chestplate, leggings, boots, total} or None.
+        """
+        lbin = await self.get_lowest_bin()
+        slots = {
+            "helmet":     [f"{set_id_prefix}_HELMET"],
+            "chestplate": [f"{set_id_prefix}_CHESTPLATE"],
+            "leggings":   [f"{set_id_prefix}_LEGGINGS"],
+            "boots":      [f"{set_id_prefix}_BOOTS"],
+        }
+        result = {}
+        for slot, ids in slots.items():
+            for item_id in ids:
+                if item_id in lbin:
+                    result[slot] = {"id": item_id, "price": lbin[item_id]}
+                    break
+        if not result:
+            return None
+        result["total"] = sum(v["price"] for v in result.values())
+        return result
+
     async def get_bazaar_flips(self, min_margin_pct: float = 1.5, min_volume: int = 5_000, top_n: int = 15) -> list[dict]:
         """
         Find top Bazaar order-flip opportunities.
