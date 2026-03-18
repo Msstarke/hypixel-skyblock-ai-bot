@@ -133,9 +133,10 @@ class AIHandler:
     def _needs_ah_data(self, question: str) -> bool:
         q = question.lower()
         budget_kws = ["budget", "afford", "for x", "for 1", "for 2", "for 3", "for 4",
-                      "for 5", "for 6", "for 7", "for 8", "for 9", "million", "mil ",
+                      "for 5", "for 6", "for 7", "for 8", "for 9", "million", " mil",
                       "cheapest", "cheap", "how much is", "how much does", "ah price",
-                      "auction price", "bin price", "lowest bin"]
+                      "auction price", "bin price", "lowest bin",
+                      "best reforge", "reforge for", "reforge stone"]
         return self._needs_live_data(q) or any(kw in q for kw in budget_kws)
 
     def _extract_qty_item(self, question: str) -> tuple[int, str] | None:
