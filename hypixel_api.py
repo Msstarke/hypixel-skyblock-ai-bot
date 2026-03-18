@@ -331,24 +331,23 @@ class HypixelAPI:
             p = baz.get("products", {}).get(bid, {})
             return p.get("quick_status", {}).get("buyPrice", 0)
 
-        # Base item from AH — try lowestbin, then auction averages (covers dungeon items), then coflnet
+        # Base item — try multiple sources in order
         base = lbin.get(item_id, 0)
-        if not base:
-            for suffix in ["_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS"]:
-                price = lbin.get(item_id + suffix, 0)
-                if price:
-                    base = price
-                    item_id = item_id + suffix
-                    break
         if not base:
             base = avg.get(item_id, 0)
         if not base:
-            base = await self.get_reforge_stone_price(item_id)  # coflnet
+            # Try coflnet with the items-API ID (e.g. ARMOR_OF_DIVAN_HELMET → DIVAN_HELMET)
+            cofl_id = self._ITEMS_API_ID_MAP.get(item_id, item_id)
+            data = await self.get_reforge_stone_price(cofl_id)
+            base = data or 0
         if not base:
-            # Last resort: search AH by item name (catches ended auctions)
-            ah_results = await self.search_ah(item_id)
-            if ah_results:
-                base = ah_results[0]["price"]
+            # Try raw coflnet with original ID
+            base = await self.get_reforge_stone_price(item_id)
+        if not base:
+            # Last resort: scan ALL active bid auctions (cached 15 min)
+            terms = BID_ONLY_SEARCH_TERMS.get(item_id)
+            if terms:
+                base = await self.scan_bid_auctions(terms)
 
         hpb_price  = baz_price("HOT_POTATO_BOOK")
         fhpb_price = baz_price("FUMING_POTATO_BOOK")
