@@ -244,7 +244,12 @@ class HypixelAPI:
         if not base:
             base = avg.get(item_id, 0)
         if not base:
-            base = await self.get_reforge_stone_price(item_id)  # coflnet last resort
+            base = await self.get_reforge_stone_price(item_id)  # coflnet
+        if not base:
+            # Last resort: search AH by item name (catches ended auctions)
+            ah_results = await self.search_ah(item_id)
+            if ah_results:
+                base = ah_results[0]["price"]
 
         hpb_price  = baz_price("HOT_POTATO_BOOK")
         fhpb_price = baz_price("FUMING_POTATO_BOOK")
