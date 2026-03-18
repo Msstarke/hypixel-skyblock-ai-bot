@@ -121,7 +121,16 @@ class AIHandler:
             return f"AI error: {e}"
 
     def _needs_live_data(self, question: str) -> bool:
-        return any(kw in question.lower() for kw in PRICE_KEYWORDS)
+        q = question.lower()
+        return any(kw in q for kw in PRICE_KEYWORDS)
+
+    def _needs_ah_data(self, question: str) -> bool:
+        q = question.lower()
+        budget_kws = ["budget", "afford", "for x", "for 1", "for 2", "for 3", "for 4",
+                      "for 5", "for 6", "for 7", "for 8", "for 9", "million", "mil ",
+                      "cheapest", "cheap", "how much is", "how much does", "ah price",
+                      "auction price", "bin price", "lowest bin"]
+        return self._needs_live_data(q) or any(kw in q for kw in budget_kws)
 
     def _extract_qty_item(self, question: str) -> tuple[int, str] | None:
         """Try to extract a quantity + item name from the question."""
