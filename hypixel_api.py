@@ -6,7 +6,6 @@ from typing import Optional
 BAZAAR_URL = "https://api.hypixel.net/v2/skyblock/bazaar"
 AUCTIONS_ENDED_URL = "https://api.hypixel.net/v2/skyblock/auctions_ended"
 LOWEST_BIN_URL = "https://moulberry.codes/lowestbin.json"
-AUCTION_AVERAGES_URL = "https://moulberry.codes/auction_averages_lbin.json"
 COFLNET_PRICE_URL = "https://sky.coflnet.com/api/item/price/{item_id}/current"
 MOJANG_URL = "https://api.mojang.com/users/profiles/minecraft"
 PROFILES_URL = "https://api.hypixel.net/v2/skyblock/profiles"
