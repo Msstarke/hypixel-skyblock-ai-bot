@@ -199,9 +199,9 @@ class HypixelAPI:
                     "qty": count, "unit": price, "total": price * count
                 }
 
-        # Reforge stone (AH price from lbin)
+        # Reforge stone — fetched from coflnet (not in lowestbin)
         if reforge_stone_id:
-            stone_price = lbin.get(reforge_stone_id, 0)
+            stone_price = await self.get_reforge_stone_price(reforge_stone_id)
             breakdown["reforge_stone"] = {"qty": 1, "unit": stone_price, "total": stone_price}
 
         total = sum(v["total"] for v in breakdown.values())
