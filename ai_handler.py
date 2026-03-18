@@ -28,10 +28,11 @@ class AIHandler:
         self.model = "llama-3.3-70b-versatile"
 
     def _extract_username(self, question: str) -> str | None:
-        """Extract a Minecraft username from patterns like 'my account is X', 'ign X', 'ign: X'."""
+        """Extract a Minecraft username only from explicit patterns like 'my account is X', 'ign X'."""
         patterns = [
-            r"(?:my\s+)?(?:account|ign|username|user|name)\s+(?:is\s+)?([A-Za-z0-9_]{3,16})",
-            r"(?:for|check)\s+([A-Za-z0-9_]{3,16})\b",
+            r"(?:my\s+)?(?:account|ign|username)\s+(?:is\s+)?([A-Za-z0-9_]{3,16})",
+            r"\bcheck\s+(?:player\s+)?([A-Za-z0-9_]{3,16})\b",
+            r"\bfor\s+player\s+([A-Za-z0-9_]{3,16})\b",
         ]
         for pat in patterns:
             m = re.search(pat, question, re.IGNORECASE)
