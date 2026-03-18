@@ -49,7 +49,60 @@ class HypixelAPI:
         return await self._get(BAZAAR_URL, "bazaar")
 
     async def get_auctions_ended(self) -> Optional[dict]:
-        return await self._get(AUCTIONS_ENDED_URL, "auctions_ended")
+        return await self._get(AUCTIONS_ENDED_URL, "auctions_ended", ttl=AH_CACHE_TTL)
+
+    async def get_lowest_bin(self) -> dict:
+        """Fetch lowest BIN prices from moulberry.codes (keyed by item ID)."""
+        data = await self._get(LOWEST_BIN_URL, "lowest_bin", params={}, ttl=AH_CACHE_TTL)
+        return data or {}
+
+    async def search_ah(self, query: str) -> list[dict]:
+        """
+        Search for an item across AH sources:
+        1. Lowest BIN (active listings)
+        2. Recently ended auctions (last ~24h sales)
+        Returns list of {source, item_id, price, name}
+        """
+        query_norm = query.upper().replace(" ", "_").replace("'", "")
+        query_lower = query.lower().replace("'", "")
+        results = []
+
+        # 1. Lowest BIN prices
+        lbin = await self.get_lowest_bin()
+        lbin_matches = {k: v for k, v in lbin.items()
+                        if query_norm in k or query_lower in k.lower().replace("_", " ")}
+        for item_id, price in sorted(lbin_matches.items(), key=lambda x: x[1])[:5]:
+            results.append({
+                "source": "Lowest BIN",
+                "item_id": item_id,
+                "price": price,
+                "name": item_id.replace("_", " ").title(),
+            })
+
+        # 2. Recently ended auctions — find recent sales for this item
+        ended = await self.get_auctions_ended()
+        if ended:
+            auctions = ended.get("auctions", [])
+            # Filter by item name match
+            matches = [
+                a for a in auctions
+                if query_lower in a.get("item_name", "").lower() or
+                   query_norm in a.get("item_lore", "")
+            ]
+            if matches:
+                # Get median/avg price from recent sales
+                prices = sorted(a["price"] for a in matches)
+                median = prices[len(prices) // 2]
+                results.append({
+                    "source": f"Recent AH sales ({len(matches)} auctions)",
+                    "item_id": query_norm,
+                    "price": median,
+                    "name": matches[0].get("item_name", query),
+                    "low": prices[0],
+                    "high": prices[-1],
+                })
+
+        return results[:6]
 
     async def search_bazaar(self, query: str) -> list[dict]:
         data = await self.get_bazaar()
