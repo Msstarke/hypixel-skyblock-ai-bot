@@ -482,6 +482,8 @@ class AIHandler:
                 except Exception as e:
                     live_ctx = f"(Live price fetch failed: {e})"
 
+            static_ctx = self.knowledge.get_relevant_knowledge(question)
+
             if self._needs_ah_data(question):
                 try:
                     kb_ids = re.findall(r'\b[A-Z][A-Z0-9_]{3,}\b', static_ctx)
@@ -509,8 +511,6 @@ class AIHandler:
                             break
                 except Exception:
                     pass
-
-            static_ctx = self.knowledge.get_relevant_knowledge(question)
             system = (
                 "You are a Hypixel Skyblock assistant. Answer ONLY using the knowledge base provided below.\n\n"
                 "STRICT RULES:\n"
