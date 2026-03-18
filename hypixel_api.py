@@ -84,6 +84,76 @@ class HypixelAPI:
             "sell_vol": qs.get("sellVolume", 0),
         }
 
+    async def get_all_items(self) -> dict[str, dict]:
+        """Fetch all Skyblock items, keyed by item ID. Cached for 1 hour."""
+        data = await self._get(ITEMS_URL, "all_items", ttl=ITEMS_CACHE_TTL)
+        if not data:
+            return {}
+        return {item["id"]: item for item in data.get("items", [])}
+
+    async def find_item(self, query: str) -> Optional[dict]:
+        """Find an item by name or ID (fuzzy match)."""
+        items = await self.get_all_items()
+        if not items:
+            return None
+
+        query_norm = query.upper().replace(" ", "_").replace("'", "")
+        query_lower = query.lower().replace("'", "")
+
+        # 1. Exact ID match
+        if query_norm in items:
+            return items[query_norm]
+
+        # 2. Exact name match
+        for item in items.values():
+            if item.get("name", "").lower().replace("'", "") == query_lower:
+                return item
+
+        # 3. Partial ID match
+        matches = [item for item_id, item in items.items() if query_norm in item_id]
+        if matches:
+            # prefer shorter ID (more specific match)
+            return min(matches, key=lambda x: len(x["id"]))
+
+        # 4. Partial name match
+        matches = [item for item in items.values() if query_lower in item.get("name", "").lower()]
+        if matches:
+            return min(matches, key=lambda x: len(x.get("name", "")))
+
+        return None
+
+    def format_item_info(self, item: dict) -> str:
+        """Format item data into a readable string for the AI."""
+        lines = [f"**{item.get('name', item['id'])}** (ID: {item['id']})"]
+
+        if item.get("tier"):
+            lines.append(f"Rarity: {item['tier'].title()}")
+        if item.get("category"):
+            lines.append(f"Category: {item['category'].replace('_', ' ').title()}")
+        if item.get("npc_sell_price"):
+            lines.append(f"NPC sell price: {item['npc_sell_price']:,} coins")
+
+        recipe = item.get("recipe")
+        if recipe:
+            # Recipe is a 3x3 grid: A1-C3
+            slots = []
+            for row in ["A", "B", "C"]:
+                for col in ["1", "2", "3"]:
+                    slot = recipe.get(f"{row}{col}", "")
+                    if slot:
+                        item_id, count = slot.split(":") if ":" in slot else (slot, "1")
+                        name = item_id.replace("_", " ").title()
+                        slots.append(f"{name} x{count}")
+            if slots:
+                lines.append(f"Recipe: {', '.join(slots)}")
+        elif item.get("crafttext"):
+            lines.append(f"Craft info: {item['crafttext']}")
+
+        if item.get("museum"):
+            lines.append("Museum: Yes")
+
+        return "\n".join(lines)
+
     async def get_uuid(self, username: str) -> Optional[str]:
         """Get Mojang UUID for a username."""
         cache_key = f"uuid_{username.lower()}"
