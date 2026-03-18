@@ -349,6 +349,35 @@ class AIHandler:
 
         return None
 
+    def _detect_desired_stat(self, question: str) -> str | None:
+        """Extract a desired stat from phrases like 'with more intelligence', 'for mage', 'i want str'."""
+        q = question.lower()
+        # Explicit stat patterns: "with X", "for X", "want X", "more X", "extra X"
+        patterns = [
+            r"(?:with|for|want|more|extra|need|give me|maximize)\s+([a-z][a-z _]{2,30}?)(?:\s+(?:stat|reforge|build|setup)|$|\?)",
+            r"(?:focused on|optimized for|best for)\s+([a-z][a-z _]{2,30}?)(?:\s|$|\?)",
+        ]
+        for pat in patterns:
+            m = re.search(pat, q)
+            if m:
+                candidate = m.group(1).strip()
+                normed = normalize_stat(candidate)
+                if normed:
+                    return normed
+        # Build shortcuts: "mage build" → intelligence, "mining build" → mining_fortune
+        build_map = {
+            "mage":    "intelligence",
+            "wizard":  "intelligence",
+            "archer":  "crit_chance",
+            "berserker": "crit_damage",
+            "tank":    "defense",
+            "mining":  "mining_fortune",
+        }
+        for keyword, stat in build_map.items():
+            if keyword in q:
+                return stat
+        return None
+
     # Known armor set ID prefixes
     ARMOR_SETS = {
         "armor of divan": "ARMOR_OF_DIVAN",
