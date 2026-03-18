@@ -271,11 +271,24 @@ class AIHandler:
         if not any(kw in q for kw in hypermax_kws):
             return None
 
+        # Normalize query: remove apostrophes/punctuation for matching
+        q_norm = re.sub(r"['\s]+", " ", q).strip()
+
         for name, (item_id, gem_slots, gem_type) in self.ITEM_UPGRADE_MAP.items():
-            if name in q or name.replace(" ", "") in q.replace(" ", ""):
+            name_norm = re.sub(r"['\s]+", " ", name).strip()
+            # Also try without trailing 's' (divans -> divan)
+            if (name_norm in q_norm
+                    or name_norm.rstrip("s") in q_norm
+                    or name_norm in q_norm.replace("divans", "divan")):
                 result = await self.hypixel.get_hypermaxed_price(item_id, gem_slots, gem_type)
                 if not result:
-                    return f"Couldn't find `{item_id}` on the AH right now."
+                    # Still show upgrade costs even if base item not on AH
+                    result = await self.hypixel.get_hypermaxed_price("FAKE_ITEM", gem_slots, gem_type)
+                    if result:
+                        result["item_id"] = item_id
+                        result["breakdown"]["base_item"]["total"] = 0
+                        result["breakdown"]["base_item"]["unit"] = 0
+                        result["total"] = sum(v["total"] for k, v in result["breakdown"].items() if k != "base_item")
 
                 lines = [f"**Hypermaxed {name.title()}** — Total: **{result['total']:,.0f} coins**\n"]
                 for label, data in result["breakdown"].items():
