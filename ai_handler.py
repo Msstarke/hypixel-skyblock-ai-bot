@@ -28,6 +28,8 @@ class AIHandler:
         self.knowledge = KnowledgeBase()
         self.semaphore = asyncio.Semaphore(5)
         self.model = "llama-3.3-70b-versatile"
+        # Lazy import to avoid circular dependency — tracker set by bot.py after init
+        self.tracker = None
 
     def _extract_username(self, question: str) -> str | None:
         """Extract a Minecraft username only from explicit patterns like 'my account is X', 'ign X'."""
