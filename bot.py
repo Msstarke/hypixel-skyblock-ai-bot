@@ -268,6 +268,15 @@ async def help_command(ctx: commands.Context):
     await ctx.send(embed=embed)
 
 
+@bot.command(name="reload")
+@commands.is_owner()
+async def reload_knowledge(ctx: commands.Context):
+    """Reload knowledge files from disk (owner only)."""
+    ai.knowledge.reload()
+    files = ai.knowledge.list_files()
+    await ctx.reply(f"Reloaded {len(files)} knowledge files: {', '.join(files)}")
+
+
 @bot.event
 async def on_command_error(ctx: commands.Context, error):
     if isinstance(error, commands.CommandNotFound):
