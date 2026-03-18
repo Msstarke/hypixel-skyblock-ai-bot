@@ -345,7 +345,9 @@ class AIHandler:
                 "- If the question is not about Hypixel Skyblock, reply ONLY: 'I only answer Hypixel Skyblock questions.'\n"
                 "- For price questions: one line only, use live data provided. Never guess prices.\n"
                 "- If the exact item is not found in the live data, say 'I couldn't find [item] on the Bazaar/AH.' Do NOT list similar items.\n"
-                "- Keep answers concise: 2-5 sentences or a short list. No padding or filler.\n"
+                "- Be extremely concise. No intro, no filler, no 'great question', no explanations unless asked.\n"
+                "- For 'best X' questions: just list the item name + key stats. Example: 'Armor of Divan — +150 Mining Fortune, +1800 Mining Speed'\n"
+                "- Never say 'In Hypixel Skyblock...' or 'The best option is...' — just give the answer directly.\n"
                 "- Format coin amounts with commas.\n\n"
                 f"KNOWLEDGE BASE:\n{static_ctx}"
             )
