@@ -291,11 +291,15 @@ class AIHandler:
             name_words = name.split()
             # All words in the item name must appear in the question (prefix match for plurals)
             if all(any(qt.startswith(nw) for qt in q_tokens) for nw in name_words):
-                result = await self.hypixel.get_hypermaxed_price(item_id)
+                # Look up recommended reforge for this item
+                reforge_info = self.RECOMMENDED_REFORGES.get(item_id)
+                reforge_name, stone_id = reforge_info if reforge_info else (None, None)
+
+                result = await self.hypixel.get_hypermaxed_price(item_id, reforge_stone_id=stone_id)
                 if not result:
                     return f"Couldn't fetch upgrade prices right now, try again."
 
-                # Parse exclusions from question: "without hot potato", "no recomb", etc.
+                # Parse exclusions from question: "without hot potato", "no recomb", "without jaded", etc.
                 exclude_map = {
                     "hot potato":       "hot_potato_books",
                     "hpb":              "hot_potato_books",
@@ -306,7 +310,12 @@ class AIHandler:
                     "recombobulator":   "recombobulator_3000",
                     "art of peace":     "art_of_peace",
                     "aop":              "art_of_peace",
+                    "reforge":          "reforge_stone",
                 }
+                # Also allow excluding by reforge name (e.g. "without jaded")
+                if reforge_name:
+                    exclude_map[reforge_name] = "reforge_stone"
+
                 excluded = set()
                 for phrase, key in exclude_map.items():
                     if phrase in q:
@@ -321,12 +330,16 @@ class AIHandler:
                 base_price = result["breakdown"]["base_item"]["total"]
                 base_note = f"{base_price:,.0f} (lowest BIN)" if base_price > 0 else "not found on AH"
                 excl_note = f" *(excl. {', '.join(e.replace('_', ' ') for e in excluded)})*" if excluded else ""
-                lines = [f"**Hypermaxed {name.title()}**{excl_note} — Total: **{total:,.0f} coins**\n",
+                reforge_label = f" + {reforge_name.title()} reforge" if reforge_name and "reforge_stone" not in excluded else ""
+                lines = [f"**Hypermaxed {name.title()}**{reforge_label}{excl_note} — Total: **{total:,.0f} coins**\n",
                          f"  Base item: {base_note}"]
                 for label, data in result["breakdown"].items():
                     if label == "base_item" or data["total"] == 0 or label in excluded:
                         continue
-                    label_fmt = label.replace("_", " ").title()
+                    if label == "reforge_stone" and reforge_name:
+                        label_fmt = f"{reforge_name.title()} Reforge Stone"
+                    else:
+                        label_fmt = label.replace("_", " ").title()
                     if data["qty"] > 1:
                         lines.append(f"  {label_fmt} ×{data['qty']}: {data['total']:,.0f} ({data['unit']:,.0f} each)")
                     else:
