@@ -322,16 +322,20 @@ class AIHandler:
 
                 # Parse exclusions: "without hot potato", "no recomb", "without jaded", etc.
                 exclude_map = {
-                    "hot potato":     "hot_potato_books",
-                    "hpb":            "hot_potato_books",
-                    "fuming potato":  "fuming_potato_books",
-                    "fuming":         "fuming_potato_books",
-                    "fhpb":           "fuming_potato_books",
-                    "recomb":         "recombobulator_3000",
-                    "recombobulator": "recombobulator_3000",
-                    "art of peace":   "art_of_peace",
-                    "aop":            "art_of_peace",
-                    "reforge":        "reforge_stone",
+                    "hot potato":       "hot_potato_books",
+                    "hpb":              "hot_potato_books",
+                    "fuming potato":    "fuming_potato_books",
+                    "fuming":           "fuming_potato_books",
+                    "fhpb":             "fuming_potato_books",
+                    "recomb":           "recombobulator_3000",
+                    "recombobulator":   "recombobulator_3000",
+                    "art of peace":     "art_of_peace",
+                    "aop":              "art_of_peace",
+                    "reforge":          "reforge_stone",
+                    "slot unlock":      "slot_unlocking",
+                    "unlocking":        "slot_unlocking",
+                    "unlock":           "slot_unlocking",
+                    "gemstone chamber": "slot_unlocking",
                 }
                 if reforge_name:
                     exclude_map[reforge_name] = "reforge_stone"
