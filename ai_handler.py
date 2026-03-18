@@ -299,7 +299,6 @@ class AIHandler:
                         pass  # fall through to AI
 
             # --- Normal AI path ---
-            static_ctx = self.knowledge.get_relevant_knowledge(question)
             live_ctx = ""
             ah_ctx = ""
             item_ctx = ""
