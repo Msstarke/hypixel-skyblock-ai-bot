@@ -220,7 +220,7 @@ async def scrape_group(session: aiohttp.ClientSession, output_file: str, pages: 
     combined = "\n\n---\n\n".join(sections)
     out_path = KNOWLEDGE_DIR / output_file
     out_path.write_text(combined, encoding="utf-8")
-    print(f"  Saved → {out_path} ({len(combined):,} chars, {len(sections)}/{len(pages)} pages)")
+    print(f"  Saved -> {out_path} ({len(combined):,} chars, {len(sections)}/{len(pages)} pages)")
     return True
 
 
