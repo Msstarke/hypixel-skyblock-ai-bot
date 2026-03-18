@@ -6,13 +6,16 @@ BAZAAR_URL = "https://api.hypixel.net/v2/skyblock/bazaar"
 AUCTIONS_ENDED_URL = "https://api.hypixel.net/v2/skyblock/auctions_ended"
 MOJANG_URL = "https://api.mojang.com/users/profiles/minecraft"
 PROFILES_URL = "https://api.hypixel.net/v2/skyblock/profiles"
+ITEMS_URL = "https://api.hypixel.net/v2/skyblock/items"
+ITEMS_CACHE_TTL = 3600  # 1 hour — items rarely change
 
 CACHE_TTL = 300  # 5 minutes
 PLAYER_CACHE_TTL = 120  # 2 minutes for player data
 
-# Cumulative HotM XP required per level
-HOTM_XP = [0, 0, 3_000, 12_000, 37_000, 97_000, 197_000, 347_000, 697_000, 1_497_000, 2_997_000]
-# XP per commission tier
+# Cumulative HotM XP required per level (source: SkyCrypt leveling.js)
+# Increments: 3k, 9k, 25k, 60k, 100k, 150k, 210k, 290k, 400k
+HOTM_XP = [0, 0, 3_000, 12_000, 37_000, 97_000, 197_000, 347_000, 557_000, 847_000, 1_247_000]
+# XP per commission tier (tier 1 = standard Dwarven commission)
 COMMISSION_XP = {1: 2_750, 2: 7_500, 3: 22_500}
 
 
