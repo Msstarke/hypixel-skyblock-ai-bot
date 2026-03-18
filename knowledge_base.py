@@ -16,6 +16,8 @@ TOPIC_KEYWORDS = {
                  "necron", "hyperion", "livid", "terminator", "aspect", "aote"],
     "general.md": ["coin", "profit", "flip", "npc", "collection", "recipe", "craft", "island",
                    "hub", "slayer", "revenant", "tarantula", "sven", "voidgloom"],
+    "bestiary.md": ["bestiary", "bestiaries", "mob kill", "mob grind", "kill count",
+                    "grind mob", "grind mobs", "mob farming", "monster grind"],
 }
 
 
