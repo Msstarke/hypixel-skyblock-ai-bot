@@ -242,6 +242,57 @@ class AIHandler:
             )
         return "\n".join(lines)
 
+    # Known armor set ID prefixes
+    ARMOR_SETS = {
+        "armor of divan": "ARMOR_OF_DIVAN",
+        "divan": "ARMOR_OF_DIVAN",
+        "glacite": "GLACITE",
+        "mineral": "MINERAL",
+        "aurora": "AURORA",
+        "terror": "TERROR",
+        "fervor": "FERVOR",
+        "crimson": "CRIMSON",
+        "necron": "NECRONS",
+        "wither": "WITHER",
+        "shadow assassin": "SHADOW_ASSASSIN",
+        "superior dragon": "SUPERIOR_DRAGON",
+        "strong dragon": "STRONG_DRAGON",
+        "young dragon": "YOUNG_DRAGON",
+        "old dragon": "OLD_DRAGON",
+        "unstable dragon": "UNSTABLE_DRAGON",
+        "holy dragon": "HOLY_DRAGON",
+        "wise dragon": "WISE_DRAGON",
+        "protector dragon": "PROTECTOR_DRAGON",
+        "tarantula": "TARANTULA",
+        "revenant": "REVENANT",
+        "mastiff": "MASTIFF",
+        "berserker": "BERSERKER",
+        "hollow": "HOLLOW",
+        "goldor": "GOLDOR",
+        "storm": "STORM",
+        "maxor": "MAXOR",
+    }
+
+    async def _build_armor_set_context(self, question: str) -> str:
+        """Fetch full set prices for any armor sets mentioned in the question."""
+        q = question.lower()
+        lines = []
+        checked = set()
+        for name, prefix in self.ARMOR_SETS.items():
+            if name in q and prefix not in checked:
+                checked.add(prefix)
+                try:
+                    prices = await self.hypixel.get_armor_set_prices(prefix)
+                    if prices:
+                        total = prices.pop("total")
+                        pieces = " | ".join(
+                            f"{slot}: {data['price']:,.0f}" for slot, data in prices.items()
+                        )
+                        lines.append(f"{name.title()} full set: {total:,.0f} coins ({pieces})")
+                except Exception:
+                    pass
+        return ("Current AH set prices:\n" + "\n".join(lines)) if lines else ""
+
     async def _build_ah_context(self, question: str, extra_ids: list[str] = None) -> str:
         """Search AH (lowest BIN + ended auctions) for items mentioned in the question."""
         phrases = self._extract_search_phrases(question)
