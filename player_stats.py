@@ -171,8 +171,13 @@ def parse_member(member: dict) -> dict:
     stats['selected_class'] = dungeons.get('selected_dungeon_class', 'none').capitalize()
 
     # ── HotM ─────────────────────────────────────────────────────────────────
-    mining = member.get('mining_core', {})
-    stats['hotm_xp'] = mining.get('experience', 0)
+    # v2 API: skill_tree.experience.mining (NOT mining_core.experience)
+    skill_tree = member.get('skill_tree', {})
+    hotm_xp_raw = skill_tree.get('experience', {})
+    if isinstance(hotm_xp_raw, dict):
+        stats['hotm_xp'] = float(hotm_xp_raw.get('mining', 0))
+    else:
+        stats['hotm_xp'] = float(hotm_xp_raw or 0)
 
     # ── Fairy Souls ──────────────────────────────────────────────────────────
     stats['fairy_souls'] = member.get('fairy_soul', {}).get('total_collected', 0)

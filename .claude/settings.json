@@ -6,9 +6,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "jq -r '{tool_input: .tool_input, tool_response: .tool_response}' | bash /c/Users/matthew/Desktop/hypixel.ai/scripts/post_edit.sh",
-            "timeout": 30,
-            "statusMessage": "Checking syntax, committing, restarting bot..."
+            "command": "bash /c/Users/matthew/Desktop/hypixel.ai/scripts/post_edit.sh",
+            "timeout": 60,
+            "statusMessage": "Syntax check, commit, restart bot..."
           }
         ]
       }
