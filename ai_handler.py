@@ -611,32 +611,28 @@ class AIHandler:
                 f"If an item requires a higher Cata level, skip it.\n"
             ) if cata_level is not None else ""
             system = (
-                "You are a Hypixel Skyblock assistant. Answer ONLY using the knowledge base provided below.\n\n"
+                "You are a Hypixel Skyblock assistant. Answer ONLY using the knowledge base and live price data provided below.\n\n"
                 "STRICT RULES:\n"
-                "- ONLY reference items, mechanics, setups, and numbers that appear in the knowledge base below.\n"
-                "- Do NOT use your general training knowledge about Hypixel Skyblock item names, stats, or prices. EVER.\n"
-                "- If an item name or setup is not explicitly listed in the knowledge base, do NOT mention it.\n"
-                + ("- WARNING: The knowledge base returned little or no relevant content for this question. "
-                   "If you cannot answer strictly from the knowledge base, reply: "
+                "- ONLY reference items explicitly listed in the knowledge base. Do NOT use training knowledge for item names or stats.\n"
+                + ("- WARNING: Knowledge base has little relevant content. If you cannot answer from it, say: "
                    "'I don't have enough info on that in my knowledge base yet.'\n"
                    if kb_empty else "")
                 + cata_note
-                + "- If the question is not about Hypixel Skyblock, reply ONLY: 'I only answer Hypixel Skyblock questions.'\n"
-                "- For price questions: use the live AH prices provided — NEVER use the static price ranges in the knowledge base.\n"
-                "- For budget questions: recommend only items from the knowledge base that fit within the stated budget using live prices. Show item name, key stats, and the live price.\n"
-                "- Be extremely concise. No intro, no filler, no 'great question', no explanations unless asked.\n"
-                "- For 'best X' questions: list item name + key stats + live price. Example: 'Strong Dragon — +100 Strength — 4,200,000 coins'\n"
-                "- Never say 'In Hypixel Skyblock...' or 'The best option is...' — just give the answer directly.\n"
-                "- Format coin amounts with commas.\n\n"
+                + "- PRICES: The knowledge base contains OUTDATED placeholder prices — ignore ALL coin amounts written there.\n"
+                "  Use ONLY the live AH prices in the 'LIVE AH PRICES' section below. If no live price exists for an item, say 'price unavailable'.\n"
+                "- For budget questions: show only items whose live set price fits within the budget. Sort cheapest-to-most-expensive.\n"
+                "- Format: 'Item Name — stat1, stat2 — X,XXX,XXX coins (live)'\n"
+                "- If not about Hypixel Skyblock, reply only: 'I only answer Hypixel Skyblock questions.'\n"
+                "- No intro, no filler, no explanations. Direct answer only.\n\n"
                 f"KNOWLEDGE BASE:\n{static_ctx}"
             )
 
             if item_ctx:
                 system += f"\n\n{item_ctx}"
             if live_ctx:
-                system += f"\n\n{live_ctx}"
+                system += f"\n\nLIVE BAZAAR PRICES:\n{live_ctx}"
             if ah_ctx:
-                system += f"\n\n{ah_ctx}"
+                system += f"\n\nLIVE AH PRICES:\n{ah_ctx}"
             if hist_ctx:
                 system += f"\n\nHistorical price data:\n{hist_ctx}"
             if price_question and not live_ctx and not ah_ctx:
