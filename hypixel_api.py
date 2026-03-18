@@ -176,6 +176,11 @@ class HypixelAPI:
                     "qty": count, "unit": price, "total": price * count
                 }
 
+        # Reforge stone (AH price from lbin)
+        if reforge_stone_id:
+            stone_price = lbin.get(reforge_stone_id, 0)
+            breakdown["reforge_stone"] = {"qty": 1, "unit": stone_price, "total": stone_price}
+
         total = sum(v["total"] for v in breakdown.values())
         return {
             "item_id": item_id,
