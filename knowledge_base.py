@@ -122,6 +122,12 @@ class KnowledgeBase:
         if not file_scores and "general.md" in self._files:
             file_scores["general.md"] = 1
 
+        # Always include obtaining.md for recipe/obtain questions — it often ties with other files
+        # and gets dropped, causing hallucination
+        RECIPE_TRIGGERS = {"recipe", "craft", "forge", "how to get", "how do i get", "how to craft", "how to make", "how to obtain"}
+        if any(t in q_norm for t in RECIPE_TRIGGERS) and "obtaining.md" in self._files:
+            file_scores["obtaining.md"] = file_scores.get("obtaining.md", 0) + 10
+
         top_files = sorted(file_scores, key=lambda f: file_scores[f], reverse=True)[:3]
 
         parts = []
