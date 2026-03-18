@@ -27,7 +27,7 @@ class AIHandler:
             base_url="https://openrouter.ai/api/v1",
             api_key=os.getenv("OPENROUTER_API_KEY"),
         )
-        self.model = "google/gemini-2.0-flash-lite:free"
+        self.model = "meta-llama/llama-3.3-70b-instruct:free"
         self.hypixel = HypixelAPI(os.getenv("HYPIXEL_API_KEY", ""))
         self.knowledge = KnowledgeBase()
         self.semaphore = asyncio.Semaphore(5)
