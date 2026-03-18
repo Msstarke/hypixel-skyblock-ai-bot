@@ -105,60 +105,86 @@ class HypixelAPI:
 
         return results[:6]
 
-    async def get_hypermaxed_price(self, item_id: str, gemstone_slots: int = 0, gem_type: str = "JASPER") -> dict | None:
+    async def get_item_gem_slots(self, item_id: str) -> dict:
         """
-        Calculate total cost of a hypermaxed item:
+        Fetch gem slot types for an item from the Hypixel items API.
+        Returns dict of {gem_type: count}, e.g. {"AMBER": 2, "JADE": 2, "TOPAZ": 1}
+        """
+        items = await self.get_items()
+        item_list = items.get("items", [])
+        for item in item_list:
+            if item.get("id") == item_id:
+                slots = item.get("gemstone_slots", [])
+                counts: dict = {}
+                for slot in slots:
+                    t = slot.get("slot_type", "")
+                    if t and t not in ("UNIVERSAL", "COMBAT", "DEFENSIVE", "MINING", "SPEED"):
+                        counts[t] = counts.get(t, 0) + 1
+                return counts
+        return {}
+
+    async def get_hypermaxed_price(self, item_id: str) -> dict | None:
+        """
+        Calculate total cost of a hypermaxed item using live prices:
         - Base item (lowest BIN from AH)
-        - 10x Hot Potato Books (Bazaar)
-        - 5x Fuming Potato Books (Bazaar)
-        - 1x Recombobulator 3000 (Bazaar)
-        - 1x Art of Peace (Bazaar, optional)
-        - N gemstone slots filled with Perfect gemstones (Bazaar)
+        - 10x Hot Potato Books
+        - 5x Fuming Potato Books
+        - 1x Recombobulator 3000
+        - 1x Art of Peace
+        - Perfect gemstones for each actual slot (fetched from items API)
         Returns itemised cost dict.
         """
-        lbin = await self.get_lowest_bin()
-        baz = await self.get_bazaar()
+        lbin, baz, gem_slots = await asyncio.gather(
+            self.get_lowest_bin(),
+            self.get_bazaar(),
+            self.get_item_gem_slots(item_id),
+        )
         if not baz:
             return None
 
-        def baz_price(item_id: str) -> float:
-            p = baz.get("products", {}).get(item_id, {})
+        def baz_price(bid: str) -> float:
+            p = baz.get("products", {}).get(bid, {})
             return p.get("quick_status", {}).get("buyPrice", 0)
 
         # Base item from AH
         base = lbin.get(item_id, 0)
         if not base:
-            # try common suffixes
-            for suffix in ["", "_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS"]:
+            for suffix in ["_HELMET", "_CHESTPLATE", "_LEGGINGS", "_BOOTS"]:
                 price = lbin.get(item_id + suffix, 0)
                 if price:
                     base = price
                     item_id = item_id + suffix
                     break
 
-        # base may be 0 if not on AH — still show upgrade costs
-
         hpb_price  = baz_price("HOT_POTATO_BOOK")
         fhpb_price = baz_price("FUMING_POTATO_BOOK")
         recomb     = baz_price("RECOMBOBULATOR_3000")
         aop        = baz_price("ART_OF_PEACE")
-        gem_id     = f"PERFECT_{gem_type}_GEM"
-        gem_price  = baz_price(gem_id)
 
         breakdown = {
-            "base_item":             {"qty": 1,              "unit": base,       "total": base},
-            "hot_potato_books":      {"qty": 10,             "unit": hpb_price,  "total": hpb_price * 10},
-            "fuming_potato_books":   {"qty": 5,              "unit": fhpb_price, "total": fhpb_price * 5},
-            "recombobulator_3000":   {"qty": 1,              "unit": recomb,     "total": recomb},
-            "art_of_peace":          {"qty": 1,              "unit": aop,        "total": aop},
+            "base_item":           {"qty": 1,  "unit": base,       "total": base},
+            "hot_potato_books":    {"qty": 10, "unit": hpb_price,  "total": hpb_price * 10},
+            "fuming_potato_books": {"qty": 5,  "unit": fhpb_price, "total": fhpb_price * 5},
+            "recombobulator_3000": {"qty": 1,  "unit": recomb,     "total": recomb},
+            "art_of_peace":        {"qty": 1,  "unit": aop,        "total": aop},
         }
-        if gemstone_slots > 0 and gem_price > 0:
-            breakdown[f"perfect_{gem_type.lower()}_gems"] = {
-                "qty": gemstone_slots, "unit": gem_price, "total": gem_price * gemstone_slots
-            }
+
+        # Add per-gem-type costs from actual item slots
+        for gem_type, count in gem_slots.items():
+            gem_id = f"PERFECT_{gem_type}_GEM"
+            price = baz_price(gem_id)
+            if price > 0:
+                breakdown[f"perfect_{gem_type.lower()}_gems"] = {
+                    "qty": count, "unit": price, "total": price * count
+                }
 
         total = sum(v["total"] for v in breakdown.values())
-        return {"item_id": item_id, "breakdown": breakdown, "total": total}
+        return {
+            "item_id": item_id,
+            "gem_slots": gem_slots,
+            "breakdown": breakdown,
+            "total": total,
+        }
 
     async def get_armor_set_prices(self, set_id_prefix: str) -> dict | None:
         """
