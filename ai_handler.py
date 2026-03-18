@@ -31,6 +31,11 @@ class AIHandler:
         self.semaphore = asyncio.Semaphore(5)
         self.tracker = None
 
+    def _extract_cata_level(self, question: str) -> int | None:
+        """Extract stated Catacombs level from e.g. 'cata 0', 'cata level 5', 'im cata 12'."""
+        m = re.search(r'cata(?:combs)?\s*(?:level\s*)?(\d+)', question, re.IGNORECASE)
+        return int(m.group(1)) if m else None
+
     def _extract_username(self, question: str) -> str | None:
         """Extract a Minecraft username only from explicit patterns like 'my account is X', 'ign X'."""
         patterns = [
