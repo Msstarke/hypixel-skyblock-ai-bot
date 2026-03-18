@@ -335,6 +335,38 @@ class AIHandler:
 
         return None
 
+    # Recommended reforge per item: (reforge_name, reforge_stone_item_id)
+    # Stone IDs are AH items — prices fetched from lowestbin
+    RECOMMENDED_REFORGES: dict[str, tuple[str, str]] = {
+        "DIVAN_HELMET":       ("jaded",    "JADERALD"),
+        "DIVAN_CHESTPLATE":   ("jaded",    "JADERALD"),
+        "DIVAN_LEGGINGS":     ("jaded",    "JADERALD"),
+        "DIVAN_BOOTS":        ("jaded",    "JADERALD"),
+        "GLACITE_HELMET":     ("jaded",    "JADERALD"),
+        "GLACITE_CHESTPLATE": ("jaded",    "JADERALD"),
+        "GLACITE_LEGGINGS":   ("jaded",    "JADERALD"),
+        "GLACITE_BOOTS":      ("jaded",    "JADERALD"),
+        "HYPERION":           ("withered", "WITHER_BLOOD"),
+        "TERMINATOR":         ("fabled",   "DRAGON_CLAW"),
+        "LIVID_DAGGER":       ("fabled",   "DRAGON_CLAW"),
+        "NECRONS_HELMET":     ("renowned", "DRAGON_HORN"),
+        "NECRONS_CHESTPLATE": ("renowned", "DRAGON_HORN"),
+        "NECRONS_LEGGINGS":   ("renowned", "DRAGON_HORN"),
+        "NECRONS_BOOTS":      ("renowned", "DRAGON_HORN"),
+        "STORM_HELMET":       ("renowned", "DRAGON_HORN"),
+        "STORM_CHESTPLATE":   ("renowned", "DRAGON_HORN"),
+        "STORM_LEGGINGS":     ("renowned", "DRAGON_HORN"),
+        "STORM_BOOTS":        ("renowned", "DRAGON_HORN"),
+        "AURORA_HELMET":      ("renowned", "DRAGON_HORN"),
+        "AURORA_CHESTPLATE":  ("renowned", "DRAGON_HORN"),
+        "AURORA_LEGGINGS":    ("renowned", "DRAGON_HORN"),
+        "AURORA_BOOTS":       ("renowned", "DRAGON_HORN"),
+        "TERROR_HELMET":      ("renowned", "DRAGON_HORN"),
+        "TERROR_CHESTPLATE":  ("renowned", "DRAGON_HORN"),
+        "TERROR_LEGGINGS":    ("renowned", "DRAGON_HORN"),
+        "TERROR_BOOTS":       ("renowned", "DRAGON_HORN"),
+    }
+
     # Known armor set ID prefixes
     ARMOR_SETS = {
         "armor of divan": "ARMOR_OF_DIVAN",
