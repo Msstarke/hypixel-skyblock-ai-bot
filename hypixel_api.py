@@ -208,6 +208,63 @@ class HypixelAPI:
         item = items_data.get(api_id, {})
         return item.get("gemstone_slots", [])
 
+    async def scan_bid_auctions(self, search_terms: list[str]) -> float:
+        """
+        Scan ALL active Hypixel auction pages in parallel to find bid-only auctions
+        matching the given keywords (checked against item_name, case-insensitive).
+        Returns the median highest_bid_amount of matched auctions, or 0 if none found.
+        Cached for 15 minutes to avoid repeated expensive scans.
+        """
+        cache_key = "bid_scan_" + "_".join(sorted(search_terms))
+        cached = self._cache.get(cache_key)
+        if cached and time.time() - cached["ts"] < ACTIVE_AH_CACHE_TTL:
+            return cached["price"]
+
+        terms = [t.lower() for t in search_terms]
+        all_auctions: list[dict] = []
+
+        try:
+            timeout = aiohttp.ClientTimeout(total=15)
+            async with aiohttp.ClientSession(timeout=timeout) as session:
+                # Page 0 first to get totalPages
+                async with session.get(f"{ACTIVE_AUCTIONS_URL}?page=0") as r:
+                    page0 = await r.json()
+                total_pages = min(page0.get("totalPages", 1), 60)
+                all_auctions.extend(page0.get("auctions", []))
+
+                # Fetch remaining pages in parallel
+                async def fetch_page(p: int) -> list[dict]:
+                    try:
+                        async with session.get(f"{ACTIVE_AUCTIONS_URL}?page={p}") as r:
+                            d = await r.json()
+                            return d.get("auctions", [])
+                    except Exception:
+                        return []
+
+                pages_data = await asyncio.gather(*[fetch_page(p) for p in range(1, total_pages)])
+                for page_auctions in pages_data:
+                    all_auctions.extend(page_auctions)
+        except Exception:
+            self._cache[cache_key] = {"ts": time.time(), "price": 0}
+            return 0
+
+        # Find non-BIN auctions that have at least one bid and match all terms
+        matches = [
+            a for a in all_auctions
+            if not a.get("bin", False)
+            and a.get("highest_bid_amount", 0) > 0
+            and all(t in a.get("item_name", "").lower() for t in terms)
+        ]
+
+        if not matches:
+            self._cache[cache_key] = {"ts": time.time(), "price": 0}
+            return 0
+
+        prices = sorted(a["highest_bid_amount"] for a in matches)
+        median = prices[len(prices) // 2]
+        self._cache[cache_key] = {"ts": time.time(), "price": median}
+        return median
+
     async def _price_unlock_costs(self, slots: list[dict], baz: dict) -> tuple[float, list[str]]:
         """
         Calculate total cost to unlock all gem slots.
