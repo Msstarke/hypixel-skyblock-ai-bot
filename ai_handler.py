@@ -281,8 +281,13 @@ class AIHandler:
                     or name_norm.rstrip("s") in q_norm
                     or name_norm in q_norm.replace("divans", "divan")):
                 result = await self.hypixel.get_hypermaxed_price(item_id, gem_slots, gem_type)
+                if not result:
+                    return f"Couldn't fetch upgrade prices right now, try again."
 
-                lines = [f"**Hypermaxed {name.title()}** — Total: **{result['total']:,.0f} coins**\n"]
+                base_price = result["breakdown"]["base_item"]["total"]
+                base_note = f"{base_price:,.0f} (lowest BIN)" if base_price > 0 else "not found on AH"
+                lines = [f"**Hypermaxed {name.title()}** — Total: **{result['total']:,.0f} coins**\n",
+                         f"  Base item: {base_note}"]
                 for label, data in result["breakdown"].items():
                     if data["total"] == 0:
                         continue
