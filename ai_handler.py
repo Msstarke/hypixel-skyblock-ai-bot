@@ -453,7 +453,6 @@ class AIHandler:
         "tarantula": "TARANTULA",
         "revenant": "REVENANT",
         "mastiff": "MASTIFF",
-        "berserker": "BERSERKER",
         "hollow": "HOLLOW",
         "goldor": "GOLDOR",
         "storm": "STORM",
