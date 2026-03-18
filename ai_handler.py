@@ -636,7 +636,9 @@ class AIHandler:
                    if kb_empty else "")
                 + cata_note
                 + "- PRICES: Ignore ALL coin amounts in the knowledge base — they are outdated. "
-                "Use ONLY the live data in 'LIVE AH PRICES' / 'LIVE BAZAAR PRICES' sections. If no live price exists, say 'price unavailable'.\n"
+                "Use ONLY the live data in 'LIVE AH PRICES' / 'LIVE BAZAAR PRICES' sections. "
+                "If no live price exists for an item you know about from the knowledge base, say 'price unavailable — this item is likely sold as a bid-only auction (no BIN price)'. "
+                "Do NOT say 'I don't have info' for items that exist in the knowledge base.\n"
                 "- For budget questions: only list items whose live price fits within budget. Sort cheapest first.\n"
                 "- Format: 'Item Name — key stats — X,XXX,XXX coins (live)'\n"
                 "- If not about Hypixel Skyblock, reply: 'I only answer Hypixel Skyblock questions.'\n"
