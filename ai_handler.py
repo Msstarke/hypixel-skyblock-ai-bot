@@ -645,10 +645,12 @@ class AIHandler:
                         {"role": "system", "content": system},
                         {"role": "user", "content": question},
                     ],
-                    max_tokens=400,
+                    max_tokens=1200,
                     temperature=0.0,
                 )
                 text = resp.choices[0].message.content.strip()
+                # deepseek-r1 wraps its reasoning in <think>...</think> — strip it
+                text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
                 if len(text) > MAX_DISCORD_LEN:
                     text = text[:MAX_DISCORD_LEN] + "…"
                 return text
