@@ -32,8 +32,6 @@ class AIHandler:
         self.knowledge = KnowledgeBase()
         self.semaphore = asyncio.Semaphore(5)
         self.tracker = None
-        # Pre-load full knowledge into memory (1M context = dump everything)
-        self._full_knowledge = self.knowledge.get_all_knowledge()
 
     def _extract_username(self, question: str) -> str | None:
         """Extract a Minecraft username only from explicit patterns like 'my account is X', 'ign X'."""
