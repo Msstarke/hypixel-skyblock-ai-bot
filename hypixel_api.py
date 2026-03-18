@@ -59,6 +59,11 @@ class HypixelAPI:
         data = await self._get(LOWEST_BIN_URL, "lowest_bin", params={}, ttl=AH_CACHE_TTL)
         return data or {}
 
+    async def get_auction_averages(self) -> dict:
+        """Fetch average AH prices from moulberry.codes — includes bid auctions, so covers dungeon items."""
+        data = await self._get(AUCTION_AVERAGES_URL, "auction_averages", params={}, ttl=AH_CACHE_TTL)
+        return data or {}
+
     async def get_reforge_stone_price(self, stone_id: str) -> float:
         """
         Fetch AH price for a reforge stone via coflnet.
