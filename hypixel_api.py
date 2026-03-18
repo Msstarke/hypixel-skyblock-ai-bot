@@ -152,6 +152,17 @@ class HypixelAPI:
                     "high": prices[-1],
                 })
 
+        # 4. Coflnet fallback — catches AH items not in lowestbin (gems, stones, etc.)
+        if not results:
+            price = await self.get_reforge_stone_price(query_norm)
+            if price:
+                results.append({
+                    "source": "AH (coflnet)",
+                    "item_id": query_norm,
+                    "price": price,
+                    "name": query_norm.replace("_", " ").title(),
+                })
+
         return results[:6]
 
     async def get_item_gem_slots(self, item_id: str) -> list[dict]:
