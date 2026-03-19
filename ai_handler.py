@@ -709,24 +709,36 @@ class AIHandler:
             lines.append(f"  {pname}: {ptotal:,.0f}")
 
         # Aggregated cost breakdown
+        num_pieces = sum(1 for _, pt in piece_totals if pt > 0)
         lines.append("")
         lines.append("**Cost Breakdown (all pieces combined):**")
         # Friendly labels and ordering
         LABEL_ORDER = ["base_item", "hot_potato_books", "fuming_potato_books", "recombobulator_3000",
-                       "art_of_peace", "slot_unlocking", "reforge_stone"]
+                       "art_of_peace", "essence_stars", "master_stars", "slot_unlocking", "reforge_stone"]
         seen = set()
+        # Find essence type from any result that has it
+        essence_type = None
+        for r in results:
+            if r and "essence_stars" in r.get("breakdown", {}):
+                essence_type = r["breakdown"]["essence_stars"].get("essence_type")
+                break
         for key in LABEL_ORDER:
             if key in agg and agg[key] > 0 and key not in excluded:
                 seen.add(key)
                 label = key.replace("_", " ").title()
                 if key == "reforge_stone" and reforge_name:
-                    label = f"{reforge_name.title()} Reforge Stone ×4"
+                    label = f"{reforge_name.title()} Reforge Stone ×{num_pieces}"
                 elif key in ("hot_potato_books", "fuming_potato_books"):
-                    label = f"{label} ×{4 * (10 if 'hot' in key else 5)}"
+                    label = f"{label} ×{num_pieces * (10 if 'hot' in key else 5)}"
                 elif key == "recombobulator_3000":
-                    label = f"{label} ×4"
+                    label = f"{label} ×{num_pieces}"
                 elif key == "base_item":
-                    label = "Base Items (×4)"
+                    label = f"Base Items (×{num_pieces})"
+                elif key == "essence_stars":
+                    etype = (essence_type or "?").title()
+                    label = f"5 Stars ({etype} Essence) ×{num_pieces}"
+                elif key == "master_stars":
+                    label = f"Master Stars (×5) ×{num_pieces}"
                 lines.append(f"  {label}: {agg[key]:,.0f}")
         # Any remaining keys (gem types, etc.)
         for key, val in agg.items():
