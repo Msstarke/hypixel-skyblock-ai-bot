@@ -908,6 +908,37 @@ class AIHandler:
             except Exception as e:
                 print(f"[hypermax error] {e}")
 
+            # --- Fast path: bare item name lookup (e.g. "!ai enchanted diamond") ---
+            # Triggered when the question is 1-5 words with no verb/question structure
+            if os.getenv("HYPIXEL_API_KEY"):
+                _NON_ITEM_WORDS = {"what", "why", "how", "when", "where", "who", "is", "are",
+                                   "can", "do", "does", "should", "would", "best", "guide",
+                                   "tell", "explain", "help", "tips", "i", "my", "the"}
+                q_words = re.sub(r"[^\w\s]", "", question.lower()).split()
+                if 1 <= len(q_words) <= 5 and not any(w in _NON_ITEM_WORDS for w in q_words):
+                    item_phrase = " ".join(q_words)
+                    try:
+                        # Try bazaar first (fast), then AH
+                        baz_match = await self._find_best_bazaar_match(item_phrase)
+                        if baz_match:
+                            return (f"**{baz_match['id'].replace('_', ' ').title()}** — "
+                                    f"instabuy **{baz_match['buy']:,.1f}** | instasell **{baz_match['sell']:,.1f}** coins")
+                        ah_results = await self.hypixel.search_ah(item_phrase)
+                        if ah_results:
+                            r = ah_results[0]
+                            if r["source"].startswith("Lowest BIN"):
+                                return f"**{r['name']}** — **{r['price']:,.0f}** coins (lowest BIN)"
+                            return (f"**{r['name']}** — median **{r['price']:,.0f}** | "
+                                    f"low **{r.get('low', r['price']):,.0f}** | high **{r.get('high', r['price']):,.0f}** coins (AH)")
+                        # Try unified price lookup via item ID
+                        found = await self.hypixel.find_item(item_phrase)
+                        if found:
+                            p = await self.hypixel.get_item_price(found["id"])
+                            if p:
+                                return f"**{found.get('name', found['id'])}** — **{p:,.0f}** coins"
+                    except Exception:
+                        pass  # fall through to AI
+
             # --- Fast path: quantity × item calculation, bypass AI entirely ---
             if price_question and os.getenv("HYPIXEL_API_KEY"):
                 parsed = self._extract_qty_item(question)
