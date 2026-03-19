@@ -535,10 +535,24 @@ class AIHandler:
                     elif label == "slot_unlocking":
                         slot_note = f" ({free} free)" if free else ""
                         label_fmt = f"Gem Slot Unlocking ×{data['qty']}{slot_note}"
-                        # Append detail breakdown as sub-line
                         lines.append(f"  {label_fmt}: {data['total']:,.0f}")
                         for detail in data.get("details", []):
                             lines.append(f"    ↳ {detail}")
+                        continue
+                    elif label == "essence_stars":
+                        etype = data.get("essence_type", "?")
+                        per_star = data.get("per_star", [])
+                        star_detail = " + ".join(str(a) for a in per_star)
+                        label_fmt = f"5 Stars ({etype.title()} Essence ×{data['qty']})"
+                        lines.append(f"  {label_fmt}: {data['total']:,.0f} ({data['unit']:,.0f}/essence)")
+                        lines.append(f"    ↳ Per star: {star_detail}")
+                        continue
+                    elif label == "master_stars":
+                        ms_prices = data.get("prices", [])
+                        lines.append(f"  Master Stars (×5): {data['total']:,.0f}")
+                        ms_names = ["1st", "2nd", "3rd", "4th", "5th"]
+                        for mn, mp in zip(ms_names, ms_prices):
+                            lines.append(f"    ↳ {mn}: {mp:,.0f}")
                         continue
                     else:
                         label_fmt = label.replace("_", " ").title()
