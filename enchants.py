@@ -181,8 +181,8 @@ ENCHANTS: list[dict] = [
         "priority": 9,
     },
     {
-        "name": "Smite 7",
-        "bazaar_id": "ENCHANTMENT_SMITE_7",
+        "name": "Smite 6",
+        "bazaar_id": "ENCHANTMENT_SMITE_6",
         "types": SWORD_TYPES,
         "use_cases": {"dungeons"},
         "priority": 8,
