@@ -66,8 +66,7 @@ HotM is the mining skill tree unlocked in Dwarven Mines. Levels 1-10.
 
 ### Key HotM Unlocks
 - HotM 5 → Crystal Hollows unlocked
-- HotM 6 → Divan's Armor usable
-- HotM 7 → Can forge Divan's Drill
+- HotM 7 → Armor of Divan equippable + can forge Divan's Drill
 
 ---
 
@@ -77,6 +76,19 @@ HotM is the mining skill tree unlocked in Dwarven Mines. Levels 1-10.
 - **Crystal Hollows** — Best for gemstones, Scatha, powder
 - **Glacite Tunnels** — Best for Glacite ore, unique mobs, cold-resistant gear testing
 - **Deep Caverns** — Early game mining location
+
+---
+
+## Best Reforges for Mining Armor
+
+Item IDs for price lookups: JADERALD, GLACITE_SHARD
+
+- **Jaded** (Jaderald stone, ~3.5M) — Best reforge for Mining Fortune. +20 Mining Fortune per piece at Legendary. Use this on Armor of Divan. Stone ID: JADERALD
+- **Glaciated** (Glacite Shard stone, ~60k) — Budget mining reforge. +15 Defense, +5 Mining Fortune per piece at Legendary. Use on Glacite Armor or budget builds. Stone ID: GLACITE_SHARD
+
+**Recommendation by armor:**
+- Armor of Divan → **Jaded** (best Mining Fortune, ~3.5M Jaderald stone)
+- Glacite Armor → **Glaciated** (budget option, ~60k Glacite Shard stone)
 
 ---
 
