@@ -425,29 +425,12 @@ class AIHandler:
             name_words = name.split()
             # All words in the item name must appear in the question (prefix match for plurals)
             if all(any(qt.startswith(nw) for qt in q_tokens) for nw in name_words):
-                # ── Dynamic reforge selection ────────────────────────────────
-                desired_stat = self._detect_desired_stat(question)
-
-                # Fetch lbin for item price, coflnet for stone prices
+                # ── Reforge selection (explicit name wins over scoring) ──────
                 lbin = await self.hypixel.get_lowest_bin()
                 item_price = lbin.get(item_id, 0)
-
-                # Batch-fetch all stone prices from coflnet in parallel
-                from reforges import REFORGES
-                stone_ids = list({d["stone"] for d in REFORGES.values() if d.get("stone")})
-                prices_list = await asyncio.gather(
-                    *[self.hypixel.get_reforge_stone_price(sid) for sid in stone_ids]
-                )
-                stone_prices = dict(zip(stone_ids, prices_list))
-
-                reforge = pick_reforge(
-                    item_id,
-                    desired_stat=desired_stat,
-                    item_price=item_price,
-                    stone_prices=stone_prices,
-                )
-                stone_id    = reforge["stone"]    if reforge else None
-                reforge_name = reforge["name"]    if reforge else None
+                reforge, stone_prices = await self._resolve_reforge(question, item_id, item_price)
+                stone_id     = reforge["stone"] if reforge else None
+                reforge_name = reforge["name"]  if reforge else None
 
                 result = await self.hypixel.get_hypermaxed_price(item_id, reforge_stone_id=stone_id)
                 if not result:
