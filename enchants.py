@@ -437,8 +437,14 @@ def _infer_use_case(item_id: str) -> str:
     item = item_id.lower()
     if any(x in item for x in ("divan", "glacite", "mineral", "mithril")):
         return "mining"
-    if any(x in item for x in ("power_wither", "wise_wither", "speed_wither", "tank_wither",
-                                "shadow_assassin", "necron", "storm", "maxor", "goldor",
+    # Specific wither set roles
+    if "wise_wither" in item or "storm" in item:
+        return "mage"
+    if "tank_wither" in item or "goldor" in item:
+        return "tank"
+    if "speed_wither" in item or "maxor" in item:
+        return "dungeons"  # Maxor is speed/berserk
+    if any(x in item for x in ("power_wither", "shadow_assassin", "necron",
                                 "aurora", "terror")):
         return "dungeons"
     if any(x in item for x in ("hyperion", "astraea", "scylla", "valkyrie")):
