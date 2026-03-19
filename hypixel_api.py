@@ -167,24 +167,50 @@ class HypixelAPI:
             terms.append(slot)
         return terms
 
+    @staticmethod
+    def _item_id_variants(item_id: str) -> list[str]:
+        """
+        Generate lookup variants for an item ID to handle apostrophe differences.
+        Some items appear in lowestbin/coflnet with 'S_ instead of S_:
+        NECRONS_CHESTPLATE → also try NECRON'S_CHESTPLATE
+        STORMS_CHESTPLATE  → also try STORM'S_CHESTPLATE
+        """
+        import re as _re
+        variants = [item_id]
+        # Insert apostrophe before trailing S on each word segment: NECRONS_ → NECRON'S_
+        apos = _re.sub(r"([A-Z]+)S_", r"\1'S_", item_id)
+        if apos != item_id:
+            variants.append(apos)
+        # Also try without apostrophe (strip any existing apostrophes)
+        stripped = item_id.replace("'", "")
+        if stripped != item_id and stripped not in variants:
+            variants.append(stripped)
+        return variants
+
     async def get_item_price(self, item_id: str) -> float:
         """
         BIN-only price lookup. Returns 0 for bid-only items (no BIN listings).
+        Tries apostrophe variants (NECRONS_ / NECRON'S_) for both sources.
         1. Lowest BIN (moulberry lowestbin.json)
         2. CoflNet /current lbin field — catches BIN items moulberry may lag on
-        3. CoflNet with items-API ID remapping (e.g. ARMOR_OF_DIVAN → DIVAN)
         """
-        # 1. Moulberry lowest BIN
         lbin = await self.get_lowest_bin()
-        price = lbin.get(item_id, 0)
-        if price:
-            return price
 
-        # 2. CoflNet /current — only trust the lbin field (actual BIN price)
+        # 1. Moulberry lowest BIN — try all ID variants
         mapped_id = self._ITEMS_API_ID_MAP.get(item_id)
-        for check_id in filter(None, [item_id, mapped_id if mapped_id != item_id else None]):
+        all_ids = list(dict.fromkeys(
+            self._item_id_variants(item_id)
+            + (self._item_id_variants(mapped_id) if mapped_id and mapped_id != item_id else [])
+        ))
+        for vid in all_ids:
+            price = lbin.get(vid, 0)
+            if price:
+                return price
+
+        # 2. CoflNet /current lbin field — actual BIN price, not auction average
+        for vid in all_ids:
             try:
-                url = COFLNET_PRICE_URL.format(item_id=check_id)
+                url = COFLNET_PRICE_URL.format(item_id=vid)
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
                         if resp.status == 200:
