@@ -1104,7 +1104,7 @@ class AIHandler:
             item_ctx = ""
 
             # Item/recipe lookup from Hypixel items API
-            item_keywords = ["what is", "stats", "item info"]
+            item_keywords = ["what is", "stats", "item info", "craft", "recipe", "how to make", "ingredients"]
             if any(kw in question.lower() for kw in item_keywords):
                 try:
                     item_ctx = await self._build_item_context(question)
