@@ -694,6 +694,29 @@ class AIHandler:
         # Hypermax keywords were present but no item matched
         return "I don't recognize that item for a hypermax calculation. Try specifying a piece or set name (e.g. 'hypermax divan helmet', 'hypermax necron armor')."
 
+    def _detect_explicit_reforge(self, question: str) -> dict | None:
+        """
+        Detect if the user explicitly names a reforge (e.g. 'with jaded', 'use withered').
+        Returns the full reforge dict if found, None otherwise.
+        Explicit requests bypass the affordability penalty entirely.
+        """
+        from reforges import REFORGES
+        q = question.lower()
+        for key, data in REFORGES.items():
+            clean = key.replace("_weapon", "")
+            # Match "with jaded", "use jaded", "jaded reforge", or just "jaded" near reforge word
+            if re.search(rf"\b{re.escape(clean)}\b", q):
+                return {
+                    "name":        clean,
+                    "stone":       data["stone"],
+                    "stone_price": 0,  # filled in by caller once stone prices are fetched
+                    "stats":       data["stats"],
+                    "note":        data["note"],
+                    "affordable":  True,   # user explicitly chose it — skip affordability check
+                    "score":       999,
+                }
+        return None
+
     def _detect_desired_stat(self, question: str) -> str | None:
         """Extract a desired stat from phrases like 'with more intelligence', 'for mage', 'i want str'."""
         q = question.lower()
