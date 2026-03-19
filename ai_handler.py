@@ -316,9 +316,11 @@ class AIHandler:
             return None
 
         # Normalize query: remove apostrophes/punctuation for matching
-        # Tokenize question — strip possessives so "divans" → "divan"
+        # Tokenize question — strip possessives so "divan's" → "divan"
         q_tokens = re.sub(r"'s?\b", "", q)
         q_tokens = re.sub(r"[^a-z0-9\s]", "", q_tokens).split()
+        # Normalised set for set/piece token matching — strip trailing 's' so "divans" matches "divan"
+        q_tokens_norm = {t.rstrip("s") if len(t) > 4 else t for t in q_tokens}
 
         for name, item_id in self.ITEM_UPGRADE_MAP.items():
             name_words = name.split()
