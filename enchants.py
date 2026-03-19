@@ -239,8 +239,8 @@ ENCHANTS: list[dict] = [
         "priority": 6,
     },
     {
-        "name": "Ender Slayer 7",
-        "bazaar_id": "ENCHANTMENT_ENDER_SLAYER_7",
+        "name": "Ender Slayer 6",
+        "bazaar_id": "ENCHANTMENT_ENDER_SLAYER_6",
         "types": SWORD_TYPES,
         "use_cases": {"combat"},
         "priority": 6,
