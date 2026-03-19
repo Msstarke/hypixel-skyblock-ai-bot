@@ -768,7 +768,13 @@ class AIHandler:
             "unlocking":        "slot_unlocking",
             "unlock":           "slot_unlocking",
             "gemstone chamber": "slot_unlocking",
+            "stars":            "essence_stars",
+            "essence":          "essence_stars",
+            "master star":      "master_stars",
         }
+        # "no stars" excludes both essence stars and master stars
+        if re.search(r'\bno\s+stars?\b|\bwithout\s+stars?\b', q):
+            excluded |= {"essence_stars", "master_stars"}
         for phrase, key in single.items():
             if phrase in q:
                 excluded.add(key)
