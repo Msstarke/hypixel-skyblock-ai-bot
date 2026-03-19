@@ -91,21 +91,29 @@ ENCHANTS: list[dict] = [
     },
 
     # ═══════════════════════════════════════════════════════════════════════════
-    # ARMOR — ALL SLOTS (mining)
+    # ARMOR — ALL SLOTS (mining) — mining armor still uses normal armor enchants
+    # but only the ones that help survivability, not combat damage
     # ═══════════════════════════════════════════════════════════════════════════
     {
-        "name": "Pristine 5",
-        "bazaar_id": "ENCHANTMENT_PRISTINE_5",
+        "name": "Protection 7",
+        "bazaar_id": "ENCHANTMENT_PROTECTION_7",
         "types": ARMOR_TYPES,
         "use_cases": {"mining"},
-        "priority": 9,
+        "priority": 7,
     },
     {
-        "name": "Fortune 4",
-        "bazaar_id": "ENCHANTMENT_FORTUNE_4",
+        "name": "Growth 7",
+        "bazaar_id": "ENCHANTMENT_GROWTH_7",
         "types": ARMOR_TYPES,
         "use_cases": {"mining"},
-        "priority": 8,
+        "priority": 6,
+    },
+    {
+        "name": "Rejuvenate 5",
+        "bazaar_id": "ENCHANTMENT_REJUVENATE_5",
+        "types": ARMOR_TYPES,
+        "use_cases": {"mining"},
+        "priority": 5,
     },
 
     # ═══════════════════════════════════════════════════════════════════════════
