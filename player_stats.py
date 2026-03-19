@@ -255,10 +255,79 @@ def parse_member(member: dict) -> dict:
     return stats
 
 
+def _format_number(n: float) -> str:
+    """Format large numbers compactly: 1.5M, 23.4K, etc."""
+    if n >= 1_000_000_000:
+        return f"{n / 1_000_000_000:.1f}B"
+    if n >= 1_000_000:
+        return f"{n / 1_000_000:.1f}M"
+    if n >= 1_000:
+        return f"{n / 1_000:.1f}K"
+    return f"{n:,.0f}"
+
+
+# Pet XP table (cumulative) for LEGENDARY rarity — used to estimate pet level
+PET_XP_LEGENDARY = [
+    0, 660, 1390, 2190, 3070, 4030, 5080, 6230, 7490, 8870, 10380, 12030, 13830,
+    15780, 17880, 20130, 22530, 25080, 27780, 30630, 33630, 36780, 40080, 43530,
+    47130, 50880, 54780, 58830, 63030, 67380, 71880, 76530, 81330, 86280, 91380,
+    96630, 102030, 107580, 113280, 119130, 125130, 131280, 137580, 144030, 150630,
+    157380, 164280, 171330, 178530, 185880, 193380, 201030, 208830, 216780, 224880,
+    233130, 241530, 250080, 258780, 267630, 276630, 285780, 295080, 304530, 314130,
+    323880, 333780, 343830, 354030, 364380, 374880, 385530, 396330, 407280, 418380,
+    429630, 441030, 452580, 464280, 476130, 488130, 500280, 512580, 525030, 537630,
+    550380, 563280, 576330, 589530, 602880, 616380, 630030, 643830, 657780, 671880,
+    686130, 700530, 715080, 729780, 744630,
+]
+
+
+def _pet_level(xp: float, tier: str = 'LEGENDARY') -> int:
+    """Estimate pet level from XP. Uses legendary table as approximation."""
+    table = PET_XP_LEGENDARY
+    lvl = 1
+    for i, req in enumerate(table):
+        if xp >= req:
+            lvl = i + 1
+    return min(lvl, 100)
+
+
+COLLECTION_CATEGORIES = {
+    'Mining': ['COBBLESTONE', 'COAL', 'IRON_INGOT', 'GOLD_INGOT', 'DIAMOND', 'LAPIS_LAZULI',
+               'EMERALD', 'REDSTONE', 'QUARTZ', 'OBSIDIAN', 'GLOWSTONE_DUST', 'GRAVEL',
+               'ICE', 'NETHERRACK', 'SAND', 'ENDER_STONE', 'MITHRIL_ORE', 'HARD_STONE',
+               'GEMSTONE_COLLECTION', 'SULPHUR_ORE', 'MYCEL', 'RED_SAND'],
+    'Combat': ['ROTTEN_FLESH', 'BONE', 'STRING', 'SPIDER_EYE', 'GUNPOWDER', 'ENDER_PEARL',
+                'GHAST_TEAR', 'SLIME_BALL', 'BLAZE_ROD', 'MAGMA_CREAM'],
+    'Farming': ['WHEAT', 'CARROT_ITEM', 'POTATO_ITEM', 'PUMPKIN', 'MELON', 'SEEDS',
+                'MUSHROOM_COLLECTION', 'NETHER_STALK', 'CACTUS', 'SUGAR_CANE',
+                'FEATHER', 'LEATHER', 'PORK', 'RAW_CHICKEN', 'MUTTON', 'RABBIT', 'COCOA'],
+    'Fishing': ['RAW_FISH', 'RAW_FISH:1', 'RAW_FISH:2', 'RAW_FISH:3', 'PRISMARINE_SHARD',
+                'PRISMARINE_CRYSTALS', 'CLAY_BALL', 'WATER_LILY', 'INK_SACK',
+                'SPONGE', 'MAGMA_FISH'],
+    'Foraging': ['LOG', 'LOG:1', 'LOG:2', 'LOG_2:1', 'LOG_2', 'LOG:3'],
+}
+
+
 def format_for_ai(username: str, profile_name: str, stats: dict) -> str:
     """Condense parsed stats into a string for the AI system prompt."""
     from hypixel_api import HOTM_XP
     lines = [f"=== Player: {username} | Profile: {profile_name} ==="]
+
+    # Skyblock Level
+    sb_xp = stats.get('sb_xp', 0)
+    if sb_xp:
+        lines.append(f"Skyblock Level: {int(sb_xp / 100)}")
+
+    # Money
+    purse = stats.get('purse', 0)
+    bank = stats.get('bank', 0)
+    money_parts = []
+    if purse:
+        money_parts.append(f"Purse: {_format_number(purse)}")
+    if bank:
+        money_parts.append(f"Bank: {_format_number(bank)}")
+    if money_parts:
+        lines.append(" | ".join(money_parts))
 
     # Skills
     skill_parts = [f"{k} {v['level']}" for k, v in stats.get('skills', {}).items() if v['level'] > 0]
@@ -266,38 +335,104 @@ def format_for_ai(username: str, profile_name: str, stats: dict) -> str:
         lines.append("Skills: " + " | ".join(skill_parts))
 
     # Slayer
-    slayer_parts = [f"{k} {v['level']}" for k, v in stats.get('slayer', {}).items()]
-    lines.append("Slayer: " + " | ".join(slayer_parts))
+    slayer_parts = [f"{k} {v['level']}" for k, v in stats.get('slayer', {}).items() if v['level'] > 0]
+    if slayer_parts:
+        lines.append("Slayer: " + " | ".join(slayer_parts))
 
     # Dungeons
     cata = stats.get('catacombs_level', 0)
     sel_class = stats.get('selected_class', '')
-    lines.append(f"Catacombs: {cata} | Selected class: {sel_class}")
+    lines.append(f"Catacombs: {cata} | Class: {sel_class}")
 
     class_parts = [f"{k} {v['level']}" for k, v in stats.get('dungeon_classes', {}).items() if v['level'] > 0]
     if class_parts:
-        lines.append("Classes: " + " | ".join(class_parts))
+        lines.append("Class levels: " + " | ".join(class_parts))
 
     completions = stats.get('floor_completions', {})
     if completions:
         comp_parts = [f"{k}:{v}" for k, v in sorted(completions.items())]
-        lines.append("Floor completions: " + " ".join(comp_parts))
+        lines.append("Floors: " + " ".join(comp_parts))
 
-    # HotM
+    # HotM + Powder
     hotm_xp = stats.get('hotm_xp', 0)
     hotm_lvl = sum(1 for req in HOTM_XP[1:] if hotm_xp >= req)
-    lines.append(f"HotM: {hotm_lvl} ({hotm_xp:,.0f} XP)")
+    mithril_p = stats.get('mithril_powder', 0)
+    gemstone_p = stats.get('gemstone_powder', 0)
+    glacite_p = stats.get('glacite_powder', 0)
+    hotm_line = f"HotM: {hotm_lvl}"
+    powder_parts = []
+    if mithril_p:
+        powder_parts.append(f"Mithril: {_format_number(mithril_p)}")
+    if gemstone_p:
+        powder_parts.append(f"Gemstone: {_format_number(gemstone_p)}")
+    if glacite_p:
+        powder_parts.append(f"Glacite: {_format_number(glacite_p)}")
+    if powder_parts:
+        hotm_line += " | Powder: " + ", ".join(powder_parts)
+    lines.append(hotm_line)
+
+    # Accessories / Magic Power
+    mp = stats.get('magical_power', 0)
+    power = stats.get('selected_power', '')
+    if mp:
+        lines.append(f"Magic Power: {mp:,} | Power: {power}")
+
+    # Essence
+    essence = stats.get('essence', {})
+    if essence:
+        ess_parts = [f"{k}: {_format_number(v)}" for k, v in essence.items() if v > 0]
+        if ess_parts:
+            lines.append("Essence: " + " | ".join(ess_parts))
+
+    # Kuudra
+    kuudra = stats.get('kuudra', {})
+    if kuudra:
+        kuudra_parts = [f"{k}: {v}" for k, v in kuudra.items() if v > 0]
+        if kuudra_parts:
+            lines.append("Kuudra: " + " | ".join(kuudra_parts))
+
+    # Crimson Isle
+    faction = stats.get('crimson_faction', '')
+    if faction:
+        rep = stats.get('crimson_reputation', {})
+        lines.append(f"Crimson Isle: {faction} | Barbarian rep: {rep.get('barbarians', 0):,} | Mage rep: {rep.get('mages', 0):,}")
 
     # Misc
     lines.append(f"Fairy souls: {stats.get('fairy_souls', 0)}")
-    purse = stats.get('purse', 0)
-    if purse:
-        lines.append(f"Purse: {purse:,.0f} coins")
+
+    bestiary = stats.get('bestiary_milestone', 0)
+    if bestiary:
+        lines.append(f"Bestiary milestone: {bestiary}")
+
+    trophy = stats.get('trophy_fish_total', 0)
+    if trophy:
+        lines.append(f"Trophy fish caught: {trophy:,}")
+
+    # Pets (active + top 5 by level)
+    pets = stats.get('pets', [])
+    if pets:
+        active = [p for p in pets if p.get('active')]
+        if active:
+            p = active[0]
+            lvl = _pet_level(p['xp'], p['tier'])
+            held = p['held_item'].replace('PET_ITEM_', '').replace('_', ' ').title() if p['held_item'] else 'none'
+            lines.append(f"Active pet: {p['type'].title()} ({p['tier'].title()}) Lvl {lvl} | Held: {held}")
+
+        # Top pets by XP
+        top = sorted(pets, key=lambda x: x['xp'], reverse=True)[:10]
+        pet_parts = []
+        for p in top:
+            if p.get('active'):
+                continue
+            lvl = _pet_level(p['xp'], p['tier'])
+            pet_parts.append(f"{p['type'].title()} {p['tier'][0]}{lvl}")
+        if pet_parts:
+            lines.append("Top pets: " + ", ".join(pet_parts[:8]))
 
     # Gear
     armor = [a['name'] for a in stats.get('armor', []) if a.get('name')]
     if armor:
-        lines.append("Armor (head→feet): " + ", ".join(armor))
+        lines.append("Armor: " + ", ".join(armor))
 
     equip = [e['name'] for e in stats.get('equipment', []) if e.get('name')]
     if equip:
@@ -310,29 +445,12 @@ def format_for_ai(username: str, profile_name: str, stats: dict) -> str:
     # Collections (group by category)
     collections = stats.get('collections', {})
     if collections:
-        COLLECTION_CATEGORIES = {
-            'Mining': ['COBBLESTONE', 'COAL', 'IRON_INGOT', 'GOLD_INGOT', 'DIAMOND', 'LAPIS_LAZULI',
-                       'EMERALD', 'REDSTONE', 'QUARTZ', 'OBSIDIAN', 'GLOWSTONE_DUST', 'GRAVEL',
-                       'ICE', 'NETHERRACK', 'SAND', 'ENDER_STONE', 'MITHRIL_ORE', 'HARD_STONE',
-                       'GEMSTONE_COLLECTION', 'SULPHUR_ORE', 'MYCEL', 'RED_SAND'],
-            'Combat': ['ROTTEN_FLESH', 'BONE', 'STRING', 'SPIDER_EYE', 'GUNPOWDER', 'ENDER_PEARL',
-                        'GHAST_TEAR', 'SLIME_BALL', 'BLAZE_ROD', 'MAGMA_CREAM',
-                        'ENCHANTED_ROTTEN_FLESH'],
-            'Farming': ['WHEAT', 'CARROT_ITEM', 'POTATO_ITEM', 'PUMPKIN', 'MELON', 'SEEDS',
-                        'MUSHROOM_COLLECTION', 'NETHER_STALK', 'CACTUS', 'SUGAR_CANE',
-                        'FEATHER', 'LEATHER', 'PORK', 'RAW_CHICKEN', 'MUTTON', 'RABBIT',
-                        'COCOA'],
-            'Fishing': ['RAW_FISH', 'RAW_FISH:1', 'RAW_FISH:2', 'RAW_FISH:3', 'PRISMARINE_SHARD',
-                        'PRISMARINE_CRYSTALS', 'CLAY_BALL', 'WATER_LILY', 'INK_SACK',
-                        'SPONGE', 'MAGMA_FISH'],
-            'Foraging': ['LOG', 'LOG:1', 'LOG:2', 'LOG_2:1', 'LOG_2', 'LOG:3'],
-        }
         for cat, item_ids in COLLECTION_CATEGORIES.items():
             cat_colls = []
             for cid in item_ids:
                 if cid in collections:
                     name = cid.replace('_', ' ').title().replace(':1', '').replace(':2', '').replace(':3', '')
-                    cat_colls.append(f"{name}: {collections[cid]:,}")
+                    cat_colls.append(f"{name}: {_format_number(collections[cid])}")
             if cat_colls:
                 lines.append(f"Collections ({cat}): " + " | ".join(cat_colls))
 
