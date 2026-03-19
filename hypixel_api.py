@@ -301,11 +301,30 @@ class HypixelAPI:
         Fetch full gemstone slot data for an item from the Hypixel items API.
         Returns list of slot dicts: [{slot_type, costs: [{type, item_id/coins, amount}]}]
         slot_type may be a specific gem type (AMBER, JADE) or UNIVERSAL/COMBAT/etc.
+        Tries: explicit ID map → raw ID → strip known prefixes (ARMOR_OF_, etc.)
         """
-        api_id = self._ITEMS_API_ID_MAP.get(item_id, item_id)
         items_data = await self.get_all_items()
+
+        # 1. Explicit map (e.g. ARMOR_OF_DIVAN_HELMET → DIVAN_HELMET)
+        api_id = self._ITEMS_API_ID_MAP.get(item_id, item_id)
         item = items_data.get(api_id, {})
-        return item.get("gemstone_slots", [])
+        if item.get("gemstone_slots"):
+            return item["gemstone_slots"]
+
+        # 2. Raw ID
+        item = items_data.get(item_id, {})
+        if item.get("gemstone_slots"):
+            return item["gemstone_slots"]
+
+        # 3. Strip known AH-only prefixes (e.g. ARMOR_OF_ prefix on some items)
+        for prefix in ("ARMOR_OF_", "NECRONS_"):
+            if item_id.startswith(prefix):
+                stripped = item_id[len(prefix):]
+                item = items_data.get(stripped, {})
+                if item.get("gemstone_slots"):
+                    return item["gemstone_slots"]
+
+        return []
 
     async def scan_bid_auctions(self, search_terms: list[str]) -> float:
         """
