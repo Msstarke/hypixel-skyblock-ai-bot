@@ -554,6 +554,11 @@ class AIHandler:
                         for mn, mp in zip(ms_names, ms_prices):
                             lines.append(f"    ↳ {mn}: {mp:,.0f}")
                         continue
+                    elif label == "enchantments":
+                        lines.append(f"  Enchantments (×{data['qty']}): {data['total']:,.0f}")
+                        for detail in data.get("details", []):
+                            lines.append(f"    ↳ {detail}")
+                        continue
                     else:
                         label_fmt = label.replace("_", " ").title()
                     if data["qty"] > 1:
