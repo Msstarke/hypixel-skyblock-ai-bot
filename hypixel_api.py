@@ -170,31 +170,20 @@ class HypixelAPI:
     async def get_item_price(self, item_id: str) -> float:
         """
         Unified price lookup for any Skyblock item. Tries all sources in order:
-        1. Lowest BIN (moulberry) — fastest, most common items
-        2. CoflNet /current — covers non-BIN AH items, bid-only dungeon drops
-        3. CoflNet /current with items-API ID remapping (e.g. ARMOR_OF_DIVAN → DIVAN)
-        4. CoflNet 24h history — catches items with no current BIN but recent sales
-        5. Dynamic bid auction scan — last resort, scans all active auctions live
+        1. Lowest BIN (moulberry) — reliable for BIN items
+        2. CoflNet 24h history — reliable for bid-only items (averages many real sales, outliers smoothed)
+        3. CoflNet /current — single snapshot, can have outlier troll BIN listings; last resort
+        4. Dynamic bid auction scan — scans all active auctions live
         """
-        # 1. Lowest BIN
+        # 1. Lowest BIN — most items live here
         lbin = await self.get_lowest_bin()
         price = lbin.get(item_id, 0)
         if price:
             return price
 
-        # 2. CoflNet /current with raw ID
-        price = await self.get_reforge_stone_price(item_id)
-        if price:
-            return price
-
-        # 3. CoflNet /current with remapped items-API ID
+        # 2. CoflNet 24h history — average of many real sales, much more reliable than /current
+        #    for bid-only items (Necron, Storm, etc.) where /current may return outlier BINs
         mapped_id = self._ITEMS_API_ID_MAP.get(item_id)
-        if mapped_id and mapped_id != item_id:
-            price = await self.get_reforge_stone_price(mapped_id)
-            if price:
-                return price
-
-        # 4. CoflNet 24h history (catches bid-only items that sold recently)
         price = await self._coflnet_history_price(item_id)
         if price:
             return price
@@ -203,7 +192,16 @@ class HypixelAPI:
             if price:
                 return price
 
-        # 5. Bid auction scan — use hardcoded terms if known, else derive from ID
+        # 3. CoflNet /current — single snapshot, only if history had nothing
+        price = await self.get_reforge_stone_price(item_id)
+        if price:
+            return price
+        if mapped_id and mapped_id != item_id:
+            price = await self.get_reforge_stone_price(mapped_id)
+            if price:
+                return price
+
+        # 4. Bid auction scan — live scan of all active auctions
         terms = BID_ONLY_SEARCH_TERMS.get(item_id) or self._derive_search_terms(item_id)
         if terms:
             price = await self.scan_bid_auctions(terms)
