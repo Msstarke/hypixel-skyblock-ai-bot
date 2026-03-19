@@ -385,12 +385,12 @@ class AIHandler:
         "mineral":        ("Mineral Armor Set",          ["MINERAL_HELMET",         "MINERAL_CHESTPLATE",        "MINERAL_LEGGINGS",        "MINERAL_BOOTS"]),
         "glossy mineral": ("Glossy Mineral Armor Set", ["GLOSSY_MINERAL_HELMET",   "GLOSSY_MINERAL_CHESTPLATE", "GLOSSY_MINERAL_LEGGINGS", "GLOSSY_MINERAL_BOOTS"]),
         # ── Dungeons — Wither ──
-        "necron":    ("Necron Armor Set",           ["NECRONS_HELMET",            "NECRONS_CHESTPLATE",            "NECRONS_LEGGINGS",            "NECRONS_BOOTS"]),
-        "storm":     ("Storm Armor Set",            ["STORM_HELMET",              "STORM_CHESTPLATE",              "STORM_LEGGINGS",              "STORM_BOOTS"]),
+        "necron":    ("Necron Armor Set",           ["POWER_WITHER_HELMET",       "POWER_WITHER_CHESTPLATE",       "POWER_WITHER_LEGGINGS",       "POWER_WITHER_BOOTS"]),
+        "storm":     ("Storm Armor Set",            ["WISE_WITHER_HELMET",        "WISE_WITHER_CHESTPLATE",        "WISE_WITHER_LEGGINGS",        "WISE_WITHER_BOOTS"]),
         "aurora":    ("Aurora Armor Set",           ["AURORA_HELMET",             "AURORA_CHESTPLATE",             "AURORA_LEGGINGS",             "AURORA_BOOTS"]),
         "terror":    ("Terror Armor Set",           ["TERROR_HELMET",             "TERROR_CHESTPLATE",             "TERROR_LEGGINGS",             "TERROR_BOOTS"]),
-        "maxor":     ("Maxor Armor Set",            ["MAXOR_HELMET",              "MAXOR_CHESTPLATE",              "MAXOR_LEGGINGS",              "MAXOR_BOOTS"]),
-        "goldor":    ("Goldor Armor Set",           ["GOLDOR_HELMET",             "GOLDOR_CHESTPLATE",             "GOLDOR_LEGGINGS",             "GOLDOR_BOOTS"]),
+        "maxor":     ("Maxor Armor Set",            ["SPEED_WITHER_HELMET",       "SPEED_WITHER_CHESTPLATE",       "SPEED_WITHER_LEGGINGS",       "SPEED_WITHER_BOOTS"]),
+        "goldor":    ("Goldor Armor Set",           ["TANK_WITHER_HELMET",        "TANK_WITHER_CHESTPLATE",        "TANK_WITHER_LEGGINGS",        "TANK_WITHER_BOOTS"]),
         # ── Dungeons — other ──
         "shadow":    ("Shadow Assassin Armor Set",  ["SHADOW_ASSASSIN_HELMET",    "SHADOW_ASSASSIN_CHESTPLATE",    "SHADOW_ASSASSIN_LEGGINGS",    "SHADOW_ASSASSIN_BOOTS"]),
         "holy":      ("Holy Dragon Armor Set",      ["HOLY_DRAGON_HELMET",        "HOLY_DRAGON_CHESTPLATE",        "HOLY_DRAGON_LEGGINGS",        "HOLY_DRAGON_BOOTS"]),
