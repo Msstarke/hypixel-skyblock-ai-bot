@@ -511,23 +511,22 @@ class HypixelAPI:
 
     async def get_armor_set_prices(self, set_id_prefix: str) -> dict | None:
         """
-        Fetch lowest BIN price for each piece of an armor set.
-        set_id_prefix: e.g. 'ARMOR_OF_DIVAN', 'GLACITE', 'MINERAL'
+        Fetch price for each piece of an armor set using the full fallback chain
+        (lowestbin → coflnet → history → bid auction scan).
+        set_id_prefix: e.g. 'ARMOR_OF_DIVAN', 'GLACITE', 'NECRONS'
         Returns {helmet, chestplate, leggings, boots, total} or None.
         """
-        lbin = await self.get_lowest_bin()
-        slots = {
-            "helmet":     [f"{set_id_prefix}_HELMET"],
-            "chestplate": [f"{set_id_prefix}_CHESTPLATE"],
-            "leggings":   [f"{set_id_prefix}_LEGGINGS"],
-            "boots":      [f"{set_id_prefix}_BOOTS"],
+        piece_ids = {
+            "helmet":     f"{set_id_prefix}_HELMET",
+            "chestplate": f"{set_id_prefix}_CHESTPLATE",
+            "leggings":   f"{set_id_prefix}_LEGGINGS",
+            "boots":      f"{set_id_prefix}_BOOTS",
         }
+        prices = await asyncio.gather(*[self.get_item_price(pid) for pid in piece_ids.values()])
         result = {}
-        for slot, ids in slots.items():
-            for item_id in ids:
-                if item_id in lbin:
-                    result[slot] = {"id": item_id, "price": lbin[item_id]}
-                    break
+        for (slot, item_id), price in zip(piece_ids.items(), prices):
+            if price:
+                result[slot] = {"id": item_id, "price": price}
         if not result:
             return None
         result["total"] = sum(v["price"] for v in result.values())
