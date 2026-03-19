@@ -425,9 +425,9 @@ class AIHandler:
         # ── Full armor set match ─────────────────────────────────────────────
         # If no individual piece matched, check if a set name is in the question
         # and no piece-type word (helmet/chestplate/etc.) was specified
-        if not any(pt in q_tokens for pt in self._PIECE_TOKENS):
+        if not any(pt in q_tokens_norm for pt in self._PIECE_TOKENS):
             for set_token, (set_name, piece_ids) in self.ITEM_SET_MAP.items():
-                if set_token in q_tokens:
+                if set_token in q_tokens_norm:
                     desired_stat = self._detect_desired_stat(question)
                     lbin = await self.hypixel.get_lowest_bin()
 
