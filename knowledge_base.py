@@ -56,7 +56,6 @@ FILE_KEYWORDS = {
                        "how to craft", "forged", "dungeon drop", "dragon fragment"],
     "general.md":     ["fairy soul", "essence", "magic find", "kuudra", "how to", "guide",
                        "tip", "beginner", "what is"],
-    "community_corrections.md": [],  # always score via section content matching
 }
 
 
