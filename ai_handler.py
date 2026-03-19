@@ -745,6 +745,8 @@ class AIHandler:
                     label = f"5 Stars ({etype} Essence) ×{num_pieces}"
                 elif key == "master_stars":
                     label = f"Master Stars (×5) ×{num_pieces}"
+                elif key == "enchantments":
+                    label = f"Enchantments ×{num_pieces}"
                 lines.append(f"  {label}: {agg[key]:,.0f}")
         # Any remaining keys (gem types, etc.)
         for key, val in agg.items():
