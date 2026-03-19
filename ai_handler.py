@@ -657,6 +657,34 @@ class AIHandler:
         # Hypermax keywords were present but no item matched
         return "I don't recognize that item for a hypermax calculation. Try specifying a piece or set name (e.g. 'hypermax divan helmet', 'hypermax necron armor')."
 
+    def _build_excluded(self, q: str, reforge_name: str | None = None) -> set[str]:
+        """Parse exclusion keywords from the question. Returns set of breakdown keys to skip."""
+        excluded: set[str] = set()
+        # "no books" / "without books" → exclude both HPB and FHPB
+        if re.search(r'\bno\s+books?\b|\bwithout\s+books?\b|\bno\s+(hpb|potato books?)\b', q):
+            excluded |= {"hot_potato_books", "fuming_potato_books"}
+        single = {
+            "hot potato":       "hot_potato_books",
+            "hpb":              "hot_potato_books",
+            "fuming":           "fuming_potato_books",
+            "fhpb":             "fuming_potato_books",
+            "recomb":           "recombobulator_3000",
+            "recombobulator":   "recombobulator_3000",
+            "art of peace":     "art_of_peace",
+            "aop":              "art_of_peace",
+            "reforge":          "reforge_stone",
+            "slot unlock":      "slot_unlocking",
+            "unlocking":        "slot_unlocking",
+            "unlock":           "slot_unlocking",
+            "gemstone chamber": "slot_unlocking",
+        }
+        for phrase, key in single.items():
+            if phrase in q:
+                excluded.add(key)
+        if reforge_name and reforge_name in q:
+            excluded.add("reforge_stone")
+        return excluded
+
     async def _resolve_reforge(self, question: str, item_id: str, item_price: float) -> tuple[dict | None, dict]:
         """
         Resolve the best reforge for an item, respecting explicit user requests.
