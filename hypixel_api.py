@@ -564,6 +564,38 @@ class HypixelAPI:
                     "qty": count, "unit": price, "total": price * count
                 }
 
+        # ── Stars (essence) ──────────────────────────────────────────────────
+        if star_info:
+            essence_type = star_info["essence_type"]
+            essence_amounts = star_info["essence_amounts"]  # [star1..star5]
+            total_essence = sum(essence_amounts)
+            essence_baz_id = f"ESSENCE_{essence_type}"
+            essence_unit = baz_price(essence_baz_id)
+            essence_cost = essence_unit * total_essence
+            breakdown["essence_stars"] = {
+                "qty": total_essence,
+                "unit": essence_unit,
+                "total": essence_cost,
+                "essence_type": essence_type,
+                "per_star": essence_amounts,
+            }
+
+            # Master stars (5 items, each applied once)
+            ms_total = 0
+            ms_prices = []
+            for ms_id in self.MASTER_STAR_IDS:
+                # Master stars are bid-only AH items — use allow_auction
+                p, src = await self.get_item_price(ms_id, allow_auction=True)
+                ms_prices.append(p)
+                ms_total += p
+            if ms_total > 0:
+                breakdown["master_stars"] = {
+                    "qty": 5,
+                    "unit": ms_total / 5,
+                    "total": ms_total,
+                    "prices": ms_prices,  # individual prices for display
+                }
+
         # ── Reforge stone ─────────────────────────────────────────────────────
         if reforge_stone_id:
             stone_price = await self.get_reforge_stone_price(reforge_stone_id)
