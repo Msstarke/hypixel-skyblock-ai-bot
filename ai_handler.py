@@ -1242,7 +1242,7 @@ class AIHandler:
                         {"role": "system", "content": system},
                         {"role": "user", "content": question},
                     ],
-                    max_tokens=1200,
+                    max_tokens=600,
                     temperature=0.1,
                 )
                 text = resp.choices[0].message.content.strip()
