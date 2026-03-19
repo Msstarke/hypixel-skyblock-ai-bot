@@ -57,6 +57,8 @@ ENCHANTS: list[dict] = [
     {
         "name": "Thorns 3",
         "bazaar_id": "ENCHANTMENT_THORNS_3",
+        "note": "Not on bazaar — crafted or dropped. Negligible cost.",
+        "skip_price": True,
         "types": ARMOR_TYPES,
         "use_cases": {"combat", "dungeons", "tank"},
         "priority": 3,
