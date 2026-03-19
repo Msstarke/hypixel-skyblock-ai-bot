@@ -869,8 +869,27 @@ class HypixelAPI:
             if req_parts:
                 lines.append(f"Requirements: {', '.join(req_parts)}")
 
-        # Recipe — Hypixel items API does NOT provide recipe data. Flag it so the AI doesn't guess.
-        lines.append("Recipe: NOT AVAILABLE in items API — do not guess the recipe")
+        # Recipe
+        recipe = item.get("recipe")
+        if recipe:
+            recipe_parts = []
+            counts = {}
+            for slot, material_id in recipe.items():
+                if material_id and isinstance(material_id, str):
+                    # Format: "ITEM_ID:count" or just "ITEM_ID"
+                    parts = material_id.split(":")
+                    mat_id = parts[0]
+                    count = int(parts[1]) if len(parts) > 1 else 1
+                    counts[mat_id] = counts.get(mat_id, 0) + count
+            for mat_id, count in counts.items():
+                name = mat_id.replace("_", " ").title()
+                recipe_parts.append(f"{count}x {name}")
+            if recipe_parts:
+                lines.append(f"Recipe: {', '.join(recipe_parts)}")
+            else:
+                lines.append("Recipe: none (not craftable)")
+        else:
+            lines.append("Recipe: none (not craftable — obtained from AH, drops, or other sources)")
 
         # Gemstone slots
         gem_slots = item.get("gemstone_slots", [])
