@@ -605,6 +605,10 @@ class HypixelAPI:
             enchant_details = []
             for e in enchant_list:
                 price = baz_price(e["bazaar_id"])
+                # Some enchants (Chimera etc) aren't on bazaar — try AH
+                if price <= 0:
+                    p, _src = await self.get_item_price(e["bazaar_id"], allow_auction=True)
+                    price = p
                 if price > 0:
                     enchant_total += price
                     ult_tag = " (ULT)" if e.get("ultimate") else ""
