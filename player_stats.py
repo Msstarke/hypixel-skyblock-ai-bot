@@ -191,6 +191,59 @@ def parse_member(member: dict) -> dict:
     # ── Collections ───────────────────────────────────────────────────────────
     stats['collections'] = member.get('collection') or {}
 
+    # ── Bank ────────────────────────────────────────────────────────────────
+    stats['bank'] = member.get('_bank_balance', 0)
+
+    # ── Pets ────────────────────────────────────────────────────────────────
+    raw_pets = member.get('pets_data', {}).get('pets', [])
+    pets = []
+    for pet in raw_pets:
+        pets.append({
+            'type': pet.get('type', ''),
+            'tier': pet.get('tier', ''),
+            'active': pet.get('active', False),
+            'xp': pet.get('exp', 0),
+            'held_item': pet.get('heldItem', ''),
+        })
+    stats['pets'] = pets
+
+    # ── Accessories / Magic Power ──────────────────────────────────────────
+    acc = member.get('accessory_bag_storage', {})
+    stats['magical_power'] = acc.get('highest_magical_power', 0)
+    stats['selected_power'] = acc.get('selected_power', '')
+
+    # ── Essence ─────────────────────────────────────────────────────────────
+    essence_raw = member.get('currencies', {}).get('essence', {})
+    stats['essence'] = {k: v.get('current', 0) for k, v in essence_raw.items() if isinstance(v, dict)}
+
+    # ── Mining (powder) ─────────────────────────────────────────────────────
+    mc = member.get('mining_core', {})
+    stats['mithril_powder'] = mc.get('powder_mithril', 0)
+    stats['gemstone_powder'] = mc.get('powder_gemstone', 0)
+    stats['glacite_powder'] = mc.get('powder_glacite', 0)
+
+    # ── Kuudra ──────────────────────────────────────────────────────────────
+    kuudra = member.get('nether_island_player_data', {}).get('kuudra_completed_tiers', {})
+    stats['kuudra'] = {k: v for k, v in kuudra.items() if not k.startswith('highest_wave')}
+
+    # ── Crimson Isle ────────────────────────────────────────────────────────
+    nether = member.get('nether_island_player_data', {})
+    stats['crimson_faction'] = nether.get('selected_faction', '')
+    stats['crimson_reputation'] = {
+        'barbarians': nether.get('barbarians_reputation', 0),
+        'mages': nether.get('mages_reputation', 0),
+    }
+
+    # ── Skyblock Level ──────────────────────────────────────────────────────
+    stats['sb_xp'] = member.get('leveling', {}).get('experience', 0)
+
+    # ── Bestiary ────────────────────────────────────────────────────────────
+    bestiary = member.get('bestiary', {})
+    stats['bestiary_milestone'] = bestiary.get('milestone', {}).get('last_claimed_milestone', 0)
+
+    # ── Trophy Fish ─────────────────────────────────────────────────────────
+    stats['trophy_fish_total'] = member.get('trophy_fish', {}).get('total_caught', 0)
+
     # ── Gear (NBT) ───────────────────────────────────────────────────────────
     inv = member.get('inventory', {})
     stats['armor']     = parse_nbt_items(inv.get('inv_armor', {}).get('data', ''))
