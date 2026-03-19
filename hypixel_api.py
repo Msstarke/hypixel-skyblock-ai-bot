@@ -187,12 +187,16 @@ class HypixelAPI:
             variants.append(stripped)
         return variants
 
-    async def get_item_price(self, item_id: str) -> float:
+    async def get_item_price(self, item_id: str, allow_auction: bool = False) -> tuple[float, str] | float:
         """
-        BIN-only price lookup. Returns 0 for bid-only items (no BIN listings).
-        Tries apostrophe variants (NECRONS_ / NECRON'S_) for both sources.
+        Price lookup for an item. Returns price (float) by default.
+        If allow_auction=True, returns (price, source_tag) where source_tag is
+        "bin" or "auction" so callers can label the price correctly.
+
+        Lookup chain:
         1. Lowest BIN (moulberry lowestbin.json)
-        2. CoflNet /current lbin field — catches BIN items moulberry may lag on
+        2. CoflNet lbin field
+        3. (if allow_auction) CoflNet median field — covers bid-only AH items
         """
         lbin = await self.get_lowest_bin()
 
@@ -202,36 +206,34 @@ class HypixelAPI:
             self._item_id_variants(item_id)
             + (self._item_id_variants(mapped_id) if mapped_id and mapped_id != item_id else [])
         ))
-        print(f"[get_item_price] item_id={item_id} all_ids={all_ids}")
         for vid in all_ids:
             price = lbin.get(vid, 0)
             if price:
-                print(f"[get_item_price] FOUND in lowestbin: {vid} = {price}")
-                return price
-        # Debug: check similar keys in lowestbin
-        search = item_id.replace("'", "").replace("_", "").lower()
-        similar = [k for k in lbin if k.replace("'", "").replace("_", "").lower().startswith(search[:6])]
-        if similar:
-            print(f"[get_item_price] similar lowestbin keys for '{item_id}': {similar[:10]}")
+                return (price, "bin") if allow_auction else price
 
-        # 2. CoflNet /current lbin field — actual BIN price, not auction average
+        # 2. CoflNet lbin field — actual BIN price
+        coflnet_median = 0
         for vid in all_ids:
             try:
                 url = COFLNET_PRICE_URL.format(item_id=vid)
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
-                        print(f"[get_item_price] CoflNet {vid}: status={resp.status}")
                         if resp.status == 200:
                             data = await resp.json()
                             p = data.get("lbin") or 0
-                            print(f"[get_item_price] CoflNet {vid}: lbin={p}")
                             if p:
-                                return p
-            except Exception as e:
-                print(f"[get_item_price] CoflNet {vid}: error={e}")
+                                return (p, "bin") if allow_auction else p
+                            # Stash median for fallback
+                            if not coflnet_median:
+                                coflnet_median = data.get("median") or data.get("sell") or 0
+            except Exception:
+                pass
 
-        print(f"[get_item_price] NOTHING FOUND for {item_id}")
-        return 0
+        # 3. CoflNet median — bid-only auction price (only if caller opted in)
+        if allow_auction and coflnet_median:
+            return (coflnet_median, "auction")
+
+        return (0, "none") if allow_auction else 0
 
     async def search_ah(self, query: str) -> list[dict]:
         """
