@@ -257,13 +257,19 @@ async def help_command(ctx: commands.Context):
         inline=False
     )
     embed.add_field(
+        name="!correct <topic> | <correction>",
+        value="Submit a correction if the bot gets something wrong. Reviewed by admins.",
+        inline=False
+    )
+    embed.add_field(
         name="Examples",
         value=(
             "`!ai what's the total cost of 655 enchanted diamonds?`\n"
             "`!ai how much profit per hour does a t11 wheat minion make?`\n"
             "`!ai what's the best reforge for berserker armor?`\n"
             "`!bazaar enchanted diamond`\n"
-            "`!flips` / `!flips ah`"
+            "`!flips` / `!flips ah`\n"
+            "`!correct minions | T11 snow minion makes ~1.2M/day with diamond spreading`"
         ),
         inline=False
     )
