@@ -194,7 +194,9 @@ def _infer_use_case(item_id: str) -> str:
     item = item_id.lower()
     if any(x in item for x in ("divan", "glacite", "mineral", "mithril")):
         return "mining"
-    if any(x in item for x in ("necron", "storm", "aurora", "terror", "goldor", "maxor")):
+    if any(x in item for x in ("necron", "storm", "aurora", "terror", "goldor", "maxor",
+                                "power_wither", "wise_wither", "speed_wither", "tank_wither",
+                                "shadow_assassin")):
         return "dungeons"
     if any(x in item for x in ("hyperion", "astraea", "livid", "aote")):
         return "combat"
