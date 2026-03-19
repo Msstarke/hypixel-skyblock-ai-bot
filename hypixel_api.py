@@ -887,21 +887,19 @@ class HypixelAPI:
             if req_parts:
                 lines.append(f"Requirements: {', '.join(req_parts)}")
 
-        # Recipe
-        recipe = item.get("recipe")
+        # Recipe from local database
+        recipe = self.get_recipe(item["id"])
         if recipe:
             recipe_parts = []
-            counts = {}
-            for slot, material_id in recipe.items():
-                if material_id and isinstance(material_id, str):
-                    parts = material_id.split(":")
-                    mat_id = parts[0]
-                    count = int(parts[1]) if len(parts) > 1 else 1
-                    counts[mat_id] = counts.get(mat_id, 0) + count
-            for mat_id, count in counts.items():
+            for mat_id, count in recipe["i"].items():
                 name = mat_id.replace("_", " ").title()
                 recipe_parts.append(f"{count}x {name}")
-            if recipe_parts:
+            rtype = recipe.get("t", "craft")
+            if rtype == "forge":
+                dur = recipe.get("d", 0)
+                dur_str = f" ({dur // 3600}h)" if dur else ""
+                lines.append(f"Recipe (Forge{dur_str}): {', '.join(recipe_parts)}")
+            else:
                 lines.append(f"Recipe: {', '.join(recipe_parts)}")
 
         # Gemstone slots
