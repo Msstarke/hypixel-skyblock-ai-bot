@@ -322,6 +322,48 @@ class HypixelAPI:
         "ARMOR_OF_DIVAN_BOOTS":       "DIVAN_BOOTS",
     }
 
+    async def get_item_star_costs(self, item_id: str) -> dict | None:
+        """
+        Fetch star upgrade costs for a dungeon item from the Hypixel items API.
+        Returns {essence_type, essence_amounts: [star1..star5], is_dungeon: bool} or None.
+        """
+        items_data = await self.get_all_items()
+        api_id = self._ITEMS_API_ID_MAP.get(item_id, item_id)
+        item = items_data.get(api_id) or items_data.get(item_id) or {}
+
+        if not item.get("dungeon_item") or not item.get("upgrade_costs"):
+            return None
+
+        upgrade_costs = item["upgrade_costs"]
+        # Each star level is a list of cost dicts; we sum essence amounts
+        essence_type = None
+        essence_amounts = []
+        for star_costs in upgrade_costs:
+            star_essence = 0
+            for cost in star_costs:
+                if cost.get("type") == "ESSENCE":
+                    essence_type = cost.get("essence_type", essence_type)
+                    star_essence += cost.get("amount", 0)
+            essence_amounts.append(star_essence)
+
+        if not essence_type:
+            return None
+
+        return {
+            "essence_type": essence_type,
+            "essence_amounts": essence_amounts,  # [star1, star2, star3, star4, star5]
+            "is_dungeon": True,
+        }
+
+    # Master star item IDs in order (1st through 5th)
+    MASTER_STAR_IDS = [
+        "FIRST_MASTER_STAR",
+        "SECOND_MASTER_STAR",
+        "THIRD_MASTER_STAR",
+        "FOURTH_MASTER_STAR",
+        "FIFTH_MASTER_STAR",
+    ]
+
     async def get_item_gem_slots(self, item_id: str) -> list[dict]:
         """
         Fetch full gemstone slot data for an item from the Hypixel items API.
