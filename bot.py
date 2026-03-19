@@ -321,6 +321,78 @@ async def reload_knowledge(ctx: commands.Context):
     await ctx.reply(f"Reloaded {len(files)} knowledge files: {', '.join(files)}")
 
 
+@bot.command(name="correct")
+async def correct_command(ctx: commands.Context, *, content: str = None):
+    """Submit a correction: !correct <topic> | <correction>"""
+    if not content or "|" not in content:
+        await ctx.reply("Usage: `!correct <topic> | <the correct info>` — e.g. `!correct snow minion | T11 snow minion with diamond spreading makes ~1.2M/day, not 800k`")
+        return
+
+    topic, correction = content.split("|", 1)
+    topic, correction = topic.strip(), correction.strip()
+    if not topic or not correction:
+        await ctx.reply("Both topic and correction are required. Use `|` to separate them.")
+        return
+
+    row_id = submit_correction(ctx.author.id, str(ctx.author), topic, correction)
+    if row_id is None:
+        await ctx.reply("You already have 3 pending corrections. Wait for them to be reviewed first.")
+        return
+
+    await ctx.reply(f"Correction submitted (#{row_id}). An admin will review it — thanks!")
+
+
+@bot.command(name="corrections")
+@commands.is_owner()
+async def corrections_command(ctx: commands.Context):
+    """List pending corrections (owner only)."""
+    pending = get_pending(10)
+    if not pending:
+        await ctx.reply("No pending corrections.")
+        return
+
+    embed = discord.Embed(title=f"Pending Corrections ({len(pending)})", color=0xF1C40F)
+    for c in pending:
+        embed.add_field(
+            name=f"#{c['id']} — {c['topic']}",
+            value=f"{c['correction'][:200]}\n*— {c['discord_name']}*",
+            inline=False,
+        )
+    embed.set_footer(text="!approve <id> or !reject <id>")
+    await ctx.reply(embed=embed)
+
+
+@bot.command(name="approve")
+@commands.is_owner()
+async def approve_command(ctx: commands.Context, correction_id: int = None):
+    """Approve a pending correction (owner only)."""
+    if correction_id is None:
+        await ctx.reply("Usage: `!approve <id>`")
+        return
+
+    result = approve_correction(correction_id)
+    if not result:
+        await ctx.reply(f"Correction #{correction_id} not found or already reviewed.")
+        return
+
+    ai.knowledge.reload()
+    await ctx.reply(f"Approved #{correction_id} (**{result['topic']}**) — added to knowledge base.")
+
+
+@bot.command(name="reject")
+@commands.is_owner()
+async def reject_command(ctx: commands.Context, correction_id: int = None):
+    """Reject a pending correction (owner only)."""
+    if correction_id is None:
+        await ctx.reply("Usage: `!reject <id>`")
+        return
+
+    if reject_correction(correction_id):
+        await ctx.reply(f"Rejected #{correction_id}.")
+    else:
+        await ctx.reply(f"Correction #{correction_id} not found or already reviewed.")
+
+
 @bot.event
 async def on_command_error(ctx: commands.Context, error):
     if isinstance(error, commands.CommandNotFound):
