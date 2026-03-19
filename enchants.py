@@ -330,30 +330,13 @@ ENCHANTS: list[dict] = [
         "priority": 8,
     },
     {
-        "name": "Fatal Tempo 2",
-        "bazaar_id": "ENCHANTMENT_ULTIMATE_FATAL_TEMPO_2",
+        "name": "Fatal Tempo 1",
+        "bazaar_id": "ENCHANTMENT_ULTIMATE_FATAL_TEMPO_1",
         "types": SWORD_TYPES,
         "use_cases": {"dungeons"},
         "ultimate": True,
         "priority": 10,
         "note": "Best ultimate for dungeon swords (Hyperion, etc).",
-    },
-    {
-        "name": "Chimera 5",
-        "bazaar_id": "ENCHANTMENT_ULTIMATE_CHIMERA_5",
-        "types": SWORD_TYPES,
-        "use_cases": {"combat"},
-        "ultimate": True,
-        "priority": 9,
-        "note": "Very expensive. Copies pet stats to weapon.",
-    },
-    {
-        "name": "Inferno 5",
-        "bazaar_id": "ENCHANTMENT_ULTIMATE_INFERNO_5",
-        "types": SWORD_TYPES,
-        "use_cases": {"combat"},
-        "ultimate": True,
-        "priority": 8,
     },
 
     # ═══════════════════════════════════════════════════════════════════════════
