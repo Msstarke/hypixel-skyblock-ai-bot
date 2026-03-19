@@ -567,19 +567,7 @@ class AIHandler:
 
             result = await self.hypixel.get_hypermaxed_price(dyn_id, reforge_stone_id=stone_id)
             if result:
-                exclude_map = {
-                    "hot potato": "hot_potato_books", "hpb": "hot_potato_books",
-                    "fuming potato": "fuming_potato_books", "fuming": "fuming_potato_books",
-                    "fhpb": "fuming_potato_books",
-                    "recomb": "recombobulator_3000", "recombobulator": "recombobulator_3000",
-                    "art of peace": "art_of_peace", "aop": "art_of_peace",
-                    "reforge": "reforge_stone",
-                    "slot unlock": "slot_unlocking", "unlocking": "slot_unlocking",
-                    "unlock": "slot_unlocking", "gemstone chamber": "slot_unlocking",
-                }
-                if reforge_name:
-                    exclude_map[reforge_name] = "reforge_stone"
-                excluded = {v for phrase, v in exclude_map.items() if phrase in q}
+                excluded = self._build_excluded(q, reforge_name)
 
                 total = sum(v["total"] for k, v in result["breakdown"].items() if k not in excluded)
                 base_price = result["breakdown"]["base_item"]["total"]
