@@ -936,6 +936,22 @@ class AIHandler:
                                         return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins (BIN)\n  {pieces}"
                                     else:
                                         return f"**{aname.title()} Set** — bid-only auction (no BIN prices available)"
+                        # Check ITEM_UPGRADE_MAP first — exact known item IDs, no fuzzy guessing
+                        matched_iid = None
+                        matched_display = None
+                        for iname, iid in sorted(self.ITEM_UPGRADE_MAP.items(), key=lambda x: -len(x[0])):
+                            iname_words = iname.split()
+                            if all(nw in q_words for nw in iname_words):
+                                matched_iid = iid
+                                matched_display = iname.title()
+                                break
+                        if matched_iid:
+                            p = await self.hypixel.get_item_price(matched_iid)
+                            if p:
+                                return f"**{matched_display}** — **{p:,.0f}** coins (lowest BIN)"
+                            else:
+                                return f"**{matched_display}** — bid-only auction (no BIN prices available)"
+
                         # Try bazaar first (fast), then AH
                         baz_match = await self._find_best_bazaar_match(item_phrase)
                         if baz_match:
