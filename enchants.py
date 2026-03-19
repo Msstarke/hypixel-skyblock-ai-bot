@@ -377,8 +377,8 @@ ENCHANTS: list[dict] = [
         "priority": 9,
     },
     {
-        "name": "Dragon Hunter 5",
-        "bazaar_id": "ENCHANTMENT_DRAGON_HUNTER_5",
+        "name": "Dragon Hunter 6",
+        "bazaar_id": "ENCHANTMENT_DRAGON_HUNTER_6",
         "types": BOW_TYPES,
         "use_cases": {"archer"},
         "priority": 7,
