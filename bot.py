@@ -45,6 +45,12 @@ async def on_ready():
     snapshot_bazaar.start()
 
 
+# Track recent bot responses for reaction-based feedback
+# {message_id: (question, response, author_id, author_name)}
+_recent_responses: dict[int, tuple[str, str, int, str]] = {}
+MAX_TRACKED = 200
+
+
 @bot.command(name="ai")
 async def ai_command(ctx: commands.Context, *, question: str = None):
     if not question:
@@ -57,7 +63,20 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
     async with ctx.typing():
         response = await ai.get_response(question, discord_user_id=ctx.author.id)
 
-    await ctx.reply(response)
+    msg = await ctx.reply(response)
+
+    # Add reaction buttons for feedback
+    try:
+        await msg.add_reaction("👍")
+        await msg.add_reaction("👎")
+    except Exception:
+        pass
+
+    # Track for reaction handler
+    _recent_responses[msg.id] = (question, response, ctx.author.id, str(ctx.author))
+    if len(_recent_responses) > MAX_TRACKED:
+        oldest = next(iter(_recent_responses))
+        del _recent_responses[oldest]
 
 
 @bot.command(name="bazaar")
