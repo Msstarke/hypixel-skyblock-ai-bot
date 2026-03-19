@@ -936,7 +936,24 @@ class AIHandler:
                                         return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins (BIN)\n  {pieces}"
                                     else:
                                         return f"**{aname.title()} Set** — bid-only auction (no BIN prices available)"
-                        # Check ITEM_UPGRADE_MAP first — exact known item IDs, no fuzzy guessing
+                        # If query matches a known armor set name and has NO piece-type word,
+                        # treat it as an implicit set query (e.g. "glossy mineral" → full set)
+                        _PIECE_WORDS = {"helmet", "chestplate", "leggings", "boots", "helm", "chest", "legs", "boot"}
+                        if not any(w in _PIECE_WORDS for w in q_words):
+                            for aname, prefix in sorted(self.ARMOR_SETS.items(), key=lambda x: -len(x[0])):
+                                aname_words = aname.split()
+                                if all(w in q_words for w in aname_words):
+                                    prices = await self.hypixel.get_armor_set_prices(prefix)
+                                    if prices:
+                                        total = prices.pop("total")
+                                        pieces = " | ".join(
+                                            f"{slot}: {data['price']:,.0f}" for slot, data in prices.items()
+                                        )
+                                        return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins (BIN)\n  {pieces}"
+                                    else:
+                                        return f"**{aname.title()} Set** — bid-only auction (no BIN prices available)"
+
+                        # Check ITEM_UPGRADE_MAP — exact known item IDs, no fuzzy guessing
                         matched_iid = None
                         matched_display = None
                         for iname, iid in sorted(self.ITEM_UPGRADE_MAP.items(), key=lambda x: -len(x[0])):
