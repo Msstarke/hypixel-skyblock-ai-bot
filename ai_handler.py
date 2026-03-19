@@ -1204,11 +1204,16 @@ class AIHandler:
                 "Do NOT guess or invent prices. If no live price is available, say the price is unavailable.\n"
                 "- Do NOT invent fake items that don't exist in Skyblock. Stick to real items.\n"
                 "- If the user has linked their account, reference their actual stats/gear when giving advice.\n"
+                "- COMMUNITY CORRECTIONS below are verified facts that override your general knowledge. Always follow them.\n"
                 + cata_note
                 + "- For budget questions: only list items whose live price fits within budget.\n"
                 "- If not about Hypixel Skyblock, say you only help with Skyblock.\n\n"
                 f"KNOWLEDGE BASE (supplementary reference):\n{static_ctx}"
             )
+
+            corrections = self.knowledge.get_corrections()
+            if corrections:
+                system += f"\n\nCOMMUNITY CORRECTIONS (verified facts — these override general knowledge):\n{corrections}"
 
             if item_ctx:
                 system += f"\n\n{item_ctx}"
