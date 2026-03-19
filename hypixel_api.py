@@ -598,6 +598,25 @@ class HypixelAPI:
                     "prices": ms_prices,  # individual prices for display
                 }
 
+        # ── Enchantments ─────────────────────────────────────────────────────
+        enchant_list = pick_enchants(item_id)
+        if enchant_list:
+            enchant_total = 0
+            enchant_details = []
+            for e in enchant_list:
+                price = baz_price(e["bazaar_id"])
+                if price > 0:
+                    enchant_total += price
+                    ult_tag = " (ULT)" if e.get("ultimate") else ""
+                    enchant_details.append(f"{e['name']}{ult_tag}: {price:,.0f}")
+            if enchant_total > 0:
+                breakdown["enchantments"] = {
+                    "qty": len(enchant_details),
+                    "unit": enchant_total / len(enchant_details),
+                    "total": enchant_total,
+                    "details": enchant_details,
+                }
+
         # ── Reforge stone ─────────────────────────────────────────────────────
         if reforge_stone_id:
             stone_price = await self.get_reforge_stone_price(reforge_stone_id)
