@@ -501,9 +501,11 @@ class HypixelAPI:
         - 1x Art of Peace
         - Gemstone slot unlock costs (coins + required items per slot)
         - Perfect gemstones for each slot
+        - Enchantments (based on item type and use case)
         - Reforge stone (optional)
         Returns itemised cost dict.
         """
+        from enchants import pick_enchants
         baz, raw_slots, star_info = await asyncio.gather(
             self.get_bazaar(),
             self.get_item_gem_slots(item_id),
