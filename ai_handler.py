@@ -585,29 +585,9 @@ class AIHandler:
                     ])
 
                     excluded = self._build_excluded(q, reforge_name)
-
-                    piece_names = ["Helmet", "Chestplate", "Leggings", "Boots"]
-                    grand_total = 0
-                    piece_totals = []
-                    for r, pname in zip(results, piece_names):
-                        if not r:
-                            piece_totals.append((pname, 0))
-                            continue
-                        ptotal = sum(v["total"] for k, v in r["breakdown"].items() if k not in excluded)
-                        grand_total += ptotal
-                        piece_totals.append((pname, ptotal))
-
-                    if reforge and "reforge_stone" not in excluded:
-                        stat_str = ", ".join(f"+{v} {k.replace('_',' ').title()}" for k, v in reforge["stats"].items())
-                        afford_warn = " ⚠️ expensive relative to item" if not reforge["affordable"] else ""
-                        reforge_label = f" + **{reforge_name.title()}** reforge (×4, {stat_str}){afford_warn}"
-                    else:
-                        reforge_label = ""
-
-                    excl_note = f" *(excl. {', '.join(e.replace('_',' ') for e in excluded)})*" if excluded else ""
-                    lines = [f"**Hypermaxed {set_name}**{reforge_label}{excl_note} — Total: **{grand_total:,.0f} coins**\n"]
-                    for pname, ptotal in piece_totals:
-                        lines.append(f"  {pname}: {ptotal:,.0f}")
+                    lines, grand_total = self._format_set_hypermax(
+                        results, piece_ids, excluded, set_name, reforge, reforge_name
+                    )
                     return "\n".join(lines)
 
         # ── Dynamic item lookup — any item in the game ───────────────────────
