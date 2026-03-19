@@ -382,7 +382,8 @@ class AIHandler:
         # ── Mining ──
         "divan":     ("Divan Armor Set",            ["ARMOR_OF_DIVAN_HELMET",     "ARMOR_OF_DIVAN_CHESTPLATE",     "ARMOR_OF_DIVAN_LEGGINGS",     "ARMOR_OF_DIVAN_BOOTS"]),
         "glacite":   ("Glacite Armor Set",          ["GLACITE_HELMET",            "GLACITE_CHESTPLATE",            "GLACITE_LEGGINGS",            "GLACITE_BOOTS"]),
-        "mineral":   ("Mineral Armor Set",          ["MINERAL_HELMET",            "MINERAL_CHESTPLATE",            "MINERAL_LEGGINGS",            "MINERAL_BOOTS"]),
+        "mineral":        ("Mineral Armor Set",          ["MINERAL_HELMET",         "MINERAL_CHESTPLATE",        "MINERAL_LEGGINGS",        "MINERAL_BOOTS"]),
+        "glossy mineral": ("Glossy Mineral Armor Set", ["GLOSSY_MINERAL_HELMET",   "GLOSSY_MINERAL_CHESTPLATE", "GLOSSY_MINERAL_LEGGINGS", "GLOSSY_MINERAL_BOOTS"]),
         # ── Dungeons — Wither ──
         "necron":    ("Necron Armor Set",           ["NECRONS_HELMET",            "NECRONS_CHESTPLATE",            "NECRONS_LEGGINGS",            "NECRONS_BOOTS"]),
         "storm":     ("Storm Armor Set",            ["STORM_HELMET",              "STORM_CHESTPLATE",              "STORM_LEGGINGS",              "STORM_BOOTS"]),
