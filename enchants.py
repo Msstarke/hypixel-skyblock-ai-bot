@@ -309,7 +309,7 @@ ENCHANTS: list[dict] = [
         "name": "Soul Eater 5",
         "bazaar_id": "ENCHANTMENT_ULTIMATE_SOUL_EATER_5",
         "types": SWORD_TYPES,
-        "use_cases": {"combat", "dungeons"},
+        "use_cases": {"combat"},
         "ultimate": True,
         "priority": 10,
     },
