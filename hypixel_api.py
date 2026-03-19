@@ -430,23 +430,8 @@ class HypixelAPI:
             p = baz.get("products", {}).get(bid, {})
             return p.get("quick_status", {}).get("buyPrice", 0)
 
-        # Base item — try multiple sources in order
-        base = lbin.get(item_id, 0)
-        if not base:
-            base = avg.get(item_id, 0)
-        if not base:
-            # Try coflnet with the items-API ID (e.g. ARMOR_OF_DIVAN_HELMET → DIVAN_HELMET)
-            cofl_id = self._ITEMS_API_ID_MAP.get(item_id, item_id)
-            data = await self.get_reforge_stone_price(cofl_id)
-            base = data or 0
-        if not base:
-            # Try raw coflnet with original ID
-            base = await self.get_reforge_stone_price(item_id)
-        if not base:
-            # Last resort: scan ALL active bid auctions (cached 15 min)
-            terms = BID_ONLY_SEARCH_TERMS.get(item_id)
-            if terms:
-                base = await self.scan_bid_auctions(terms)
+        # Base item — unified price lookup (lbin → coflnet → history → bid scan)
+        base = await self.get_item_price(item_id)
 
         hpb_price  = baz_price("HOT_POTATO_BOOK")
         fhpb_price = baz_price("FUMING_POTATO_BOOK")
