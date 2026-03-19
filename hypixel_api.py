@@ -855,14 +855,14 @@ class HypixelAPI:
         # 5. Word-based match — all query words appear somewhere in item name
         # Handles "titanium drill 655" matching "Titanium Drill DR-X655"
         import re as _re
-        q_words = set(_re.findall(r'[a-z0-9]+', query_lower))
+        q_words = _re.findall(r'[a-z0-9]+', query_lower)
         if len(q_words) >= 2:
             best = None
             best_len = 999
             for item in items.values():
                 name = item.get("name", "").lower()
-                name_tokens = set(_re.findall(r'[a-z0-9]+', name))
-                if q_words.issubset(name_tokens) and len(name) < best_len:
+                # Check each query word is found somewhere in the name string
+                if all(w in name for w in q_words) and len(name) < best_len:
                     best = item
                     best_len = len(name)
             if best:
