@@ -53,6 +53,22 @@ class HypixelAPI:
     def __init__(self, api_key: str):
         self.api_key = api_key
         self._cache: dict = {}
+        self._recipes = self._load_recipes()
+
+    def _load_recipes(self) -> dict:
+        """Load pre-extracted recipe database from data/recipes.json."""
+        path = Path(__file__).parent / "data" / "recipes.json"
+        if path.exists():
+            try:
+                with open(path) as f:
+                    return json.load(f)
+            except Exception:
+                pass
+        return {}
+
+    def get_recipe(self, item_id: str) -> dict | None:
+        """Get recipe for an item. Returns {'i': {mat_id: count, ...}, 'c': output_count} or None."""
+        return self._recipes.get(item_id)
 
     def _cache_valid(self, key: str, ttl: int = CACHE_TTL) -> bool:
         entry = self._cache.get(key)
