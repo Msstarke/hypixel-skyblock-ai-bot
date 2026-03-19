@@ -230,7 +230,7 @@ async def flips_command(ctx: commands.Context, mode: str = "baz", *, extra: str 
         await ctx.reply(embed=embed)
 
 
-@bot.command(name="skyblock")
+@bot.command(name="skyblock", aliases=["help"])
 async def help_command(ctx: commands.Context):
     embed = discord.Embed(
         title="Hypixel Skyblock AI Bot",
