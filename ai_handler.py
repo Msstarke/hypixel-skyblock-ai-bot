@@ -421,6 +421,74 @@ class AIHandler:
         # Normalised set for set/piece token matching — strip trailing 's' so "divans" matches "divan"
         q_tokens_norm = {t.rstrip("s") if len(t) > 4 else t for t in q_tokens}
 
+        # ── Mixed 3/4 set — check FIRST so it isn't swallowed by single-piece match ──
+        if re.search(r'3\s*/\s*4', q):
+            base_set_name  = None
+            base_piece_ids = None
+            for st, (sn, ids) in self.ITEM_SET_MAP.items():
+                if st in q_tokens_norm:
+                    base_set_name  = sn
+                    base_piece_ids = list(ids)
+                    break
+
+            rep_id   = None
+            rep_slot = None
+            SLOT_IDX = {"helmet": 0, "chestplate": 1, "leggings": 2, "boots": 3}
+            if base_piece_ids:
+                for iname, iid in self.ITEM_UPGRADE_MAP.items():
+                    iname_words = iname.split()
+                    if (iid not in base_piece_ids
+                            and all(any(qt.startswith(nw) for qt in q_tokens) for nw in iname_words)):
+                        rep_id = iid
+                        for slot_word, idx in SLOT_IDX.items():
+                            if slot_word in iname:
+                                rep_slot = idx
+                                break
+                        if rep_slot is None:
+                            rep_slot = 0
+                        break
+
+            if base_piece_ids and rep_id is not None and rep_slot is not None:
+                pieces = list(base_piece_ids)
+                pieces[rep_slot] = rep_id
+                slot_labels = ["Helmet", "Chestplate", "Leggings", "Boots"]
+
+                lbin = await self.hypixel.get_lowest_bin()
+                item_price = lbin.get(rep_id, 0) or lbin.get(pieces[0], 0)
+                reforge, stone_prices = await self._resolve_reforge(question, rep_id, item_price)
+                stone_id     = reforge["stone"] if reforge else None
+                reforge_name = reforge["name"]  if reforge else None
+
+                results = await asyncio.gather(*[
+                    self.hypixel.get_hypermaxed_price(pid, reforge_stone_id=stone_id)
+                    for pid in pieces
+                ])
+                excluded = self._build_excluded(q, reforge_name)
+
+                grand_total = 0
+                piece_totals = []
+                for r, pname in zip(results, slot_labels):
+                    if not r:
+                        piece_totals.append((pname, 0))
+                        continue
+                    ptotal = sum(v["total"] for k, v in r["breakdown"].items() if k not in excluded)
+                    grand_total += ptotal
+                    piece_totals.append((pname, ptotal))
+
+                rep_display  = next((n.title() for n, i in self.ITEM_UPGRADE_MAP.items() if i == rep_id), rep_id.replace("_", " ").title())
+                base_display = base_set_name.replace(" Armor Set", "")
+                if reforge and "reforge_stone" not in excluded:
+                    stat_str = ", ".join(f"+{v} {k.replace('_',' ').title()}" for k, v in reforge["stats"].items())
+                    afford_warn = " ⚠️ expensive relative to item" if not reforge["affordable"] else ""
+                    reforge_label = f" + **{reforge_name.title()}** reforge (×4, {stat_str}){afford_warn}"
+                else:
+                    reforge_label = ""
+                excl_note = f" *(excl. {', '.join(e.replace('_',' ') for e in excluded)})*" if excluded else ""
+                lines = [f"**Hypermaxed 3/4 {base_display} + {rep_display}**{reforge_label}{excl_note} — Total: **{grand_total:,.0f} coins**\n"]
+                for pname, ptotal in piece_totals:
+                    lines.append(f"  {pname}: {ptotal:,.0f}")
+                return "\n".join(lines)
+
         for name, item_id in self.ITEM_UPGRADE_MAP.items():
             name_words = name.split()
             # All words in the item name must appear in the question (prefix match for plurals)
