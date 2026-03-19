@@ -269,6 +269,48 @@ async def help_command(ctx: commands.Context):
     await ctx.send(embed=embed)
 
 
+@bot.command(name="link")
+async def link_command(ctx: commands.Context, *, username: str = None):
+    """Link your Discord account to your Minecraft IGN for personalized advice."""
+    if not username:
+        # Check if already linked
+        existing = get_linked_username(ctx.author.id)
+        if existing:
+            await ctx.reply(f"You're linked as **{existing}**. Use `!unlink` to remove or `!link <new_ign>` to change.")
+        else:
+            await ctx.reply("Usage: `!link <minecraft_ign>` — Links your account so I can give personalized advice.")
+        return
+
+    username = username.strip().split()[0]  # take first word only
+    if len(username) < 3 or len(username) > 16:
+        await ctx.reply("That doesn't look like a valid Minecraft username (3-16 characters).")
+        return
+
+    async with ctx.typing():
+        # Verify the username exists on Hypixel
+        try:
+            data = await ai.hypixel.get_player_data(username)
+        except Exception:
+            data = None
+
+    if not data:
+        await ctx.reply(f"Couldn't find Hypixel Skyblock data for **{username}**. Check the spelling and make sure Skyblock API is enabled in Hypixel settings.")
+        return
+
+    link_user(ctx.author.id, username)
+    profile = data.get("profile_name", "?")
+    await ctx.reply(f"Linked! **{username}** (profile: {profile}). I'll now use your stats for personalized advice when you use `!ai`.")
+
+
+@bot.command(name="unlink")
+async def unlink_command(ctx: commands.Context):
+    """Unlink your Minecraft account."""
+    if unlink_user(ctx.author.id):
+        await ctx.reply("Unlinked. I'll no longer auto-fetch your stats.")
+    else:
+        await ctx.reply("You don't have a linked account. Use `!link <ign>` to link one.")
+
+
 @bot.command(name="reload")
 @commands.is_owner()
 async def reload_knowledge(ctx: commands.Context):
