@@ -841,9 +841,11 @@ class AIHandler:
                 try:
                     prices = await self.hypixel.get_armor_set_prices(prefix)
                     if prices:
+                        prices.pop("has_auction", False)
                         total = prices.pop("total")
                         pieces = " | ".join(
                             f"{slot}: {data['price']:,.0f}" for slot, data in prices.items()
+                            if isinstance(data, dict)
                         )
                         lines.append(f"{name.title()} full set: {total:,.0f} coins ({pieces})")
                 except Exception:
