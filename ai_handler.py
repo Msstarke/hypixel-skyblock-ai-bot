@@ -810,6 +810,7 @@ class AIHandler:
         "fervor": "FERVOR",
         "crimson": "CRIMSON",
         "necron": "NECRONS",
+        "necrons": "NECRONS",
         "wither": "WITHER",
         "shadow assassin": "SHADOW_ASSASSIN",
         "superior dragon": "SUPERIOR_DRAGON",
