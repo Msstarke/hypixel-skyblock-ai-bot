@@ -548,14 +548,20 @@ class HypixelAPI:
             "leggings":   f"{set_id_prefix}_LEGGINGS",
             "boots":      f"{set_id_prefix}_BOOTS",
         }
-        prices = await asyncio.gather(*[self.get_item_price(pid) for pid in piece_ids.values()])
+        price_results = await asyncio.gather(*[
+            self.get_item_price(pid, allow_auction=True) for pid in piece_ids.values()
+        ])
         result = {}
-        for (slot, item_id), price in zip(piece_ids.items(), prices):
+        has_auction = False
+        for (slot, item_id), (price, source) in zip(piece_ids.items(), price_results):
             if price:
-                result[slot] = {"id": item_id, "price": price}
+                result[slot] = {"id": item_id, "price": price, "source": source}
+                if source == "auction":
+                    has_auction = True
         if not result:
             return None
-        result["total"] = sum(v["price"] for v in result.values())
+        result["total"] = sum(v["price"] for v in result.values() if isinstance(v, dict))
+        result["has_auction"] = has_auction
         return result
 
     async def get_bazaar_flips(self, min_margin_pct: float = 1.5, min_volume: int = 5_000, top_n: int = 15) -> list[dict]:
