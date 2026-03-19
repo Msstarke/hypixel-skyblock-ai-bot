@@ -420,8 +420,76 @@ class AIHandler:
                         lines.append(f"  {label_fmt}: {data['total']:,.0f}")
                 return "\n".join(lines)
 
-        # Hypermax keywords were present but no item in ITEM_UPGRADE_MAP matched
-        return "I don't recognize that item for a hypermax calculation. Supported items: Divan armor, Glacite armor, Necron armor, Storm armor, Aurora armor, Terror armor, Hyperion, Terminator, Livid Dagger."
+        # ── Full armor set match ─────────────────────────────────────────────
+        # If no individual piece matched, check if a set name is in the question
+        # and no piece-type word (helmet/chestplate/etc.) was specified
+        if not any(pt in q_tokens for pt in self._PIECE_TOKENS):
+            for set_token, (set_name, piece_ids) in self.ITEM_SET_MAP.items():
+                if set_token in q_tokens:
+                    desired_stat = self._detect_desired_stat(question)
+                    lbin = await self.hypixel.get_lowest_bin()
+
+                    from reforges import REFORGES
+                    stone_ids = list({d["stone"] for d in REFORGES.values() if d.get("stone")})
+                    prices_list = await asyncio.gather(
+                        *[self.hypixel.get_reforge_stone_price(sid) for sid in stone_ids]
+                    )
+                    stone_prices = dict(zip(stone_ids, prices_list))
+
+                    # Use first piece (helmet) to pick reforge — same reforge applies to all
+                    item_price = lbin.get(piece_ids[0], 0)
+                    reforge = pick_reforge(piece_ids[0], desired_stat=desired_stat,
+                                           item_price=item_price, stone_prices=stone_prices)
+                    stone_id   = reforge["stone"] if reforge else None
+                    reforge_name = reforge["name"] if reforge else None
+
+                    # Calculate all 4 pieces in parallel
+                    results = await asyncio.gather(*[
+                        self.hypixel.get_hypermaxed_price(pid, reforge_stone_id=stone_id)
+                        for pid in piece_ids
+                    ])
+
+                    # Parse exclusions same as single-piece
+                    exclude_map = {
+                        "hot potato": "hot_potato_books", "hpb": "hot_potato_books",
+                        "fuming potato": "fuming_potato_books", "fuming": "fuming_potato_books",
+                        "fhpb": "fuming_potato_books",
+                        "recomb": "recombobulator_3000", "recombobulator": "recombobulator_3000",
+                        "art of peace": "art_of_peace", "aop": "art_of_peace",
+                        "reforge": "reforge_stone",
+                        "slot unlock": "slot_unlocking", "unlocking": "slot_unlocking",
+                        "unlock": "slot_unlocking", "gemstone chamber": "slot_unlocking",
+                    }
+                    if reforge_name:
+                        exclude_map[reforge_name] = "reforge_stone"
+                    excluded = {v for phrase, v in exclude_map.items() if phrase in q}
+
+                    piece_names = ["Helmet", "Chestplate", "Leggings", "Boots"]
+                    grand_total = 0
+                    piece_totals = []
+                    for r, pname in zip(results, piece_names):
+                        if not r:
+                            piece_totals.append((pname, 0))
+                            continue
+                        ptotal = sum(v["total"] for k, v in r["breakdown"].items() if k not in excluded)
+                        grand_total += ptotal
+                        piece_totals.append((pname, ptotal))
+
+                    if reforge and "reforge_stone" not in excluded:
+                        stat_str = ", ".join(f"+{v} {k.replace('_',' ').title()}" for k, v in reforge["stats"].items())
+                        afford_warn = " ⚠️ expensive relative to item" if not reforge["affordable"] else ""
+                        reforge_label = f" + **{reforge_name.title()}** reforge (×4, {stat_str}){afford_warn}"
+                    else:
+                        reforge_label = ""
+
+                    excl_note = f" *(excl. {', '.join(e.replace('_',' ') for e in excluded)})*" if excluded else ""
+                    lines = [f"**Hypermaxed {set_name}**{reforge_label}{excl_note} — Total: **{grand_total:,.0f} coins**\n"]
+                    for pname, ptotal in piece_totals:
+                        lines.append(f"  {pname}: {ptotal:,.0f}")
+                    return "\n".join(lines)
+
+        # Hypermax keywords were present but no item matched
+        return "I don't recognize that item for a hypermax calculation. Try specifying a piece (e.g. 'divan helmet') or a set (e.g. 'divan armor', 'necron armor')."
 
     def _detect_desired_stat(self, question: str) -> str | None:
         """Extract a desired stat from phrases like 'with more intelligence', 'for mage', 'i want str'."""
