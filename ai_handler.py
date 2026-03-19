@@ -779,6 +779,9 @@ class AIHandler:
             "stars":            "essence_stars",
             "essence":          "essence_stars",
             "master star":      "master_stars",
+            "enchant":          "enchantments",
+            "enchants":         "enchantments",
+            "enchantment":      "enchantments",
         }
         # "no stars" excludes both essence stars and master stars
         if re.search(r'\bno\s+stars?\b|\bwithout\s+stars?\b', q):
