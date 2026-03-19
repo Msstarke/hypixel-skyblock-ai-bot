@@ -690,10 +690,11 @@ class AIHandler:
         """
         from reforges import REFORGES
         q = question.lower()
+        TRIGGER_WORDS = r"(?:with|use|using|apply|applying|want|reforge(?:d)?\s+(?:with|to|as)?)"
         for key, data in REFORGES.items():
             clean = key.replace("_weapon", "")
-            # Match "with jaded", "use jaded", "jaded reforge", or just "jaded" near reforge word
-            if re.search(rf"\b{re.escape(clean)}\b", q):
+            # Match "with jaded", "use jaded", "jaded reforge", "reforge with jaded"
+            if re.search(rf"(?:{TRIGGER_WORDS}\s+{re.escape(clean)}|{re.escape(clean)}\s+reforge)", q):
                 return {
                     "name":        clean,
                     "stone":       data["stone"],
