@@ -4,6 +4,7 @@ from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from ai_handler import AIHandler
 from bazaar_tracker import BazaarTracker, SNAPSHOT_INTERVAL
+from user_links import link_user, unlink_user, get_linked_username
 
 load_dotenv()
 
