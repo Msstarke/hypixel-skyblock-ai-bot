@@ -53,7 +53,7 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
         return  # silently ignore if channel-restricted
 
     async with ctx.typing():
-        response = await ai.get_response(question)
+        response = await ai.get_response(question, discord_user_id=ctx.author.id)
 
     await ctx.reply(response)
 
