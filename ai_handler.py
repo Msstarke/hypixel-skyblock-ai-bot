@@ -409,6 +409,26 @@ class AIHandler:
         "giants sword":              "GIANTS_SWORD",
         "flower of truth":           "FLOWER_OF_TRUTH",
         "valkyrie":                  "VALKYRIE",
+        "shadow fury":               "SHADOW_FURY",
+        "bonzo staff":               "BONZO_STAFF",
+        "spirit sceptre":            "SPIRIT_SCEPTRE",
+        "last breath":               "LAST_BREATH",
+        "necron blade":              "NECRON_BLADE",
+        "astraea":                   "ASTRAEA",
+        "scylla":                    "SCYLLA",
+        # ── Drills ──
+        "titanium drill 655":        "TITANIUM_DRILL_4",
+        "titanium drill 555":        "TITANIUM_DRILL_3",
+        "titanium drill 455":        "TITANIUM_DRILL_2",
+        "titanium drill 355":        "TITANIUM_DRILL_1",
+        "mithril drill 326":         "MITHRIL_DRILL_2",
+        "mithril drill 226":         "MITHRIL_DRILL_1",
+        "gemstone drill":            "GEMSTONE_DRILL_4",
+        "divans drill":              "DIVAN_DRILL",
+        "divan drill":               "DIVAN_DRILL",
+        # ── Pickaxes ──
+        "pickonimbus":               "PICKONIMBUS",
+        "gemstone gauntlet":         "GEMSTONE_GAUNTLET",
     }
 
     # Full armor set aliases — matched when user says "mineral set" / "necron armor" etc.
