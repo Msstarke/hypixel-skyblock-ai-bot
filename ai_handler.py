@@ -503,10 +503,12 @@ class AIHandler:
                      if w not in dyn_stopwords and len(w) > 2]
 
         found_item = None
-        # Try longest phrases first
+        # Try longest phrases first; single words require 5+ chars to avoid false matches
         for length in range(min(4, len(dyn_words)), 0, -1):
             for i in range(len(dyn_words) - length + 1):
                 phrase = " ".join(dyn_words[i:i + length])
+                if length == 1 and len(phrase) < 5:
+                    continue
                 try:
                     item = await self.hypixel.find_item(phrase)
                     if item:
