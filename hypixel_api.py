@@ -1,6 +1,8 @@
 import asyncio
 import aiohttp
+import json
 import time
+from pathlib import Path
 from typing import Optional
 
 BAZAAR_URL = "https://api.hypixel.net/v2/skyblock/bazaar"
