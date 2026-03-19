@@ -276,6 +276,10 @@ class AIHandler:
         "mineral chestplate":        "MINERAL_CHESTPLATE",
         "mineral leggings":          "MINERAL_LEGGINGS",
         "mineral boots":             "MINERAL_BOOTS",
+        "glossy mineral helmet":     "GLOSSY_MINERAL_HELMET",
+        "glossy mineral chestplate": "GLOSSY_MINERAL_CHESTPLATE",
+        "glossy mineral leggings":   "GLOSSY_MINERAL_LEGGINGS",
+        "glossy mineral boots":      "GLOSSY_MINERAL_BOOTS",
         # ── Dungeons — Wither ──
         "necron helmet":             "NECRONS_HELMET",
         "necron chestplate":         "NECRONS_CHESTPLATE",
