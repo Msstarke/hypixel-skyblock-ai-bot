@@ -584,7 +584,8 @@ class AIHandler:
                     grand_total += ptotal
                     piece_totals.append((pname, ptotal))
 
-                rep_display  = rep_id.replace("_", " ").title()
+                # Friendly name: find the alias used to match (e.g. "divan helmet" → "Divan Helmet")
+                rep_display  = next((n.title() for n, i in self.ITEM_UPGRADE_MAP.items() if i == rep_id), rep_id.replace("_", " ").title())
                 base_display = base_set_name.replace(" Armor Set", "")
                 if reforge and "reforge_stone" not in excluded:
                     stat_str = ", ".join(f"+{v} {k.replace('_',' ').title()}" for k, v in reforge["stats"].items())
