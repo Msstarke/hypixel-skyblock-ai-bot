@@ -824,9 +824,9 @@ class AIHandler:
         "revenant": "REVENANT",
         "mastiff": "MASTIFF",
         "hollow": "HOLLOW",
-        "goldor": "GOLDOR",
-        "storm": "STORM",
-        "maxor": "MAXOR",
+        "goldor": "TANK_WITHER",
+        "storm": "WISE_WITHER",
+        "maxor": "SPEED_WITHER",
     }
 
     async def _build_armor_set_context(self, question: str, kb_text: str = "") -> str:
