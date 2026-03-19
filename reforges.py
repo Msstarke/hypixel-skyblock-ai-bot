@@ -61,12 +61,19 @@ REFORGES: dict[str, dict] = {
         "use_cases":  {"mining"},
         "note":       "Best mining fortune reforge (~3.4M stone).",
     },
+    "ancient": {
+        "stone":      "PRECURSOR_GEAR",
+        "types":      ARMOR_SLOTS,
+        "stats":      {"crit_chance": 2, "strength": 4, "crit_damage": 6, "intelligence": 7, "health": 7},
+        "use_cases":  {"combat", "dungeons", "berserk", "archer"},
+        "note":       "Best reforge for dungeon armor (Necron, SA, etc). +1 crit damage per Catacombs level (~1.2M stone).",
+    },
     "renowned": {
         "stone":      "DRAGON_HORN",
         "types":      ARMOR_SLOTS,
         "stats":      {"strength": 4, "crit_damage": 4, "defense": 15, "health": 15},
-        "use_cases":  {"combat", "dungeons"},
-        "note":       "Best all-round combat reforge (~5.8M stone).",
+        "use_cases":  {"tank", "general"},
+        "note":       "Good all-round reforge with defense (~5.8M stone). Outclassed by Ancient for damage builds.",
     },
     "necrotic": {
         "stone":      "NECROMANCER_BROOCH",
