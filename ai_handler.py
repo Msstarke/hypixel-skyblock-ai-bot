@@ -962,9 +962,21 @@ class AIHandler:
             return ""
         return "Auction House prices (live):\n" + "\n".join(lines)
 
-    async def get_response(self, question: str) -> str:
+    async def get_response(self, question: str, discord_user_id: int = None) -> str:
         async with self.semaphore:
             price_question = self._needs_live_data(question)
+
+            # --- Linked player context (auto-fetch if linked) ---
+            linked_summary = ""
+            if discord_user_id:
+                linked_ign = get_linked_username(discord_user_id)
+                if linked_ign:
+                    try:
+                        pdata = await self.hypixel.get_player_data(linked_ign)
+                        if pdata and pdata.get("summary"):
+                            linked_summary = pdata["summary"]
+                    except Exception:
+                        pass  # silently skip if fetch fails
 
             # --- Player data path ---
             username = self._extract_username(question)
