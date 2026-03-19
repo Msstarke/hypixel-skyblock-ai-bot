@@ -237,16 +237,18 @@ def pick_reforge(
             else:
                 score = 0
 
-        # Flag as unaffordable if stone costs more than 50% of item value
-        # Hard-penalise if stone costs more than the item itself (e.g. jaded on glacite helmet)
+        # Penalise if stone costs vastly more than the item — signals wrong build tier.
+        # Threshold: 10x (not 5x or 1x) because mining builds routinely use Jaderald (~3.4M)
+        # on mid-tier armor like Mineral Helmet (~1-3M). Only truly absurd ratios get penalised.
         if item_price > 0 and stone_price > 0:
-            if stone_price > item_price * 5:
-                # Stone costs 5x+ the item — essentially unusable (e.g. jaded on glacite helmet)
+            if stone_price > item_price * 10:
+                # Stone costs 10x+ the item — essentially unusable
                 affordable = False
                 score = score * 0.001
-            elif stone_price > item_price:
+            elif stone_price > item_price * 3:
+                # Stone costs 3–10x the item — warn but still consider
                 affordable = False
-                score = score * 0.1
+                score = score * 0.5
             elif stone_price > item_price * 0.5:
                 affordable = False
 
