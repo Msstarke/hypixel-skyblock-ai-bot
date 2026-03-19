@@ -108,6 +108,10 @@ class KnowledgeBase:
     def list_files(self) -> list[str]:
         return list(self._files.keys())
 
+    def get_corrections(self) -> str:
+        """Return community corrections content, or empty string if none."""
+        return self._files.get("community_corrections.md", "")
+
     def get_relevant_knowledge(self, question: str, max_chars: int = 35000) -> str:
         q = question.lower()
         q_norm = re.sub(r"[^\w\s]", "", q)
