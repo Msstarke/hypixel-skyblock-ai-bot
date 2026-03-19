@@ -254,4 +254,33 @@ def format_for_ai(username: str, profile_name: str, stats: dict) -> str:
     if hotbar:
         lines.append("Hotbar: " + ", ".join(hotbar))
 
+    # Collections (group by category)
+    collections = stats.get('collections', {})
+    if collections:
+        COLLECTION_CATEGORIES = {
+            'Mining': ['COBBLESTONE', 'COAL', 'IRON_INGOT', 'GOLD_INGOT', 'DIAMOND', 'LAPIS_LAZULI',
+                       'EMERALD', 'REDSTONE', 'QUARTZ', 'OBSIDIAN', 'GLOWSTONE_DUST', 'GRAVEL',
+                       'ICE', 'NETHERRACK', 'SAND', 'ENDER_STONE', 'MITHRIL_ORE', 'HARD_STONE',
+                       'GEMSTONE_COLLECTION', 'SULPHUR_ORE', 'MYCEL', 'RED_SAND'],
+            'Combat': ['ROTTEN_FLESH', 'BONE', 'STRING', 'SPIDER_EYE', 'GUNPOWDER', 'ENDER_PEARL',
+                        'GHAST_TEAR', 'SLIME_BALL', 'BLAZE_ROD', 'MAGMA_CREAM',
+                        'ENCHANTED_ROTTEN_FLESH'],
+            'Farming': ['WHEAT', 'CARROT_ITEM', 'POTATO_ITEM', 'PUMPKIN', 'MELON', 'SEEDS',
+                        'MUSHROOM_COLLECTION', 'NETHER_STALK', 'CACTUS', 'SUGAR_CANE',
+                        'FEATHER', 'LEATHER', 'PORK', 'RAW_CHICKEN', 'MUTTON', 'RABBIT',
+                        'COCOA'],
+            'Fishing': ['RAW_FISH', 'RAW_FISH:1', 'RAW_FISH:2', 'RAW_FISH:3', 'PRISMARINE_SHARD',
+                        'PRISMARINE_CRYSTALS', 'CLAY_BALL', 'WATER_LILY', 'INK_SACK',
+                        'SPONGE', 'MAGMA_FISH'],
+            'Foraging': ['LOG', 'LOG:1', 'LOG:2', 'LOG_2:1', 'LOG_2', 'LOG:3'],
+        }
+        for cat, item_ids in COLLECTION_CATEGORIES.items():
+            cat_colls = []
+            for cid in item_ids:
+                if cid in collections:
+                    name = cid.replace('_', ' ').title().replace(':1', '').replace(':2', '').replace(':3', '')
+                    cat_colls.append(f"{name}: {collections[cid]:,}")
+            if cat_colls:
+                lines.append(f"Collections ({cat}): " + " | ".join(cat_colls))
+
     return "\n".join(lines)
