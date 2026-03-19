@@ -423,10 +423,20 @@ class AIHandler:
 
         # ── Mixed 3/4 set — check FIRST so it isn't swallowed by single-piece match ──
         if re.search(r'3\s*/\s*4', q):
+            # Split at "with" so we only look for the base set BEFORE "with"
+            # and the replacement piece AFTER "with"
+            split_parts = re.split(r'\bwith\b', q, maxsplit=1)
+            q_before = split_parts[0]
+            q_after  = split_parts[1] if len(split_parts) > 1 else ""
+
+            tokens_before = re.sub(r"[^a-z0-9\s]", "", re.sub(r"'s?\b", "", q_before)).split()
+            tokens_before_norm = {t.rstrip("s") if len(t) > 4 else t for t in tokens_before}
+            tokens_after = re.sub(r"[^a-z0-9\s]", "", re.sub(r"'s?\b", "", q_after)).split()
+
             base_set_name  = None
             base_piece_ids = None
             for st, (sn, ids) in self.ITEM_SET_MAP.items():
-                if st in q_tokens_norm:
+                if st in tokens_before_norm:
                     base_set_name  = sn
                     base_piece_ids = list(ids)
                     break
@@ -438,7 +448,7 @@ class AIHandler:
                 for iname, iid in self.ITEM_UPGRADE_MAP.items():
                     iname_words = iname.split()
                     if (iid not in base_piece_ids
-                            and all(any(qt.startswith(nw) for qt in q_tokens) for nw in iname_words)):
+                            and all(any(t.startswith(nw) for t in tokens_after) for nw in iname_words)):
                         rep_id = iid
                         for slot_word, idx in SLOT_IDX.items():
                             if slot_word in iname:
