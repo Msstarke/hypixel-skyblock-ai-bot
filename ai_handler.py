@@ -594,20 +594,10 @@ class AIHandler:
         if found_item:
             dyn_id   = found_item["id"]
             dyn_name = found_item.get("name", dyn_id.replace("_", " ").title())
-            desired_stat = self._detect_desired_stat(question)
 
             lbin = await self.hypixel.get_lowest_bin()
             item_price = lbin.get(dyn_id, 0)
-
-            from reforges import REFORGES
-            stone_ids = list({d["stone"] for d in REFORGES.values() if d.get("stone")})
-            prices_list = await asyncio.gather(
-                *[self.hypixel.get_reforge_stone_price(sid) for sid in stone_ids]
-            )
-            stone_prices = dict(zip(stone_ids, prices_list))
-
-            reforge = pick_reforge(dyn_id, desired_stat=desired_stat,
-                                   item_price=item_price, stone_prices=stone_prices)
+            reforge, stone_prices = await self._resolve_reforge(question, dyn_id, item_price)
             stone_id     = reforge["stone"] if reforge else None
             reforge_name = reforge["name"]  if reforge else None
 
