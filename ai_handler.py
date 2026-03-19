@@ -505,7 +505,7 @@ class AIHandler:
                     lines.append(f"  {pname}: {ptotal:,.0f}")
                 return "\n".join(lines)
 
-        for name, item_id in self.ITEM_UPGRADE_MAP.items():
+        for name, item_id in sorted(self.ITEM_UPGRADE_MAP.items(), key=lambda x: -len(x[0])):
             name_words = name.split()
             # All words in the item name must appear in the question (prefix match for plurals)
             if all(any(qt.startswith(nw) for qt in q_tokens) for nw in name_words):
