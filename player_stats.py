@@ -188,6 +188,9 @@ def parse_member(member: dict) -> dict:
         member.get('coin_purse', 0)
     )
 
+    # ── Collections ───────────────────────────────────────────────────────────
+    stats['collections'] = member.get('collection') or {}
+
     # ── Gear (NBT) ───────────────────────────────────────────────────────────
     inv = member.get('inventory', {})
     stats['armor']     = parse_nbt_items(inv.get('inv_armor', {}).get('data', ''))
