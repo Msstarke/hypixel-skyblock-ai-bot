@@ -510,22 +510,12 @@ class AIHandler:
         if not any(pt in q_tokens_norm for pt in self._PIECE_TOKENS):
             for set_token, (set_name, piece_ids) in self.ITEM_SET_MAP.items():
                 if set_token in q_tokens_norm:
-                    desired_stat = self._detect_desired_stat(question)
-                    lbin = await self.hypixel.get_lowest_bin()
-
-                    from reforges import REFORGES
-                    stone_ids = list({d["stone"] for d in REFORGES.values() if d.get("stone")})
-                    prices_list = await asyncio.gather(
-                        *[self.hypixel.get_reforge_stone_price(sid) for sid in stone_ids]
-                    )
-                    stone_prices = dict(zip(stone_ids, prices_list))
-
                     # Use first piece (helmet) to pick reforge — same reforge applies to all
+                    lbin = await self.hypixel.get_lowest_bin()
                     item_price = lbin.get(piece_ids[0], 0)
-                    reforge = pick_reforge(piece_ids[0], desired_stat=desired_stat,
-                                           item_price=item_price, stone_prices=stone_prices)
-                    stone_id   = reforge["stone"] if reforge else None
-                    reforge_name = reforge["name"] if reforge else None
+                    reforge, stone_prices = await self._resolve_reforge(question, piece_ids[0], item_price)
+                    stone_id     = reforge["stone"] if reforge else None
+                    reforge_name = reforge["name"]  if reforge else None
 
                     # Calculate all 4 pieces in parallel
                     results = await asyncio.gather(*[
