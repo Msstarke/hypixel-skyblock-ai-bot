@@ -490,8 +490,108 @@ class AIHandler:
                         lines.append(f"  {pname}: {ptotal:,.0f}")
                     return "\n".join(lines)
 
+        # ── Dynamic item lookup — any item in the game ───────────────────────
+        # Strip hypermax keywords and try to find any Hypixel item in the question
+        q_stripped = q
+        for kw in ["hypermaxed", "hypermax", "hyper max", "maxed out", "fully maxed",
+                   "max out", "fully upgraded", "max price", "max cost"]:
+            q_stripped = q_stripped.replace(kw, "")
+        dyn_stopwords = {"what", "is", "the", "a", "an", "of", "for", "how", "much",
+                         "does", "cost", "price", "worth", "my", "i", "to", "and", "or",
+                         "armor", "weapon", "item", "gear", "set", "piece"}
+        dyn_words = [w for w in re.sub(r"[^\w\s]", "", q_stripped).split()
+                     if w not in dyn_stopwords and len(w) > 2]
+
+        found_item = None
+        # Try longest phrases first
+        for length in range(min(4, len(dyn_words)), 0, -1):
+            for i in range(len(dyn_words) - length + 1):
+                phrase = " ".join(dyn_words[i:i + length])
+                try:
+                    item = await self.hypixel.find_item(phrase)
+                    if item:
+                        found_item = item
+                        break
+                except Exception:
+                    pass
+            if found_item:
+                break
+
+        if found_item:
+            dyn_id   = found_item["id"]
+            dyn_name = found_item.get("name", dyn_id.replace("_", " ").title())
+            desired_stat = self._detect_desired_stat(question)
+
+            lbin = await self.hypixel.get_lowest_bin()
+            item_price = lbin.get(dyn_id, 0)
+
+            from reforges import REFORGES
+            stone_ids = list({d["stone"] for d in REFORGES.values() if d.get("stone")})
+            prices_list = await asyncio.gather(
+                *[self.hypixel.get_reforge_stone_price(sid) for sid in stone_ids]
+            )
+            stone_prices = dict(zip(stone_ids, prices_list))
+
+            reforge = pick_reforge(dyn_id, desired_stat=desired_stat,
+                                   item_price=item_price, stone_prices=stone_prices)
+            stone_id     = reforge["stone"] if reforge else None
+            reforge_name = reforge["name"]  if reforge else None
+
+            result = await self.hypixel.get_hypermaxed_price(dyn_id, reforge_stone_id=stone_id)
+            if result:
+                exclude_map = {
+                    "hot potato": "hot_potato_books", "hpb": "hot_potato_books",
+                    "fuming potato": "fuming_potato_books", "fuming": "fuming_potato_books",
+                    "fhpb": "fuming_potato_books",
+                    "recomb": "recombobulator_3000", "recombobulator": "recombobulator_3000",
+                    "art of peace": "art_of_peace", "aop": "art_of_peace",
+                    "reforge": "reforge_stone",
+                    "slot unlock": "slot_unlocking", "unlocking": "slot_unlocking",
+                    "unlock": "slot_unlocking", "gemstone chamber": "slot_unlocking",
+                }
+                if reforge_name:
+                    exclude_map[reforge_name] = "reforge_stone"
+                excluded = {v for phrase, v in exclude_map.items() if phrase in q}
+
+                total = sum(v["total"] for k, v in result["breakdown"].items() if k not in excluded)
+                base_price = result["breakdown"]["base_item"]["total"]
+                base_note  = f"{base_price:,.0f} (lowest BIN)" if base_price > 0 else "price unavailable — bid-only AH item, add manually"
+                excl_note  = f" *(excl. {', '.join(e.replace('_',' ') for e in excluded)})*" if excluded else ""
+
+                if reforge and "reforge_stone" not in excluded:
+                    stat_str = ", ".join(f"+{v} {k.replace('_',' ').title()}" for k, v in reforge["stats"].items())
+                    afford_warn = " ⚠️ expensive relative to item" if not reforge["affordable"] else ""
+                    reforge_label = f" + **{reforge_name.title()}** reforge ({stat_str}){afford_warn}"
+                else:
+                    reforge_label = ""
+
+                lines = [
+                    f"**Hypermaxed {dyn_name}**{reforge_label}{excl_note} — Total: **{total:,.0f} coins**\n",
+                    f"  Base item: {base_note}",
+                ]
+                free = result.get("free_slots", 0)
+                for label, data in result["breakdown"].items():
+                    if label == "base_item" or data["total"] == 0 or label in excluded:
+                        continue
+                    if label == "reforge_stone" and reforge_name:
+                        label_fmt = f"{reforge_name.title()} Reforge Stone"
+                    elif label == "slot_unlocking":
+                        slot_note = f" ({free} free)" if free else ""
+                        label_fmt = f"Gem Slot Unlocking ×{data['qty']}{slot_note}"
+                        lines.append(f"  {label_fmt}: {data['total']:,.0f}")
+                        for detail in data.get("details", []):
+                            lines.append(f"    ↳ {detail}")
+                        continue
+                    else:
+                        label_fmt = label.replace("_", " ").title()
+                    if data["qty"] > 1:
+                        lines.append(f"  {label_fmt} ×{data['qty']}: {data['total']:,.0f} ({data['unit']:,.0f} each)")
+                    else:
+                        lines.append(f"  {label_fmt}: {data['total']:,.0f}")
+                return "\n".join(lines)
+
         # Hypermax keywords were present but no item matched
-        return "I don't recognize that item for a hypermax calculation. Try specifying a piece (e.g. 'divan helmet') or a set (e.g. 'divan armor', 'necron armor')."
+        return "I don't recognize that item for a hypermax calculation. Try specifying a piece or set name (e.g. 'hypermax divan helmet', 'hypermax necron armor')."
 
     def _detect_desired_stat(self, question: str) -> str | None:
         """Extract a desired stat from phrases like 'with more intelligence', 'for mage', 'i want str'."""
