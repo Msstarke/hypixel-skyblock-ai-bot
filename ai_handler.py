@@ -719,7 +719,8 @@ class AIHandler:
         lines.append("**Cost Breakdown (all pieces combined):**")
         # Friendly labels and ordering
         LABEL_ORDER = ["base_item", "hot_potato_books", "fuming_potato_books", "recombobulator_3000",
-                       "art_of_peace", "essence_stars", "master_stars", "slot_unlocking", "reforge_stone"]
+                       "art_of_peace", "essence_stars", "master_stars", "enchantments",
+                       "slot_unlocking", "reforge_stone"]
         seen = set()
         # Find essence type from any result that has it
         essence_type = None
