@@ -876,7 +876,6 @@ class HypixelAPI:
             counts = {}
             for slot, material_id in recipe.items():
                 if material_id and isinstance(material_id, str):
-                    # Format: "ITEM_ID:count" or just "ITEM_ID"
                     parts = material_id.split(":")
                     mat_id = parts[0]
                     count = int(parts[1]) if len(parts) > 1 else 1
@@ -886,10 +885,6 @@ class HypixelAPI:
                 recipe_parts.append(f"{count}x {name}")
             if recipe_parts:
                 lines.append(f"Recipe: {', '.join(recipe_parts)}")
-            else:
-                lines.append("Recipe: none (not craftable)")
-        else:
-            lines.append("Recipe: none (not craftable — obtained from AH, drops, or other sources)")
 
         # Gemstone slots
         gem_slots = item.get("gemstone_slots", [])
