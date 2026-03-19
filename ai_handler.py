@@ -803,6 +803,7 @@ class AIHandler:
     ARMOR_SETS = {
         "armor of divan": "ARMOR_OF_DIVAN",
         "glacite": "GLACITE",
+        "glossy mineral": "GLOSSY_MINERAL",
         "mineral": "MINERAL",
         "aurora": "AURORA",
         "terror": "TERROR",
