@@ -569,7 +569,7 @@ class AIHandler:
         # If no individual piece matched, check if a set name is in the question
         # and no piece-type word (helmet/chestplate/etc.) was specified
         if not any(pt in q_tokens_norm for pt in self._PIECE_TOKENS):
-            for set_token, (set_name, piece_ids) in self.ITEM_SET_MAP.items():
+            for set_token, (set_name, piece_ids) in sorted(self.ITEM_SET_MAP.items(), key=lambda x: -len(x[0])):
                 if all(w in q_tokens_norm for w in set_token.split()):
                     # Use first piece (helmet) to pick reforge — same reforge applies to all
                     lbin = await self.hypixel.get_lowest_bin()
