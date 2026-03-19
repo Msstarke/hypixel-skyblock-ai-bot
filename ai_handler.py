@@ -656,6 +656,72 @@ class AIHandler:
         # Hypermax keywords were present but no item matched
         return "I don't recognize that item for a hypermax calculation. Try specifying a piece or set name (e.g. 'hypermax divan helmet', 'hypermax necron armor')."
 
+    def _format_set_hypermax(
+        self, results: list, piece_ids: list, excluded: set,
+        title: str, reforge: dict | None, reforge_name: str | None,
+    ) -> tuple[list[str], int]:
+        """Format a multi-piece hypermax result with per-piece AND aggregated cost breakdown."""
+        piece_names = ["Helmet", "Chestplate", "Leggings", "Boots"]
+
+        # Aggregate costs across all pieces by category
+        agg: dict[str, float] = {}
+        grand_total = 0
+        piece_totals = []
+        for r, pname in zip(results, piece_names):
+            if not r:
+                piece_totals.append((pname, 0))
+                continue
+            ptotal = 0
+            for k, v in r["breakdown"].items():
+                if k in excluded:
+                    continue
+                ptotal += v["total"]
+                agg[k] = agg.get(k, 0) + v["total"]
+            grand_total += ptotal
+            piece_totals.append((pname, ptotal))
+
+        # Header
+        if reforge and "reforge_stone" not in excluded:
+            stat_str = ", ".join(f"+{v} {k.replace('_',' ').title()}" for k, v in reforge["stats"].items())
+            afford_warn = " ⚠️ expensive relative to item" if not reforge["affordable"] else ""
+            reforge_label = f" + **{reforge_name.title()}** reforge (×4, {stat_str}){afford_warn}"
+        else:
+            reforge_label = ""
+        excl_note = f" *(excl. {', '.join(e.replace('_',' ') for e in excluded)})*" if excluded else ""
+        lines = [f"**Hypermaxed {title}**{reforge_label}{excl_note} — Total: **{grand_total:,.0f} coins**\n"]
+
+        # Per-piece totals
+        for pname, ptotal in piece_totals:
+            lines.append(f"  {pname}: {ptotal:,.0f}")
+
+        # Aggregated cost breakdown
+        lines.append("")
+        lines.append("**Cost Breakdown (all pieces combined):**")
+        # Friendly labels and ordering
+        LABEL_ORDER = ["base_item", "hot_potato_books", "fuming_potato_books", "recombobulator_3000",
+                       "art_of_peace", "slot_unlocking", "reforge_stone"]
+        seen = set()
+        for key in LABEL_ORDER:
+            if key in agg and agg[key] > 0 and key not in excluded:
+                seen.add(key)
+                label = key.replace("_", " ").title()
+                if key == "reforge_stone" and reforge_name:
+                    label = f"{reforge_name.title()} Reforge Stone ×4"
+                elif key in ("hot_potato_books", "fuming_potato_books"):
+                    label = f"{label} ×{4 * (10 if 'hot' in key else 5)}"
+                elif key == "recombobulator_3000":
+                    label = f"{label} ×4"
+                elif key == "base_item":
+                    label = "Base Items (×4)"
+                lines.append(f"  {label}: {agg[key]:,.0f}")
+        # Any remaining keys (gem types, etc.)
+        for key, val in agg.items():
+            if key not in seen and val > 0 and key not in excluded:
+                label = key.replace("_", " ").title()
+                lines.append(f"  {label}: {val:,.0f}")
+
+        return lines, grand_total
+
     def _build_excluded(self, q: str, reforge_name: str | None = None) -> set[str]:
         """Parse exclusion keywords from the question. Returns set of breakdown keys to skip."""
         excluded: set[str] = set()
