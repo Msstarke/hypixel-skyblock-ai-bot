@@ -225,9 +225,49 @@ class AIHandler:
         if not found:
             return ""
 
+        is_craft_q = any(w in question.lower() for w in ["craft", "recipe", "cost", "make", "ingredients"])
+
         lines = ["Item data from Hypixel API:"]
         for item in found.values():
             lines.append(self.hypixel.format_item_info(item))
+
+            # If craft question, price up recipe materials
+            if is_craft_q and item.get("recipe"):
+                mat_counts = {}
+                for slot, material_id in item["recipe"].items():
+                    if material_id and isinstance(material_id, str):
+                        parts = material_id.split(":")
+                        mat_id = parts[0]
+                        count = int(parts[1]) if len(parts) > 1 else 1
+                        mat_counts[mat_id] = mat_counts.get(mat_id, 0) + count
+
+                total_craft = 0
+                mat_lines = []
+                for mat_id, count in mat_counts.items():
+                    try:
+                        baz = await self.hypixel.search_bazaar(mat_id.replace("_", " "))
+                        if baz:
+                            price = baz[0]["buy"]
+                            subtotal = price * count
+                            total_craft += subtotal
+                            mat_lines.append(f"  {count}x {mat_id}: {price:,.1f} each = {subtotal:,.1f} coins")
+                        else:
+                            p, src = await self.hypixel.get_item_price(mat_id, allow_auction=True)
+                            if p:
+                                subtotal = p * count
+                                total_craft += subtotal
+                                mat_lines.append(f"  {count}x {mat_id}: {p:,.1f} each = {subtotal:,.1f} coins ({src})")
+                            else:
+                                mat_lines.append(f"  {count}x {mat_id}: price unavailable")
+                    except Exception:
+                        mat_lines.append(f"  {count}x {mat_id}: price fetch failed")
+
+                if mat_lines:
+                    lines.append("Craft cost breakdown (live prices):")
+                    lines.extend(mat_lines)
+                    if total_craft > 0:
+                        lines.append(f"  TOTAL craft cost: {total_craft:,.1f} coins")
+
         return "\n".join(lines)
 
     async def _build_live_context(self, question: str) -> str:
