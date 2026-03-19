@@ -202,10 +202,17 @@ class HypixelAPI:
             self._item_id_variants(item_id)
             + (self._item_id_variants(mapped_id) if mapped_id and mapped_id != item_id else [])
         ))
+        print(f"[get_item_price] item_id={item_id} all_ids={all_ids}")
         for vid in all_ids:
             price = lbin.get(vid, 0)
             if price:
+                print(f"[get_item_price] FOUND in lowestbin: {vid} = {price}")
                 return price
+        # Debug: check similar keys in lowestbin
+        search = item_id.replace("'", "").replace("_", "").lower()
+        similar = [k for k in lbin if k.replace("'", "").replace("_", "").lower().startswith(search[:6])]
+        if similar:
+            print(f"[get_item_price] similar lowestbin keys for '{item_id}': {similar[:10]}")
 
         # 2. CoflNet /current lbin field — actual BIN price, not auction average
         for vid in all_ids:
@@ -213,14 +220,17 @@ class HypixelAPI:
                 url = COFLNET_PRICE_URL.format(item_id=vid)
                 async with aiohttp.ClientSession() as session:
                     async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                        print(f"[get_item_price] CoflNet {vid}: status={resp.status}")
                         if resp.status == 200:
                             data = await resp.json()
                             p = data.get("lbin") or 0
+                            print(f"[get_item_price] CoflNet {vid}: lbin={p}")
                             if p:
                                 return p
-            except Exception:
-                pass
+            except Exception as e:
+                print(f"[get_item_price] CoflNet {vid}: error={e}")
 
+        print(f"[get_item_price] NOTHING FOUND for {item_id}")
         return 0
 
     async def search_ah(self, query: str) -> list[dict]:
