@@ -440,8 +440,9 @@ class AIHandler:
 
             base_set_name  = None
             base_piece_ids = None
-            for st, (sn, ids) in self.ITEM_SET_MAP.items():
-                if st in tokens_before_norm:
+            # Sort by token length descending so "glossy mineral" matches before "mineral"
+            for st, (sn, ids) in sorted(self.ITEM_SET_MAP.items(), key=lambda x: -len(x[0])):
+                if all(w in tokens_before_norm for w in st.split()):
                     base_set_name  = sn
                     base_piece_ids = list(ids)
                     break
