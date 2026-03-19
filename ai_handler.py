@@ -1201,8 +1201,8 @@ class AIHandler:
                         {"role": "system", "content": system},
                         {"role": "user", "content": question},
                     ],
-                    max_tokens=1200,
-                    temperature=0.0,
+                    max_tokens=1800,
+                    temperature=0.3,
                 )
                 text = resp.choices[0].message.content.strip()
                 # deepseek-r1 wraps its reasoning in <think>...</think> — strip it
