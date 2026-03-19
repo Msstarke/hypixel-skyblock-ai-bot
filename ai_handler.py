@@ -920,26 +920,30 @@ class AIHandler:
                 if 1 <= len(q_words) <= 5 and not any(w in _NON_ITEM_WORDS for w in q_words):
                     item_phrase = " ".join(q_words)
                     try:
-                        # "X set" → armor set price lookup
-                        if "set" in q_words:
-                            set_phrase = item_phrase.replace(" set", "").strip()
-                            # Sort longer names first so "glossy mineral" beats "mineral"
-                            for aname, prefix in sorted(self.ARMOR_SETS.items(), key=lambda x: -len(x[0])):
-                                if all(w in set_phrase for w in aname.split()):
-                                    prices = await self.hypixel.get_armor_set_prices(prefix)
-                                    piece_ids = {"helmet": f"{prefix}_HELMET", "chestplate": f"{prefix}_CHESTPLATE",
-                                                 "leggings": f"{prefix}_LEGGINGS", "boots": f"{prefix}_BOOTS"}
-                                    if prices:
-                                        total = prices.pop("total")
-                                        pieces = " | ".join(
-                                            f"{slot}: {data['price']:,.0f}" for slot, data in prices.items()
-                                        )
-                                        return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins (BIN)\n  {pieces}"
-                                    else:
-                                        return f"**{aname.title()} Set** — bid-only auction (no BIN prices available)"
                         # Normalize q_words: strip trailing 's' from 5+ char words
                         # so "necrons" matches "necron", "divans" matches "divan", etc.
                         q_words_norm = {w.rstrip("s") if len(w) > 4 else w for w in q_words}
+
+                        def _format_set_prices(aname, prices):
+                            """Format set price result for display."""
+                            if not prices:
+                                return f"**{aname.title()} Set** — no price data available"
+                            has_auction = prices.pop("has_auction", False)
+                            total = prices.pop("total")
+                            pieces = " | ".join(
+                                f"{slot}: {data['price']:,.0f}" for slot, data in prices.items()
+                                if isinstance(data, dict)
+                            )
+                            label = "AH estimate" if has_auction else "BIN"
+                            return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins ({label})\n  {pieces}"
+
+                        # "X set" → armor set price lookup
+                        if "set" in q_words:
+                            set_words = [w for w in q_words_norm if w != "set" and w != "armor"]
+                            for aname, prefix in sorted(self.ARMOR_SETS.items(), key=lambda x: -len(x[0])):
+                                if all(w in set_words for w in aname.split()):
+                                    prices = await self.hypixel.get_armor_set_prices(prefix)
+                                    return _format_set_prices(aname, prices)
 
                         # If query matches a known armor set name and has NO piece-type word,
                         # treat it as an implicit set query (e.g. "glossy mineral" → full set)
@@ -949,14 +953,7 @@ class AIHandler:
                                 aname_words = aname.split()
                                 if all(w in q_words_norm for w in aname_words):
                                     prices = await self.hypixel.get_armor_set_prices(prefix)
-                                    if prices:
-                                        total = prices.pop("total")
-                                        pieces = " | ".join(
-                                            f"{slot}: {data['price']:,.0f}" for slot, data in prices.items()
-                                        )
-                                        return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins (BIN)\n  {pieces}"
-                                    else:
-                                        return f"**{aname.title()} Set** — bid-only auction (no BIN prices available)"
+                                    return _format_set_prices(aname, prices)
 
                         # Check ITEM_UPGRADE_MAP — exact known item IDs, no fuzzy guessing
                         matched_iid = None
