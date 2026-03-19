@@ -292,6 +292,21 @@ class AIHandler:
         "terror boots":       "TERROR_BOOTS",
     }
 
+    # Full armor set aliases — matched when user says "divan armor" / "necron armor" etc.
+    # Token → (display name, [helmet_id, chestplate_id, leggings_id, boots_id])
+    ITEM_SET_MAP = {
+        "divan":   ("Divan Armor Set",   ["ARMOR_OF_DIVAN_HELMET", "ARMOR_OF_DIVAN_CHESTPLATE", "ARMOR_OF_DIVAN_LEGGINGS", "ARMOR_OF_DIVAN_BOOTS"]),
+        "glacite": ("Glacite Armor Set", ["GLACITE_HELMET", "GLACITE_CHESTPLATE", "GLACITE_LEGGINGS", "GLACITE_BOOTS"]),
+        "necron":  ("Necron Armor Set",  ["NECRONS_HELMET", "NECRONS_CHESTPLATE", "NECRONS_LEGGINGS", "NECRONS_BOOTS"]),
+        "storm":   ("Storm Armor Set",   ["STORM_HELMET", "STORM_CHESTPLATE", "STORM_LEGGINGS", "STORM_BOOTS"]),
+        "aurora":  ("Aurora Armor Set",  ["AURORA_HELMET", "AURORA_CHESTPLATE", "AURORA_LEGGINGS", "AURORA_BOOTS"]),
+        "terror":  ("Terror Armor Set",  ["TERROR_HELMET", "TERROR_CHESTPLATE", "TERROR_LEGGINGS", "TERROR_BOOTS"]),
+        "maxor":   ("Maxor Armor Set",   ["MAXOR_HELMET", "MAXOR_CHESTPLATE", "MAXOR_LEGGINGS", "MAXOR_BOOTS"]),
+        "goldor":  ("Goldor Armor Set",  ["GOLDOR_HELMET", "GOLDOR_CHESTPLATE", "GOLDOR_LEGGINGS", "GOLDOR_BOOTS"]),
+    }
+    # Piece-type tokens — if any of these appear, it's a single-piece request, not a full set
+    _PIECE_TOKENS = {"helmet", "chestplate", "leggings", "boots"}
+
     async def _handle_hypermax_question(self, question: str) -> str | None:
         """Detect hypermaxed/maxed item questions and return full upgrade cost breakdown."""
         q = question.lower()
