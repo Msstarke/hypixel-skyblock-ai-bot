@@ -926,12 +926,16 @@ class AIHandler:
                             for aname, prefix in sorted(self.ARMOR_SETS.items(), key=lambda x: -len(x[0])):
                                 if all(w in set_phrase for w in aname.split()):
                                     prices = await self.hypixel.get_armor_set_prices(prefix)
+                                    piece_ids = {"helmet": f"{prefix}_HELMET", "chestplate": f"{prefix}_CHESTPLATE",
+                                                 "leggings": f"{prefix}_LEGGINGS", "boots": f"{prefix}_BOOTS"}
                                     if prices:
                                         total = prices.pop("total")
                                         pieces = " | ".join(
                                             f"{slot}: {data['price']:,.0f}" for slot, data in prices.items()
                                         )
-                                        return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins\n  {pieces}"
+                                        return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins (BIN)\n  {pieces}"
+                                    else:
+                                        return f"**{aname.title()} Set** — bid-only auction (no BIN prices available)"
                         # Try bazaar first (fast), then AH
                         baz_match = await self._find_best_bazaar_match(item_phrase)
                         if baz_match:
