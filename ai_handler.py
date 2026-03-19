@@ -1191,6 +1191,13 @@ class AIHandler:
                 system += f"\n\nHistorical price data:\n{hist_ctx}"
             if price_question and not live_ctx and not ah_ctx:
                 system += "\n\nNo live price data found. Do NOT guess prices."
+            if linked_summary:
+                system += (
+                    "\n\nLINKED PLAYER STATS (this user's actual Skyblock profile):\n"
+                    + linked_summary
+                    + "\nUse these stats to give personalized advice — reference their actual gear, "
+                    "skill levels, slayer progress, etc. when relevant to the question."
+                )
 
             try:
                 resp = await self.client.chat.completions.create(
