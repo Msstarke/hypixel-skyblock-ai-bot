@@ -919,6 +919,19 @@ class AIHandler:
                 if 1 <= len(q_words) <= 5 and not any(w in _NON_ITEM_WORDS for w in q_words):
                     item_phrase = " ".join(q_words)
                     try:
+                        # "X set" → armor set price lookup
+                        if "set" in q_words:
+                            set_phrase = item_phrase.replace(" set", "").strip()
+                            # Sort longer names first so "glossy mineral" beats "mineral"
+                            for aname, prefix in sorted(self.ARMOR_SETS.items(), key=lambda x: -len(x[0])):
+                                if all(w in set_phrase for w in aname.split()):
+                                    prices = await self.hypixel.get_armor_set_prices(prefix)
+                                    if prices:
+                                        total = prices.pop("total")
+                                        pieces = " | ".join(
+                                            f"{slot}: {data['price']:,.0f}" for slot, data in prices.items()
+                                        )
+                                        return f"**{aname.title()} Set** — Total: **{total:,.0f}** coins\n  {pieces}"
                         # Try bazaar first (fast), then AH
                         baz_match = await self._find_best_bazaar_match(item_phrase)
                         if baz_match:
