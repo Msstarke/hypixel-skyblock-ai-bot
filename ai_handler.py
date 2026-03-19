@@ -965,11 +965,12 @@ class AIHandler:
                                 matched_display = iname.title()
                                 break
                         if matched_iid:
-                            p = await self.hypixel.get_item_price(matched_iid)
+                            p, src = await self.hypixel.get_item_price(matched_iid, allow_auction=True)
                             if p:
-                                return f"**{matched_display}** — **{p:,.0f}** coins (lowest BIN)"
+                                label = "lowest BIN" if src == "bin" else "AH estimate"
+                                return f"**{matched_display}** — **{p:,.0f}** coins ({label})"
                             else:
-                                return f"**{matched_display}** — bid-only auction (no BIN prices available)"
+                                return f"**{matched_display}** — no price data available"
 
                         # Try bazaar first (fast), then AH
                         baz_match = await self._find_best_bazaar_match(item_phrase)
