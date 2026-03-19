@@ -396,7 +396,7 @@ class HypixelAPI:
         for iid, count in item_costs.items():
             price = baz_price(iid)
             if not price:
-                price = await self.get_reforge_stone_price(iid)  # coflnet fallback
+                price = await self.get_item_price(iid)  # full fallback chain
             cost_total = price * count
             total += cost_total
             name = iid.replace("_", " ").title()
