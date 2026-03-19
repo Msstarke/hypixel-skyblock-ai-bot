@@ -694,6 +694,31 @@ class AIHandler:
         # Hypermax keywords were present but no item matched
         return "I don't recognize that item for a hypermax calculation. Try specifying a piece or set name (e.g. 'hypermax divan helmet', 'hypermax necron armor')."
 
+    async def _resolve_reforge(self, question: str, item_id: str, item_price: float) -> tuple[dict | None, dict]:
+        """
+        Resolve the best reforge for an item, respecting explicit user requests.
+        Returns (reforge_dict | None, stone_prices_dict).
+        Explicit reforge names in the question always win over pick_reforge scoring.
+        """
+        from reforges import REFORGES
+        stone_ids = list({d["stone"] for d in REFORGES.values() if d.get("stone")})
+        prices_list = await asyncio.gather(
+            *[self.hypixel.get_reforge_stone_price(sid) for sid in stone_ids]
+        )
+        stone_prices = dict(zip(stone_ids, prices_list))
+
+        # Explicit reforge name in question overrides scoring
+        explicit = self._detect_explicit_reforge(question)
+        if explicit:
+            if explicit["stone"]:
+                explicit["stone_price"] = stone_prices.get(explicit["stone"], 0)
+            return explicit, stone_prices
+
+        desired_stat = self._detect_desired_stat(question)
+        reforge = pick_reforge(item_id, desired_stat=desired_stat,
+                               item_price=item_price, stone_prices=stone_prices)
+        return reforge, stone_prices
+
     def _detect_explicit_reforge(self, question: str) -> dict | None:
         """
         Detect if the user explicitly names a reforge (e.g. 'with jaded', 'use withered').
