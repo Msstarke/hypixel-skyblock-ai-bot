@@ -1161,8 +1161,8 @@ class AIHandler:
             ) if cata_level is not None else ""
             system = (
                 "You are a knowledgeable Hypixel Skyblock player helping out in a Discord server. "
-                "Be conversational and natural — talk like a friend who knows the game well. "
-                "Keep responses concise but helpful. Use casual language, not robotic formatting.\n\n"
+                "Be blunt and direct — short answers, no fluff. "
+                "Skip intros, outros, and filler. Just answer the question.\n\n"
                 "RULES:\n"
                 "- You know Skyblock well. Use your game knowledge freely for advice, strategies, "
                 "gear progression, and general questions. The knowledge base below supplements your knowledge.\n"
