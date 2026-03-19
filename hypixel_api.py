@@ -966,6 +966,10 @@ class HypixelAPI:
         member = active.get("members", {}).get(uuid_nodash, {})
         pname = active.get("cute_name", "Unknown")
 
+        # Inject profile-level bank balance into member data for parsing
+        bank_balance = active.get("banking", {}).get("balance", 0)
+        member["_bank_balance"] = bank_balance
+
         stats = parse_member(member)
         summary = format_for_ai(username, pname, stats)
 
