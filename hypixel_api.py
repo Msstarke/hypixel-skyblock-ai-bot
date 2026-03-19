@@ -111,6 +111,104 @@ class HypixelAPI:
             pass
         return 0
 
+    async def _coflnet_history_price(self, item_id: str) -> float:
+        """
+        Fetch the most recent sold price from CoflNet's 24h history endpoint.
+        Useful for bid-only items where /current returns 0 but sales happened recently.
+        """
+        cache_key = f"coflnet_hist_{item_id}"
+        if self._cache_valid(cache_key, AH_CACHE_TTL):
+            return self._cache[cache_key]["data"]
+        url = COFLNET_HISTORY_URL.format(item_id=item_id)
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, timeout=aiohttp.ClientTimeout(total=8)) as resp:
+                    if resp.status == 200:
+                        history = await resp.json()
+                        if isinstance(history, list) and history:
+                            # Most recent entry is last; pick avg of last 3 to smooth noise
+                            recent = history[-3:]
+                            prices = [e.get("avg") or e.get("median") or e.get("min") or 0
+                                      for e in recent if e.get("avg") or e.get("median") or e.get("min")]
+                            price = sum(prices) / len(prices) if prices else 0
+                            self._cache[cache_key] = {"data": price, "ts": time.time()}
+                            return price
+        except Exception:
+            pass
+        self._cache[cache_key] = {"data": 0, "ts": time.time()}
+        return 0
+
+    def _derive_search_terms(self, item_id: str) -> list[str]:
+        """
+        Derive auction search terms from an item ID for bid-only auction scanning.
+        e.g. NECRONS_CHESTPLATE → ["necron", "chestplate"]
+             SHADOW_ASSASSIN_CHESTPLATE → ["shadow assassin", "chestplate"]
+        """
+        SLOT_TYPES = {"HELMET", "CHESTPLATE", "LEGGINGS", "BOOTS", "SWORD", "BOW",
+                      "WAND", "GAUNTLET", "NECKLACE", "CLOAK", "BELT", "GLOVES"}
+        parts = item_id.upper().split("_")
+        # Find last slot-type word
+        slot = None
+        prefix_parts = parts
+        for i in range(len(parts) - 1, -1, -1):
+            if parts[i] in SLOT_TYPES:
+                slot = parts[i].lower()
+                prefix_parts = parts[:i]
+                break
+        if not prefix_parts:
+            return []
+        # Join prefix words, strip trailing 'S' on the last word (e.g. NECRONS → necron)
+        name_words = [p.lower() for p in prefix_parts]
+        if name_words and name_words[-1].endswith("s") and len(name_words[-1]) > 4:
+            name_words[-1] = name_words[-1].rstrip("s")
+        name_phrase = " ".join(name_words)
+        terms = [name_phrase]
+        if slot:
+            terms.append(slot)
+        return terms
+
+    async def get_item_price(self, item_id: str) -> float:
+        """
+        Unified price lookup for any Skyblock item. Tries all sources in order:
+        1. Lowest BIN (moulberry) — fastest, most common items
+        2. CoflNet /current — covers non-BIN AH items, bid-only dungeon drops
+        3. CoflNet /current with items-API ID remapping (e.g. ARMOR_OF_DIVAN → DIVAN)
+        4. CoflNet 24h history — catches items with no current BIN but recent sales
+        5. Dynamic bid auction scan — last resort, scans all active auctions live
+        """
+        # 1. Lowest BIN
+        lbin = await self.get_lowest_bin()
+        price = lbin.get(item_id, 0)
+        if price:
+            return price
+
+        # 2. CoflNet /current with raw ID
+        price = await self.get_reforge_stone_price(item_id)
+        if price:
+            return price
+
+        # 3. CoflNet /current with remapped items-API ID
+        mapped_id = self._ITEMS_API_ID_MAP.get(item_id)
+        if mapped_id and mapped_id != item_id:
+            price = await self.get_reforge_stone_price(mapped_id)
+            if price:
+                return price
+
+        # 4. CoflNet 24h history (catches bid-only items that sold recently)
+        price = await self._coflnet_history_price(item_id)
+        if price:
+            return price
+        if mapped_id and mapped_id != item_id:
+            price = await self._coflnet_history_price(mapped_id)
+            if price:
+                return price
+
+        # 5. Bid auction scan — use hardcoded terms if known, else derive from ID
+        terms = BID_ONLY_SEARCH_TERMS.get(item_id) or self._derive_search_terms(item_id)
+        if terms:
+            price = await self.scan_bid_auctions(terms)
+        return price
+
     async def search_ah(self, query: str) -> list[dict]:
         """
         Search for an item across AH sources:
