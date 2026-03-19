@@ -364,11 +364,11 @@ class HypixelAPI:
             self._cache[cache_key] = {"ts": time.time(), "price": 0}
             return 0
 
-        # Find non-BIN auctions that have at least one bid and match all terms
+        # Find non-BIN auctions matching all terms with a meaningful bid (> 10k to filter trolls)
         matches = [
             a for a in all_auctions
             if not a.get("bin", False)
-            and a.get("highest_bid_amount", 0) > 0
+            and a.get("highest_bid_amount", 0) > 10_000
             and all(t in a.get("item_name", "").lower() for t in terms)
         ]
 
