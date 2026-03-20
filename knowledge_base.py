@@ -113,6 +113,12 @@ FILE_KEYWORDS = {
                        "magic find potion", "pet luck potion", "true resistance",
                        "agility potion", "spelunker", "potion duration",
                        "god pot", "potion stacking"],
+    "events.md":      ["event", "spooky", "jerry workshop", "fishing festival", "mining fiesta",
+                       "dark auction", "traveling zoo", "mythological", "diana event", "griffin",
+                       "burrow", "candy", "festival", "new year cake", "season of jerry",
+                       "jerry box", "fear mongerer", "shark", "oringo", "hoppity",
+                       "chocolate egg", "jacob contest", "farming contest", "mayor event",
+                       "spooky festival", "mythological ritual", "mining event"],
 }
 
 
