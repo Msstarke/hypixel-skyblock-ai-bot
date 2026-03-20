@@ -419,6 +419,40 @@ async def reject_command(ctx: commands.Context, correction_id: int = None):
         await ctx.reply(f"Correction #{correction_id} not found or already reviewed.")
 
 
+@bot.command(name="wiki")
+@commands.is_owner()
+async def wiki_command(ctx: commands.Context, *, page_title: str = None):
+    """Scrape a wiki page into the knowledge base (owner only). Usage: !wiki <page title>"""
+    if not page_title:
+        await ctx.reply("Usage: `!wiki <page title>` — e.g. `!wiki Redstone Dust` or `!wiki Titanium Drill DR-X655`")
+        return
+
+    await ctx.reply(f"Scraping **{page_title}**...")
+
+    import aiohttp
+    from wiki_scraper import fetch_page, WIKI_API, HEADERS, KNOWLEDGE_DIR
+
+    try:
+        async with aiohttp.ClientSession() as session:
+            text = await fetch_page(session, page_title)
+
+        if not text or len(text) < 50:
+            await ctx.reply(f"Could not fetch **{page_title}** — page not found or empty.")
+            return
+
+        # Save to knowledge/wiki_<sanitized>.md
+        safe_name = page_title.lower().replace(" ", "_").replace("/", "_").replace("'", "")
+        safe_name = "".join(c for c in safe_name if c.isalnum() or c == "_")
+        out_path = KNOWLEDGE_DIR / f"wiki_{safe_name}.md"
+        out_path.write_text(f"# {page_title}\n\n{text}", encoding="utf-8")
+
+        ai.knowledge.reload()
+        await ctx.reply(f"Added **{page_title}** to knowledge base ({len(text):,} chars). Reloaded.")
+
+    except Exception as e:
+        await ctx.reply(f"Error scraping: {e}")
+
+
 @bot.event
 async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     """Handle thumbs up/down reactions on bot responses."""
