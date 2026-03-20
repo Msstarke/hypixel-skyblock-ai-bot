@@ -1270,6 +1270,75 @@ async def profile_command(ctx: commands.Context, *, username: str = None):
     await ctx.reply(embed=embed)
 
 
+@bot.command(name="mp")
+async def mp_command(ctx: commands.Context, *, username: str = None):
+    """Show cheapest accessories to maximize MP, factoring in recombobulation."""
+    from mp_optimizer import get_accessory_mp_rankings, format_mp_plan
+
+    data, username, _ = await _get_player_or_reply(ctx, username)
+    if not data:
+        return
+
+    async with ctx.typing():
+        stats = data["stats"]
+        current_mp = stats.get("magical_power", 0)
+
+        # Get owned accessory IDs
+        owned_ids = set()
+        for acc in stats.get("accessories", []):
+            if acc.get("id"):
+                owned_ids.add(acc["id"])
+
+        rankings = await get_accessory_mp_rankings(ai.hypixel, owned_ids=owned_ids)
+        if not rankings:
+            await ctx.reply("Couldn't fetch accessory price data right now. Try again in a moment.")
+            return
+
+        plan = format_mp_plan(
+            rankings, current_mp=current_mp,
+            owned_ids=owned_ids, target_count=20,
+        )
+        recomb_price = rankings[0]["recomb_price"]
+
+        embed = discord.Embed(
+            title=f"MP Upgrades for {username}",
+            color=0x9B59B6,
+        )
+        embed.description = f"Current MP: **{current_mp:,}** | Owned accessories: **{len(owned_ids)}**"
+        embed.set_footer(
+            text=f"Recombobulator 3000: {recomb_price:,.0f} coins | Prices: lowest BIN"
+        )
+
+        lines = plan.split("\n")
+        summary = lines[0] if lines else ""
+        detail_lines = [l for l in lines[1:] if l.strip()]
+
+        if summary:
+            embed.add_field(name="Plan", value=summary, inline=False)
+
+        chunk = []
+        chunk_len = 0
+        field_num = 1
+        for line in detail_lines:
+            if chunk_len + len(line) + 1 > 1000:
+                embed.add_field(
+                    name=f"Recommendations ({field_num})" if field_num > 1 else "Recommendations",
+                    value="\n".join(chunk), inline=False,
+                )
+                chunk = []
+                chunk_len = 0
+                field_num += 1
+            chunk.append(line)
+            chunk_len += len(line) + 1
+        if chunk:
+            embed.add_field(
+                name=f"Recommendations ({field_num})" if field_num > 1 else "Recommendations",
+                value="\n".join(chunk), inline=False,
+            )
+
+    await ctx.reply(embed=embed)
+
+
 @bot.command(name="link")
 async def link_command(ctx: commands.Context, *, username: str = None):
     """Link your Discord account to your Minecraft IGN for personalized advice."""
