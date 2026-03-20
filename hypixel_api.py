@@ -1010,6 +1010,11 @@ class HypixelAPI:
 
         if not uuid:
             uuid = await self.get_uuid(username)
+        else:
+            # UUID provided — resolve current username from Mojang
+            current_name = await self._uuid_to_name(uuid)
+            if current_name:
+                username = current_name
         if not uuid:
             return None
 
