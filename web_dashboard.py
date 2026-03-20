@@ -385,6 +385,15 @@ DASHBOARD_HTML = """
 
   .empty { text-align: center; color: #555; padding: 2rem; }
 
+  .fix-area { margin: 0.75rem 0; padding: 0.75rem; background: #0f3460;
+              border-radius: 8px; }
+  .fix-loading { color: #f5a623; }
+  .fix-topic { margin-bottom: 0.5rem; }
+  .fix-correction { background: #1a1a2e; border: 1px solid #333; border-radius: 6px;
+                    padding: 0.75rem; color: #eee; min-height: 60px; font-size: 0.9rem;
+                    line-height: 1.4; }
+  .fix-correction:focus { border-color: #e94560; outline: none; }
+
   @media (max-width: 600px) {
     .stat-card { padding: 0.75rem; }
     .stat-card .num { font-size: 1.5rem; }
