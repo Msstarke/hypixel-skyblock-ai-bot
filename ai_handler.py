@@ -109,12 +109,18 @@ class AIHandler:
 
         # ── General player question — inject stats as AI context ────────────
         summary = data.get("summary", "No data available.")
+        corrections = self.knowledge.get_corrections()
         system = (
-            "You are a Hypixel Skyblock assistant. Answer ONLY using the player stats and knowledge base below.\n"
-            "Do NOT invent stats, items, or advice not present in the provided data. Be concise (1-3 lines).\n\n"
+            "You are a Hypixel Skyblock assistant. Answer ONLY using the player stats, community corrections, and knowledge base below.\n"
+            "Do NOT invent stats, items, or advice not present in the provided data. Be concise.\n"
+            "HotM PERKS: ALWAYS use the perk names and max levels from COMMUNITY CORRECTIONS. Mining Fortune max level is 50 (NOT 100). Do NOT invent perk levels.\n"
+            "Do NOT recommend removed perks (Mining Madness, Star Powder, Vein Seeker, Goblin Killer, Orbiter, Crystallized).\n"
+            "Do NOT recommend fake items (Spelunker reforge, Divan's Drill, HotMines menu).\n\n"
             f"PLAYER STATS:\n{summary}\n\n"
             f"KNOWLEDGE BASE:\n{self.knowledge.get_relevant_knowledge(question)}"
         )
+        if corrections:
+            system += f"\n\nCOMMUNITY CORRECTIONS (verified facts — these override general knowledge):\n{corrections}"
         try:
             resp = await self.client.chat.completions.create(
                 model=self.model,
