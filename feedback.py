@@ -90,8 +90,12 @@ def get_feedback_stats() -> dict:
 
 
 def resolve_feedback(feedback_id: int) -> bool:
-    """Mark a specific feedback entry as resolved."""
+    """Mark a specific feedback entry as resolved (checks both tables)."""
     cur = _con.execute("UPDATE feedback SET resolved = 1 WHERE id = ? AND resolved = 0", (feedback_id,))
+    _con.commit()
+    if cur.rowcount > 0:
+        return True
+    cur = _con.execute("UPDATE unanswered SET resolved = 1 WHERE id = ? AND resolved = 0", (feedback_id,))
     _con.commit()
     return cur.rowcount > 0
 
