@@ -38,7 +38,7 @@ FILE_KEYWORDS = {
     "bestiary.md":    ["bestiary", "bestiaries", "mob kill", "mob grind", "kill count",
                        "grind mob", "grind mobs", "mob farming", "monster grind", "mob family"],
     "general.md":     ["fairy soul", "essence", "magic find", "how to", "guide",
-                       "tip", "beginner", "what is"],
+                       "tip", "beginner", "what is",],
     "garden.md":      ["garden", "crop", "farming fortune", "visitor", "composter",
                        "organic matter", "plot", "crop milestone", "jacob", "farming contest",
                        "pumpkin", "melon", "wheat", "carrot", "potato", "sugar cane",
