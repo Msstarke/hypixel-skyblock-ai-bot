@@ -658,6 +658,74 @@ async def unlink_command(ctx: commands.Context):
         await ctx.reply("You don't have a linked account. Use `!link <ign>` to link one.")
 
 
+@bot.command(name="stats")
+async def stats_command(ctx: commands.Context):
+    """Show bot usage statistics."""
+    import sqlite3
+    from pathlib import Path
+
+    data_dir = Path(__file__).parent / "data"
+
+    # Feedback stats
+    fb_db = data_dir / "feedback.db"
+    total_feedback = upvotes = downvotes = unanswered = 0
+    if fb_db.exists():
+        con = sqlite3.connect(fb_db)
+        total_feedback = con.execute("SELECT COUNT(*) FROM feedback").fetchone()[0]
+        upvotes = con.execute("SELECT COUNT(*) FROM feedback WHERE vote = 'up'").fetchone()[0]
+        downvotes = con.execute("SELECT COUNT(*) FROM feedback WHERE vote = 'down'").fetchone()[0]
+        unanswered = con.execute("SELECT COUNT(*) FROM unanswered WHERE resolved = 0").fetchone()[0]
+        con.close()
+
+    # Upvote ratio
+    total_votes = upvotes + downvotes
+    if total_votes > 0:
+        upvote_pct = (upvotes / total_votes) * 100
+        ratio_text = f"{upvotes:,} / {downvotes:,} ({upvote_pct:.1f}% positive)"
+    else:
+        ratio_text = "No votes yet"
+
+    # Linked accounts
+    links_db = data_dir / "user_links.db"
+    linked_accounts = 0
+    if links_db.exists():
+        con = sqlite3.connect(links_db)
+        linked_accounts = con.execute("SELECT COUNT(*) FROM links").fetchone()[0]
+        con.close()
+
+    # Bazaar data
+    baz_db = data_dir / "bazaar_history.db"
+    baz_snapshots = 0
+    baz_span_text = "No data yet"
+    if baz_db.exists():
+        con = sqlite3.connect(baz_db)
+        baz_snapshots = con.execute("SELECT COUNT(*) FROM snapshots").fetchone()[0]
+        if baz_snapshots > 0:
+            row = con.execute("SELECT MIN(ts), MAX(ts) FROM snapshots").fetchone()
+            if row and row[0] and row[1]:
+                span_seconds = row[1] - row[0]
+                days = span_seconds / 86400
+                if days >= 1:
+                    baz_span_text = f"{days:.1f} days"
+                else:
+                    hours = span_seconds / 3600
+                    baz_span_text = f"{hours:.1f} hours"
+        con.close()
+
+    embed = discord.Embed(title="Bot Usage Statistics", color=0x2ECC71)
+    embed.add_field(name="Total Questions Answered", value=f"{total_feedback:,}", inline=False)
+    embed.add_field(name="Upvotes / Downvotes", value=ratio_text, inline=False)
+    embed.add_field(name="Unanswered Questions", value=f"{unanswered:,}", inline=True)
+    embed.add_field(name="Linked Accounts", value=f"{linked_accounts:,}", inline=True)
+    embed.add_field(
+        name="Bazaar Data",
+        value=f"{baz_snapshots:,} data points over {baz_span_text}",
+        inline=False,
+    )
+
+    await ctx.reply(embed=embed)
+
+
 @bot.command(name="reload")
 @commands.is_owner()
 async def reload_knowledge(ctx: commands.Context):
