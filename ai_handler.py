@@ -131,7 +131,9 @@ class AIHandler:
                 max_tokens=2000,
                 temperature=0.0,
             )
-            return resp.choices[0].message.content.strip()
+            text = resp.choices[0].message.content.strip()
+            text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
+            return self._filter_hallucinations(text)
         except Exception as e:
             return f"AI error: {e}"
 
