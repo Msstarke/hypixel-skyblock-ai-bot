@@ -1068,6 +1068,11 @@ async def help_command(ctx: commands.Context):
         inline=False
     )
     embed.add_field(
+        name="!mayor",
+        value="Current mayor, perks, and active election candidates.",
+        inline=False
+    )
+    embed.add_field(
         name="!bazaar <item> / !flips / !flips ah",
         value="Bazaar prices, flip opportunities, and AH snipes.",
         inline=False
