@@ -1164,8 +1164,8 @@ class AIHandler:
             if any(kw in question.lower() for kw in item_keywords):
                 try:
                     item_ctx = await self._build_item_context(question)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[item_ctx error] {e}")
 
             if price_question:
                 try:
