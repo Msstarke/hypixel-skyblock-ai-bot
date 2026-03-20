@@ -1202,24 +1202,26 @@ class HypixelAPI:
                     breakdown.append((item.get("name", item.get("id", "?")), p))
             return total, breakdown
 
-        # Price each category
-        armor_val, armor_bd = price_items(stats.get("armor", []))
-        equip_val, equip_bd = price_items(stats.get("equipment", []))
-        inv_val, inv_bd = price_items(stats.get("inventory", []))
-        wardrobe_val, wardrobe_bd = price_items(stats.get("wardrobe", []))
-        ender_val, ender_bd = price_items(stats.get("ender_chest", []))
+        # Price all item categories (same as SkyCrypt)
+        all_bd = []
+        categories = {}
+        for cat in ("armor", "equipment", "inventory", "wardrobe", "ender_chest",
+                     "personal_vault", "accessories", "fishing_bag", "potion_bag",
+                     "sacks_bag", "quiver", "storage"):
+            val, bd = price_items(stats.get(cat, []))
+            categories[cat] = val
+            all_bd.extend(bd)
 
-        # Pet values — SkyHelper prices uses PET_<TYPE>_<TIER> keys
+        # Pet values — SkyHelper prices format: LVL_100_<TIER>_<TYPE>
         pet_total = 0
-        pet_bd = []
         for pet in stats.get("pets", []):
             ptype = pet.get("type", "").upper()
             ptier = pet.get("tier", "").upper()
-            pet_id = f"PET_{ptype}"
-            # Try tier-specific first, then generic
-            p = price_of(f"{pet_id}_{ptier}")
+            # SkyHelper format: LVL_100_LEGENDARY_MITHRIL_GOLEM
+            p = price_of(f"LVL_100_{ptier}_{ptype}")
             if not p:
-                p = price_of(pet_id)
+                # Try without level (some pets don't have lvl 100 entries)
+                p = price_of(f"LVL_1_{ptier}_{ptype}")
             # Held item value
             held = pet.get("held_item", "")
             held_p = price_of(held) if held else 0
@@ -1227,12 +1229,30 @@ class HypixelAPI:
             if val > 0:
                 pet_total += val
                 name = f"{ptype.title()} ({ptier[0] if ptier else '?'})"
-                pet_bd.append((name, val))
+                all_bd.append((name, val))
+        categories["pets"] = pet_total
+
+        # Sacks (raw materials)
+        sack_total = 0
+        for item_id, count in stats.get("sacks", {}).items():
+            p = price_of(item_id)
+            if p > 0:
+                sack_total += p * count
+        categories["sacks"] = sack_total
+
+        # Essence
+        essence_total = 0
+        for etype, count in stats.get("essence_counts", {}).items():
+            if count > 0:
+                p = price_of(f"ESSENCE_{etype}")
+                if p > 0:
+                    essence_total += p * count
+        categories["essence"] = essence_total
 
         purse = stats.get("purse", 0)
         bank = stats.get("bank", 0)
 
-        items_total = armor_val + equip_val + inv_val + wardrobe_val + ender_val + pet_total
+        items_total = sum(categories.values())
         total = purse + bank + items_total
 
         return {
@@ -1240,18 +1260,8 @@ class HypixelAPI:
             "purse": purse,
             "bank": bank,
             "items_total": items_total,
-            "categories": {
-                "armor": armor_val,
-                "equipment": equip_val,
-                "inventory": inv_val,
-                "wardrobe": wardrobe_val,
-                "ender_chest": ender_val,
-                "pets": pet_total,
-            },
-            "top_items": sorted(
-                armor_bd + equip_bd + inv_bd + wardrobe_bd + ender_bd + pet_bd,
-                key=lambda x: x[1], reverse=True
-            )[:10],
+            "categories": {k: v for k, v in categories.items() if v > 0},
+            "top_items": sorted(all_bd, key=lambda x: x[1], reverse=True)[:10],
         }
 
     def _xp_to_hotm_level(self, xp: float) -> int:
