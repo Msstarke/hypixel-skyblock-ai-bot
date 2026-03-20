@@ -514,6 +514,57 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
                 print(f"[bot] Flips tool failed: {e}")
                 # fall through to AI
 
+        # --- Tool: Price lookup ---
+        if tool == "price":
+            try:
+                embed = await _run_price_tool(question, ai.hypixel)
+                if embed:
+                    msg = await ctx.reply(embed=embed)
+                    try:
+                        await msg.add_reaction("\U0001f44d")
+                        await msg.add_reaction("\U0001f44e")
+                    except Exception:
+                        pass
+                    _recent_responses[msg.id] = (question, "[Price lookup]", ctx.author.id, str(ctx.author))
+                    return
+            except Exception as e:
+                print(f"[bot] Price tool failed: {e}")
+                pass  # fall through to AI
+
+        # --- Tool: Recipe lookup ---
+        if tool == "recipe":
+            try:
+                embed = await _run_recipe_tool(question, ai.hypixel)
+                if embed:
+                    msg = await ctx.reply(embed=embed)
+                    try:
+                        await msg.add_reaction("\U0001f44d")
+                        await msg.add_reaction("\U0001f44e")
+                    except Exception:
+                        pass
+                    _recent_responses[msg.id] = (question, "[Recipe lookup]", ctx.author.id, str(ctx.author))
+                    return
+            except Exception as e:
+                print(f"[bot] Recipe tool failed: {e}")
+                pass  # fall through to AI
+
+        # --- Tool: Skill XP calculator ---
+        if tool == "skill_calc":
+            try:
+                result = _run_skill_calc_tool(question)
+                if result:
+                    msg = await ctx.reply(result)
+                    try:
+                        await msg.add_reaction("\U0001f44d")
+                        await msg.add_reaction("\U0001f44e")
+                    except Exception:
+                        pass
+                    _recent_responses[msg.id] = (question, result, ctx.author.id, str(ctx.author))
+                    return
+            except Exception as e:
+                print(f"[bot] Skill calc tool failed: {e}")
+                pass  # fall through to AI
+
         # --- Default: AI response ---
         response = await ai.get_response(question, discord_user_id=ctx.author.id)
 
