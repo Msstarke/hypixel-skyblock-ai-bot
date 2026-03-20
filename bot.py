@@ -169,8 +169,8 @@ async def _run_flips_tool(mode: str = "baz"):
             )
         return embed
     else:
-        if tracker and tracker.has_data():
-            flips = tracker.get_best_flips()
+        if tracker and tracker.last_snapshot_age() is not None:
+            flips = tracker.get_smart_flips()
         else:
             flips = await ai.hypixel.get_bazaar_flips()
         if not flips:
