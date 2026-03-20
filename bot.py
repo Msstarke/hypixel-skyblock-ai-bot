@@ -834,6 +834,22 @@ async def hotm_command(ctx: commands.Context, *, username: str = None):
         await ctx.reply(embed=embed, file=file)
 
 
+@bot.command(name="mayor")
+async def mayor_command(ctx: commands.Context):
+    """Show the current Skyblock mayor, their perks, and active election info."""
+    async with ctx.typing():
+        try:
+            embed = await _run_mayor_tool()
+        except Exception as e:
+            print(f"[bot] Mayor command failed: {e}")
+            embed = None
+
+    if embed:
+        await ctx.reply(embed=embed)
+    else:
+        await ctx.reply("Couldn't fetch mayor/election data right now. Try again later.")
+
+
 @bot.command(name="bazaar")
 async def bazaar_command(ctx: commands.Context, *, item: str = None):
     """Quick bazaar price lookup without AI."""
