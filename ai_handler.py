@@ -1219,8 +1219,8 @@ class AIHandler:
             if wants_wiki and not price_question:
                 try:
                     wiki_ctx = await wiki_context(question, max_chars=3000)
-                except Exception:
-                    pass
+                except Exception as e:
+                    print(f"[wiki error] {e}")
             cata_level = self._extract_cata_level(question)
             cata_note = (
                 f"- The user has stated their Catacombs level is {cata_level}. "
