@@ -662,6 +662,23 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
                 traceback.print_exc()
                 pass  # fall through to AI
 
+        # --- Tool: Mayor / Election ---
+        if tool == "mayor":
+            try:
+                embed = await _run_mayor_tool()
+                if embed:
+                    msg = await ctx.reply(embed=embed)
+                    try:
+                        await msg.add_reaction("\U0001f44d")
+                        await msg.add_reaction("\U0001f44e")
+                    except Exception as e:
+                        print(f"[bot] Failed to add reactions: {e}")
+                    _recent_responses[msg.id] = (question, "[Mayor info]", ctx.author.id, str(ctx.author))
+                    return
+            except Exception as e:
+                print(f"[bot] Mayor tool failed: {e}")
+                pass  # fall through to AI
+
         # --- Default: AI response ---
         response = await ai.get_response(question, discord_user_id=ctx.author.id)
 
