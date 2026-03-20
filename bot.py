@@ -420,6 +420,49 @@ async def reject_command(ctx: commands.Context, correction_id: int = None):
 
 
 @bot.event
+async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
+    """Handle thumbs up/down reactions on bot responses."""
+    if user.bot:
+        return
+    msg_id = reaction.message.id
+    if msg_id not in _recent_responses:
+        return
+    emoji = str(reaction.emoji)
+    if emoji not in ("👍", "👎"):
+        return
+
+    question, response, author_id, author_name = _recent_responses[msg_id]
+    vote = "up" if emoji == "👍" else "down"
+    log_vote(user.id, str(user), question, response, vote)
+
+
+@bot.command(name="feedback")
+@commands.is_owner()
+async def feedback_command(ctx: commands.Context):
+    """Show feedback stats and recent bad responses (owner only)."""
+    stats = get_feedback_stats()
+    embed = discord.Embed(title="Bot Feedback", color=0xE74C3C)
+    embed.add_field(name="Votes", value=f"👍 {stats['thumbs_up']} | 👎 {stats['thumbs_down']}", inline=True)
+    embed.add_field(name="Unanswered", value=str(stats['unanswered']), inline=True)
+
+    bad = get_bad_responses(5)
+    if bad:
+        for b in bad:
+            embed.add_field(
+                name=f"👎 {b['discord_name']}",
+                value=f"**Q:** {b['question'][:100]}\n**A:** {b['response'][:100]}",
+                inline=False,
+            )
+
+    unans = get_unanswered(5)
+    if unans:
+        q_list = "\n".join(f"- {u['question'][:80]}" for u in unans)
+        embed.add_field(name="Recent unanswered", value=q_list[:500], inline=False)
+
+    await ctx.reply(embed=embed)
+
+
+@bot.event
 async def on_command_error(ctx: commands.Context, error):
     if isinstance(error, commands.CommandNotFound):
         return  # ignore unknown commands
