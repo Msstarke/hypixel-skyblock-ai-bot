@@ -1190,6 +1190,35 @@ class HypixelAPI:
                 modifier_value += price_of("ETHERWARP_CONDUIT") * APP_WORTH["etherwarp"]
                 modifier_value += price_of("ETHERWARP_MERGER") * APP_WORTH["etherwarp"]
 
+            # Gemstones
+            gems = item.get("gems", {})
+            if gems:
+                # Gem slots: JADE_0, JADE_1, AMBER_0, etc.
+                # Value is the quality (PERFECT, FLAWLESS, etc.)
+                # Also handle _gem suffix keys for universal slots
+                GEMSTONE_TYPES = {"JADE", "AMBER", "TOPAZ", "SAPPHIRE", "AMETHYST",
+                                  "RUBY", "JASPER", "OPAL", "AQUAMARINE", "CITRINE",
+                                  "ONYX", "PERIDOT"}
+                for gem_key, gem_val in gems.items():
+                    if gem_key == "unlocked_slots" or gem_key.endswith("_gem"):
+                        continue
+                    # Determine gem type and quality
+                    quality = gem_val if isinstance(gem_val, str) else ""
+                    if not quality or quality.startswith("[") or quality.startswith("{"):
+                        continue
+                    # Extract gem type from key (e.g., JADE_0 -> JADE)
+                    parts = gem_key.rsplit("_", 1)
+                    slot_type = parts[0] if len(parts) == 2 and parts[1].isdigit() else gem_key
+                    # For universal slots, check the _gem key
+                    if slot_type.upper() not in GEMSTONE_TYPES:
+                        gem_type = gems.get(f"{gem_key}_gem", slot_type)
+                    else:
+                        gem_type = slot_type
+                    gem_id = f"{quality.upper()}_{gem_type.upper()}_GEM"
+                    gp = price_of(gem_id)
+                    if gp > 0:
+                        modifier_value += gp * 0.9  # gemstone application worth
+
             return base + modifier_value
 
         def price_items(items: list[dict]) -> tuple[float, list[tuple[str, float]]]:
