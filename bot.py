@@ -96,6 +96,12 @@ def _detect_tool(question: str, has_linked: bool) -> str | None:
     if any(w in q for w in hotm_words) and has_linked:
         return "hotm"
 
+    # Mayor / election info
+    mayor_words = ["mayor", "current mayor", "who is the mayor", "who is mayor",
+                   "election", "skyblock mayor", "mayor perks", "mayor perk"]
+    if any(w in q for w in mayor_words):
+        return "mayor"
+
     # Flips / investment / money making
     flip_words = ["flip", "flips", "flipping", "what to flip", "good flip", "best flip",
                   "money making", "show flips", "flip opportunities", "bazaar flip",
