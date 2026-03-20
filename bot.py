@@ -86,6 +86,110 @@ _recent_responses: dict[int, tuple[str, str, int, str]] = {}
 MAX_TRACKED = 200
 
 
+def _detect_tool(question: str, has_linked: bool) -> str | None:
+    """Detect if the question should trigger a built-in tool instead of pure AI."""
+    q = question.lower().strip()
+
+    # HotM tree visualization
+    hotm_words = ["hotm tree", "hotm", "heart of the mountain", "my hotm", "show hotm",
+                  "show my hotm", "hotm perks", "my perks", "mining tree"]
+    if any(w in q for w in hotm_words) and has_linked:
+        return "hotm"
+
+    # Flips
+    if q in ("flips", "bazaar flips", "best flips", "flip opportunities", "what to flip",
+             "money making", "show flips"):
+        return "flips"
+    if q in ("ah flips", "auction flips", "bin flips", "snipes", "ah snipes"):
+        return "flips_ah"
+
+    return None
+
+
+async def _run_hotm_tool(ctx, username: str):
+    """Run HotM tree visualization inline."""
+    from hotm_render import render_hotm_tree
+    from hypixel_api import HOTM_XP
+
+    data = await ai.hypixel.get_player_data(username)
+    if not data:
+        return None
+
+    stats = data["stats"]
+    hotm_perks = stats.get("hotm_perks", {})
+    hotm_xp = stats.get("hotm_xp", 0)
+    hotm_lvl = sum(1 for req in HOTM_XP[1:] if hotm_xp >= req)
+    powder = {
+        "mithril": stats.get("mithril_powder", 0),
+        "gemstone": stats.get("gemstone_powder", 0),
+        "glacite": stats.get("glacite_powder", 0),
+    }
+    selected = stats.get("hotm_selected_ability", "")
+
+    buf = render_hotm_tree(hotm_perks, powder, hotm_lvl, selected, username)
+    file = discord.File(buf, filename="hotm.png")
+
+    embed = discord.Embed(title=f"{username}'s Heart of the Mountain", color=0x2E8B82)
+    embed.set_image(url="attachment://hotm.png")
+
+    mp = stats.get("mithril_powder", 0)
+    gp = stats.get("gemstone_powder", 0)
+    glp = stats.get("glacite_powder", 0)
+    spent_m = stats.get("powder_spent_mithril", 0)
+    spent_g = stats.get("powder_spent_gemstone", 0)
+    spent_gl = stats.get("powder_spent_glacite", 0)
+    powder_text = (
+        f"Mithril: **{mp:,}** available ({spent_m:,} spent)\n"
+        f"Gemstone: **{gp:,}** available ({spent_g:,} spent)\n"
+        f"Glacite: **{glp:,}** available ({spent_gl:,} spent)"
+    )
+    embed.add_field(name="Powder", value=powder_text, inline=False)
+    if selected:
+        embed.add_field(name="Active Ability", value=selected.replace("_", " ").title(), inline=True)
+    embed.add_field(name="HotM Tier", value=str(hotm_lvl), inline=True)
+
+    return embed, file
+
+
+async def _run_flips_tool(mode: str = "baz"):
+    """Run flips lookup inline, return embed or None."""
+    if mode == "ah":
+        flips = await ai.hypixel.get_ah_flips()
+        if not flips:
+            return None
+        embed = discord.Embed(title="Top AH Snipe Opportunities", color=0xE67E22)
+        for f in flips[:8]:
+            embed.add_field(
+                name=f["name"],
+                value=(
+                    f"BIN: **{f['bin_price']:,.0f}** | Median: **{f['median']:,.0f}**\n"
+                    f"Profit: **+{f['profit']:,.0f}** ({f['margin_pct']}%)"
+                ),
+                inline=False,
+            )
+        return embed
+    else:
+        if tracker and tracker.has_data():
+            flips = tracker.get_best_flips()
+        else:
+            flips = await ai.hypixel.get_bazaar_flips()
+        if not flips:
+            return None
+        embed = discord.Embed(title="Top Bazaar Flip Opportunities", color=0x2ECC71)
+        for f in flips[:8]:
+            trend_icon = {"rising": "\u2191", "falling": "\u2193", "stable": "\u2192"}.get(f.get("trend", ""), "")
+            embed.add_field(
+                name=f["name"],
+                value=(
+                    f"Buy: **{f['buy']:,.1f}** | Sell: **{f['sell']:,.1f}**\n"
+                    f"Margin: **+{f['margin']:,.1f}** ({f['margin_pct']}%) | Vol: **{f['weekly_vol']:,}**/wk"
+                    + (f" {trend_icon}" if trend_icon else "")
+                ),
+                inline=False,
+            )
+        return embed
+
+
 @bot.command(name="ai")
 async def ai_command(ctx: commands.Context, *, question: str = None):
     if not question:
@@ -93,9 +197,47 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
         return
 
     if ALLOWED_CHANNELS and ctx.channel.id not in ALLOWED_CHANNELS:
-        return  # silently ignore if channel-restricted
+        return
+
+    linked_ign = get_linked_username(ctx.author.id)
+    tool = _detect_tool(question, has_linked=bool(linked_ign))
 
     async with ctx.typing():
+        # --- Tool: HotM tree ---
+        if tool == "hotm" and linked_ign:
+            try:
+                result = await _run_hotm_tool(ctx, linked_ign)
+                if result:
+                    embed, file = result
+                    msg = await ctx.reply(embed=embed, file=file)
+                    try:
+                        await msg.add_reaction("👍")
+                        await msg.add_reaction("👎")
+                    except Exception:
+                        pass
+                    _recent_responses[msg.id] = (question, "[HotM tree image]", ctx.author.id, str(ctx.author))
+                    return
+            except Exception:
+                pass  # fall through to AI
+
+        # --- Tool: Flips ---
+        if tool in ("flips", "flips_ah"):
+            try:
+                mode = "ah" if tool == "flips_ah" else "baz"
+                embed = await _run_flips_tool(mode)
+                if embed:
+                    msg = await ctx.reply(embed=embed)
+                    try:
+                        await msg.add_reaction("👍")
+                        await msg.add_reaction("👎")
+                    except Exception:
+                        pass
+                    _recent_responses[msg.id] = (question, "[Flips data]", ctx.author.id, str(ctx.author))
+                    return
+            except Exception:
+                pass  # fall through to AI
+
+        # --- Default: AI response ---
         response = await ai.get_response(question, discord_user_id=ctx.author.id)
 
     # Split long responses into multiple messages instead of truncating
