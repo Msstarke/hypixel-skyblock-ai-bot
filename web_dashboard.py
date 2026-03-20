@@ -198,6 +198,97 @@ def api_last_analysis():
     return jsonify({"report": report or "No analysis yet. Click 'Run Analysis' to generate one."})
 
 
+@app.route("/api/fix", methods=["POST"])
+@login_required
+def api_fix():
+    """AI analyzes a downvoted response and suggests a knowledge base fix."""
+    data = request.json
+    question = data.get("question", "")
+    response = data.get("response", "")
+
+    from groq import AsyncGroq
+    client = AsyncGroq(api_key=os.getenv("GROQ_API_KEY"))
+
+    # Load current knowledge for context
+    from knowledge_base import KnowledgeBase
+    kb = KnowledgeBase()
+    relevant = kb.get_relevant_knowledge(question, max_chars=5000)
+    corrections = kb.get_corrections()
+
+    prompt = (
+        "A user asked a Hypixel Skyblock bot this question and downvoted the response.\n\n"
+        f"QUESTION: {question}\n\n"
+        f"BOT RESPONSE (downvoted): {response}\n\n"
+        f"CURRENT KNOWLEDGE BASE (relevant sections):\n{relevant}\n\n"
+        f"EXISTING CORRECTIONS:\n{corrections}\n\n"
+        "Analyze what's wrong with the bot's response. Then provide a fix in this exact format:\n\n"
+        "TOPIC: <short topic name, e.g. 'Mining Fortune' or 'Catacombs Gear'>\n"
+        "CORRECTION: <the correct information that should be added to the knowledge base, "
+        "2-4 sentences max, factual and specific>\n\n"
+        "If the response was actually correct and the downvote seems unjustified, respond with:\n"
+        "TOPIC: No Fix Needed\nCORRECTION: The response appears accurate."
+    )
+
+    try:
+        loop = asyncio.new_event_loop()
+        resp = loop.run_until_complete(client.chat.completions.create(
+            model="openai/gpt-oss-120b",
+            messages=[
+                {"role": "system", "content": "You are a Hypixel Skyblock expert reviewing bot responses. Be specific and factual."},
+                {"role": "user", "content": prompt},
+            ],
+            max_tokens=500,
+            temperature=0.2,
+        ))
+        loop.close()
+        text = resp.choices[0].message.content.strip()
+
+        # Parse TOPIC and CORRECTION
+        topic = ""
+        correction = ""
+        for line in text.split("\n"):
+            if line.upper().startswith("TOPIC:"):
+                topic = line.split(":", 1)[1].strip()
+            elif line.upper().startswith("CORRECTION:"):
+                correction = line.split(":", 1)[1].strip()
+
+        if not topic:
+            topic = "General"
+        if not correction:
+            correction = text  # fallback to full response
+
+        return jsonify({"ok": True, "topic": topic, "correction": correction, "full": text})
+    except Exception as e:
+        return jsonify({"ok": False, "error": str(e)})
+
+
+@app.route("/api/apply-fix", methods=["POST"])
+@login_required
+def api_apply_fix():
+    """Apply an AI-suggested fix to the knowledge base."""
+    data = request.json
+    topic = data.get("topic", "").strip()
+    correction = data.get("correction", "").strip()
+    feedback_id = data.get("feedback_id")
+
+    if not topic or not correction:
+        return jsonify({"ok": False, "error": "Missing topic or correction"})
+
+    from corrections import apply_to_knowledge
+    apply_to_knowledge(topic, correction, "AI Feedback Agent")
+
+    # Reload knowledge base
+    from knowledge_base import KnowledgeBase
+    kb = KnowledgeBase()
+    kb.reload()
+
+    # Mark the feedback as resolved
+    if feedback_id:
+        resolve_item("feedback", feedback_id)
+
+    return jsonify({"ok": True})
+
+
 # --- HTML Templates ---
 
 LOGIN_HTML = """
