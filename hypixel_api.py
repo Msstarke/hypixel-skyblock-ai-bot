@@ -134,8 +134,19 @@ class HypixelAPI:
 
     async def get_skyhelper_prices(self) -> dict:
         """Fetch SkyHelper prices (13k+ items incl enchantments, reforges, pets)."""
-        data = await self._get(SKYHELPER_PRICES_URL, "skyhelper_prices", params={}, ttl=CACHE_TTL)
-        return data or {}
+        # Use params={} to avoid appending the Hypixel API key to a GitHub URL
+        if self._cache_valid("skyhelper_prices", CACHE_TTL):
+            return self._cache["skyhelper_prices"]["data"]
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(SKYHELPER_PRICES_URL, timeout=aiohttp.ClientTimeout(total=15)) as resp:
+                    if resp.status == 200:
+                        data = await resp.json(content_type=None)
+                        self._cache["skyhelper_prices"] = {"data": data, "ts": time.time()}
+                        return data
+        except Exception:
+            pass
+        return {}
 
     async def get_auction_averages(self) -> dict:
         """Stub — moulberry auction averages URLs are dead (404). Returns empty dict."""
