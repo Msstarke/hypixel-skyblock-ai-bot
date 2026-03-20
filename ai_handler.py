@@ -1253,6 +1253,8 @@ class AIHandler:
                 system += f"\n\nLIVE AH PRICES:\n{ah_ctx}"
             if hist_ctx:
                 system += f"\n\nHistorical price data:\n{hist_ctx}"
+            if wiki_ctx:
+                system += f"\n\nWIKI DATA (live from Hypixel Skyblock wiki):\n{wiki_ctx}"
             if price_question and not live_ctx and not ah_ctx:
                 system += "\n\nNo live price data found. Do NOT guess prices."
             if linked_summary:
