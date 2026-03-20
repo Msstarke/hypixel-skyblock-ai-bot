@@ -1060,9 +1060,14 @@ class AIHandler:
                 linked_ign = get_linked_username(discord_user_id)
                 if linked_ign:
                     try:
-                        pdata = await self.hypixel.get_player_data(linked_ign)
+                        linked_uuid = get_linked_uuid(discord_user_id)
+                        pdata = await self.hypixel.get_player_data(linked_ign, uuid=linked_uuid)
                         if pdata and pdata.get("summary"):
                             linked_summary = pdata["summary"]
+                            # Update cached username if it changed (name change)
+                            if pdata.get("username") and pdata["username"].lower() != linked_ign.lower():
+                                from user_links import update_username
+                                update_username(discord_user_id, pdata["username"])
                     except Exception:
                         pass  # silently skip if fetch fails
 
