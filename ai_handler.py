@@ -1280,14 +1280,12 @@ class AIHandler:
                         {"role": "system", "content": system},
                         {"role": "user", "content": question},
                     ],
-                    max_tokens=600,
+                    max_tokens=1200,
                     temperature=0.1,
                 )
                 text = resp.choices[0].message.content.strip()
                 # deepseek-r1 wraps its reasoning in <think>...</think> — strip it
                 text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
-                if len(text) > MAX_DISCORD_LEN:
-                    text = text[:MAX_DISCORD_LEN] + "…"
 
                 # Log unanswered questions
                 _NO_INFO = ["don't have that info", "don't have enough info", "unavailable",
