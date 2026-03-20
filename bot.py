@@ -277,6 +277,11 @@ async def help_command(ctx: commands.Context):
         inline=False
     )
     embed.add_field(
+        name="!link <ign>",
+        value="Link your Minecraft account for personalized advice, networth, and stats.",
+        inline=False
+    )
+    embed.add_field(
         name="!correct <topic> | <correction>",
         value="Submit a correction if the bot gets something wrong. Reviewed by admins.",
         inline=False
@@ -284,9 +289,9 @@ async def help_command(ctx: commands.Context):
     embed.add_field(
         name="Examples",
         value=(
-            "`!ai what's the total cost of 655 enchanted diamonds?`\n"
-            "`!ai how much profit per hour does a t11 wheat minion make?`\n"
-            "`!ai what's the best reforge for berserker armor?`\n"
+            "`!ai whats my networth` (requires !link)\n"
+            "`!ai hypermax divan helmet`\n"
+            "`!ai whats the craft cost for glossy mineral helmet`\n"
             "`!bazaar enchanted diamond`\n"
             "`!flips` / `!flips ah`\n"
             "`!correct minions | T11 snow minion makes ~1.2M/day with diamond spreading`"
