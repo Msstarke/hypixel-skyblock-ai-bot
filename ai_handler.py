@@ -1305,6 +1305,9 @@ class AIHandler:
                 # deepseek-r1 wraps its reasoning in <think>...</think> — strip it
                 text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
 
+                # Post-processing: catch known hallucinated items/terms
+                text = self._filter_hallucinations(text)
+
                 # Log unanswered questions
                 _NO_INFO = ["don't have that info", "don't have enough info", "unavailable",
                             "i'm not sure", "not in my knowledge", "don't have info"]
