@@ -101,6 +101,11 @@ class HypixelAPI:
         data = await self._get(LOWEST_BIN_URL, "lowest_bin", params={}, ttl=AH_CACHE_TTL)
         return data or {}
 
+    async def get_skyhelper_prices(self) -> dict:
+        """Fetch SkyHelper prices (13k+ items incl enchantments, reforges, pets)."""
+        data = await self._get(SKYHELPER_PRICES_URL, "skyhelper_prices", params={}, ttl=CACHE_TTL)
+        return data or {}
+
     async def get_auction_averages(self) -> dict:
         """Stub — moulberry auction averages URLs are dead (404). Returns empty dict."""
         return {}
