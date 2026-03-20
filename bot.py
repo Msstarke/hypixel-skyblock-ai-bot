@@ -119,6 +119,75 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
             del _recent_responses[oldest]
 
 
+@bot.command(name="hotm")
+async def hotm_command(ctx: commands.Context, *, username: str = None):
+    """Show a player's Heart of the Mountain tree as an image."""
+    from hotm_render import render_hotm_tree
+    from hypixel_api import HOTM_XP
+
+    # Resolve username
+    if not username:
+        linked = get_linked_username(ctx.author.id)
+        if linked:
+            username = linked
+        else:
+            await ctx.reply("Usage: `!hotm <username>` or link your account with `!link <username>`")
+            return
+
+    async with ctx.typing():
+        try:
+            data = await ai.hypixel.get_player_data(username)
+        except Exception as e:
+            await ctx.reply(f"Error fetching data: {e}")
+            return
+
+        if not data:
+            await ctx.reply(f"Could not find player **{username}**.")
+            return
+
+        stats = data["stats"]
+        hotm_perks = stats.get("hotm_perks", {})
+        hotm_xp = stats.get("hotm_xp", 0)
+        hotm_lvl = sum(1 for req in HOTM_XP[1:] if hotm_xp >= req)
+
+        powder = {
+            "mithril": stats.get("mithril_powder", 0),
+            "gemstone": stats.get("gemstone_powder", 0),
+            "glacite": stats.get("glacite_powder", 0),
+        }
+        selected = stats.get("hotm_selected_ability", "")
+
+        buf = render_hotm_tree(hotm_perks, powder, hotm_lvl, selected, username)
+        file = discord.File(buf, filename="hotm.png")
+
+        embed = discord.Embed(
+            title=f"{username}'s Heart of the Mountain",
+            color=0x2E8B82,
+        )
+        embed.set_image(url="attachment://hotm.png")
+
+        # Add powder summary to embed
+        mp = stats.get("mithril_powder", 0)
+        gp = stats.get("gemstone_powder", 0)
+        glp = stats.get("glacite_powder", 0)
+        spent_m = stats.get("powder_spent_mithril", 0)
+        spent_g = stats.get("powder_spent_gemstone", 0)
+        spent_gl = stats.get("powder_spent_glacite", 0)
+
+        powder_text = (
+            f"Mithril: **{mp:,}** available ({spent_m:,} spent)\n"
+            f"Gemstone: **{gp:,}** available ({spent_g:,} spent)\n"
+            f"Glacite: **{glp:,}** available ({spent_gl:,} spent)"
+        )
+        embed.add_field(name="Powder", value=powder_text, inline=False)
+
+        if selected:
+            embed.add_field(name="Active Ability", value=selected.replace("_", " ").title(), inline=True)
+        embed.add_field(name="HotM Tier", value=str(hotm_lvl), inline=True)
+
+        await ctx.reply(embed=embed, file=file)
+
+
 @bot.command(name="bazaar")
 async def bazaar_command(ctx: commands.Context, *, item: str = None):
     """Quick bazaar price lookup without AI."""
