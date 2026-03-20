@@ -892,6 +892,290 @@ async def help_command(ctx: commands.Context):
     await ctx.send(embed=embed)
 
 
+async def _get_player_or_reply(ctx, username: str = None) -> tuple:
+    """Fetch player data, using linked account if no username given.
+    Returns (data, username, mc_uuid) or sends error reply and returns (None, None, None).
+    """
+    mc_uuid = None
+    if not username:
+        linked_name = get_linked_username(ctx.author.id)
+        if not linked_name:
+            await ctx.reply("Link your account first with `!link <ign>`, or provide a username.")
+            return None, None, None
+        username = linked_name
+        mc_uuid = get_linked_uuid(ctx.author.id)
+
+    async with ctx.typing():
+        try:
+            data = await ai.hypixel.get_player_data(username, uuid=mc_uuid)
+        except Exception as e:
+            print(f"[bot] Player data fetch failed for {username}: {e}")
+            data = None
+
+    if not data:
+        await ctx.reply(f"Couldn't find Skyblock data for **{username}**. Check spelling and make sure your API is enabled in Hypixel settings.")
+        return None, None, None
+
+    return data, data.get("username", username), mc_uuid
+
+
+@bot.command(name="skills")
+async def skills_command(ctx: commands.Context, *, username: str = None):
+    """View skill levels for a player."""
+    data, username, _ = await _get_player_or_reply(ctx, username)
+    if not data:
+        return
+
+    from player_stats import _format_number, SKILL_MAX
+    stats = data["stats"]
+    skills = stats.get("skills", {})
+    profile = data.get("profile_name", "?")
+
+    embed = discord.Embed(
+        title=f"{username}'s Skills",
+        description=f"Profile: {profile}",
+        color=0x3498DB,
+    )
+
+    # Calculate skill average (exclude Runecrafting, Social, Carpentry)
+    avg_skills = {k: v for k, v in skills.items() if k not in ("Runecrafting", "Social", "Carpentry")}
+    if avg_skills:
+        sa = sum(v["level"] for v in avg_skills.values()) / len(avg_skills)
+        embed.description += f" | Skill Average: **{sa:.1f}**"
+
+    for name, info in skills.items():
+        cap = SKILL_MAX.get(name, 50)
+        lvl = info["level"]
+        xp = info["xp"]
+        bar = "█" * (lvl * 10 // cap) + "░" * (10 - lvl * 10 // cap)
+        embed.add_field(
+            name=f"{name} {lvl}/{cap}",
+            value=f"`{bar}` {_format_number(xp)} XP",
+            inline=True,
+        )
+
+    await ctx.reply(embed=embed)
+
+
+@bot.command(name="slayer")
+async def slayer_command(ctx: commands.Context, *, username: str = None):
+    """View slayer levels for a player."""
+    data, username, _ = await _get_player_or_reply(ctx, username)
+    if not data:
+        return
+
+    from player_stats import _format_number
+    stats = data["stats"]
+    slayers = stats.get("slayer", {})
+    profile = data.get("profile_name", "?")
+
+    embed = discord.Embed(
+        title=f"{username}'s Slayers",
+        description=f"Profile: {profile}",
+        color=0xE74C3C,
+    )
+
+    total_xp = 0
+    for name, info in slayers.items():
+        lvl = info["level"]
+        xp = info["xp"]
+        total_xp += xp
+        bar = "█" * min(lvl, 9) + "░" * max(0, 9 - lvl)
+        embed.add_field(
+            name=f"{name} {lvl}/9",
+            value=f"`{bar}` {_format_number(xp)} XP",
+            inline=True,
+        )
+
+    embed.set_footer(text=f"Total Slayer XP: {total_xp:,}")
+    await ctx.reply(embed=embed)
+
+
+@bot.command(name="pets")
+async def pets_command(ctx: commands.Context, *, username: str = None):
+    """View a player's pets."""
+    data, username, _ = await _get_player_or_reply(ctx, username)
+    if not data:
+        return
+
+    from player_stats import _pet_level
+    stats = data["stats"]
+    pets = stats.get("pets", [])
+    profile = data.get("profile_name", "?")
+
+    embed = discord.Embed(
+        title=f"{username}'s Pets",
+        description=f"Profile: {profile} | Total: {len(pets)} pets",
+        color=0xF1C40F,
+    )
+
+    tier_colors = {"COMMON": "⬜", "UNCOMMON": "🟩", "RARE": "🟦", "EPIC": "🟪", "LEGENDARY": "🟨", "MYTHIC": "🟥", "DIVINE": "🩵"}
+
+    # Active pet first
+    active = [p for p in pets if p.get("active")]
+    if active:
+        p = active[0]
+        lvl = _pet_level(p["xp"], p["tier"])
+        held = p["held_item"].replace("PET_ITEM_", "").replace("_", " ").title() if p["held_item"] else "None"
+        icon = tier_colors.get(p["tier"], "⬜")
+        embed.add_field(
+            name=f"{icon} ACTIVE: {p['type'].replace('_', ' ').title()} (Lvl {lvl})",
+            value=f"Rarity: {p['tier'].title()} | Held item: {held}",
+            inline=False,
+        )
+
+    # Top pets by level (sorted by XP)
+    sorted_pets = sorted(pets, key=lambda x: x["xp"], reverse=True)
+    lines = []
+    for p in sorted_pets[:20]:
+        if p.get("active"):
+            continue
+        lvl = _pet_level(p["xp"], p["tier"])
+        icon = tier_colors.get(p["tier"], "⬜")
+        name = p["type"].replace("_", " ").title()
+        lines.append(f"{icon} **{name}** — Lvl {lvl} ({p['tier'].title()})")
+
+    if lines:
+        # Split into chunks for embed field limit
+        for i in range(0, len(lines), 10):
+            chunk = "\n".join(lines[i:i+10])
+            embed.add_field(name="Top Pets" if i == 0 else "\u200b", value=chunk, inline=False)
+
+    await ctx.reply(embed=embed)
+
+
+@bot.command(name="dungeons")
+async def dungeons_command(ctx: commands.Context, *, username: str = None):
+    """View dungeon stats for a player."""
+    data, username, _ = await _get_player_or_reply(ctx, username)
+    if not data:
+        return
+
+    from player_stats import _format_number
+    stats = data["stats"]
+    profile = data.get("profile_name", "?")
+
+    cata_lvl = stats.get("catacombs_level", 0)
+    cata_xp = stats.get("catacombs_xp", 0)
+    sel_class = stats.get("selected_class", "None")
+
+    embed = discord.Embed(
+        title=f"{username}'s Dungeons",
+        description=f"Profile: {profile} | Catacombs **{cata_lvl}** ({_format_number(cata_xp)} XP) | Class: {sel_class}",
+        color=0x9B59B6,
+    )
+
+    # Classes
+    classes = stats.get("dungeon_classes", {})
+    if classes:
+        class_lines = []
+        for name, info in classes.items():
+            lvl = info["level"]
+            bar = "█" * (lvl * 10 // 50) + "░" * (10 - lvl * 10 // 50)
+            class_lines.append(f"**{name}** {lvl} `{bar}`")
+        embed.add_field(name="Classes", value="\n".join(class_lines), inline=False)
+
+    # Floor completions
+    completions = stats.get("floor_completions", {})
+    if completions:
+        normal = {k: v for k, v in completions.items() if k.startswith("F")}
+        master = {k: v for k, v in completions.items() if k.startswith("M")}
+
+        if normal:
+            text = " | ".join(f"**{k}**: {v}" for k, v in sorted(normal.items()))
+            embed.add_field(name="Normal Floors", value=text, inline=False)
+        if master:
+            text = " | ".join(f"**{k}**: {v}" for k, v in sorted(master.items()))
+            embed.add_field(name="Master Mode", value=text, inline=False)
+
+    await ctx.reply(embed=embed)
+
+
+@bot.command(name="profile")
+async def profile_command(ctx: commands.Context, *, username: str = None):
+    """View a full profile overview for a player."""
+    data, username, _ = await _get_player_or_reply(ctx, username)
+    if not data:
+        return
+
+    from player_stats import _format_number, _pet_level, SKILL_MAX
+    from hypixel_api import HOTM_XP
+    stats = data["stats"]
+    profile = data.get("profile_name", "?")
+
+    embed = discord.Embed(
+        title=f"{username}'s Profile",
+        description=f"Profile: {profile}",
+        color=0x5865F2,
+    )
+
+    # Skyblock Level
+    sb_xp = stats.get("sb_xp", 0)
+    if sb_xp:
+        embed.description += f" | SB Level: **{int(sb_xp / 100)}**"
+
+    # Networth
+    nw = stats.get("networth")
+    if nw and nw.get("total"):
+        embed.add_field(
+            name="Networth",
+            value=f"**{_format_number(nw['total'])}** (Purse: {_format_number(nw.get('purse', 0))} | Bank: {_format_number(nw.get('bank', 0))})",
+            inline=False,
+        )
+    else:
+        purse = stats.get("purse", 0)
+        bank = stats.get("bank", 0)
+        embed.add_field(name="Coins", value=f"Purse: {_format_number(purse)} | Bank: {_format_number(bank)}", inline=False)
+
+    # Skills
+    skills = stats.get("skills", {})
+    avg_skills = {k: v for k, v in skills.items() if k not in ("Runecrafting", "Social", "Carpentry")}
+    if avg_skills:
+        sa = sum(v["level"] for v in avg_skills.values()) / len(avg_skills)
+        skill_text = " ".join(f"{k[:3]} {v['level']}" for k, v in skills.items() if v["level"] > 0)
+        embed.add_field(name=f"Skills (SA {sa:.1f})", value=skill_text or "None", inline=False)
+
+    # Slayers
+    slayers = stats.get("slayer", {})
+    slayer_parts = [f"{k} {v['level']}" for k, v in slayers.items() if v["level"] > 0]
+    if slayer_parts:
+        embed.add_field(name="Slayers", value=" | ".join(slayer_parts), inline=True)
+
+    # Dungeons
+    cata_lvl = stats.get("catacombs_level", 0)
+    sel_class = stats.get("selected_class", "None")
+    embed.add_field(name="Catacombs", value=f"Level {cata_lvl} | {sel_class}", inline=True)
+
+    # HotM
+    hotm_xp = stats.get("hotm_xp", 0)
+    hotm_lvl = sum(1 for req in HOTM_XP[1:] if hotm_xp >= req)
+    embed.add_field(name="HotM", value=str(hotm_lvl), inline=True)
+
+    # Magic Power
+    mp = stats.get("magical_power", 0)
+    power = stats.get("selected_power", "")
+    if mp:
+        embed.add_field(name="Magic Power", value=f"{mp:,} ({power})" if power else f"{mp:,}", inline=True)
+
+    # Active pet
+    pets = stats.get("pets", [])
+    active = [p for p in pets if p.get("active")]
+    if active:
+        p = active[0]
+        lvl = _pet_level(p["xp"], p["tier"])
+        embed.add_field(name="Active Pet", value=f"{p['type'].title()} Lvl {lvl} ({p['tier'].title()})", inline=True)
+
+    # Fairy souls
+    embed.add_field(name="Fairy Souls", value=str(stats.get("fairy_souls", 0)), inline=True)
+
+    # Armor
+    armor = [a["name"] for a in stats.get("armor", []) if a.get("name")]
+    if armor:
+        embed.add_field(name="Armor", value=", ".join(armor), inline=False)
+
+    await ctx.reply(embed=embed)
+
+
 @bot.command(name="link")
 async def link_command(ctx: commands.Context, *, username: str = None):
     """Link your Discord account to your Minecraft IGN for personalized advice."""
