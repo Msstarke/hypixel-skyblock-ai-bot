@@ -456,26 +456,27 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
 @bot.command(name="feedback")
 @commands.is_owner()
 async def feedback_command(ctx: commands.Context):
-    """Show feedback stats and recent bad responses (owner only)."""
+    """Show feedback stats and recent bad responses with IDs (owner only)."""
     stats = get_feedback_stats()
     embed = discord.Embed(title="Bot Feedback", color=0xE74C3C)
     embed.add_field(name="Votes", value=f"👍 {stats['thumbs_up']} | 👎 {stats['thumbs_down']}", inline=True)
     embed.add_field(name="Unanswered", value=str(stats['unanswered']), inline=True)
 
-    bad = get_bad_responses(5)
+    bad = get_bad_responses(10)
     if bad:
         for b in bad:
             embed.add_field(
-                name=f"👎 {b['discord_name']}",
+                name=f"#{b['id']} 👎 {b['discord_name']}",
                 value=f"**Q:** {b['question'][:100]}\n**A:** {b['response'][:100]}",
                 inline=False,
             )
 
-    unans = get_unanswered(5)
+    unans = get_unanswered(10)
     if unans:
-        q_list = "\n".join(f"- {u['question'][:80]}" for u in unans)
-        embed.add_field(name="Recent unanswered", value=q_list[:500], inline=False)
+        q_list = "\n".join(f"- **#{u['id']}** {u['question'][:80]}" for u in unans)
+        embed.add_field(name="Unanswered questions", value=q_list[:1000], inline=False)
 
+    embed.set_footer(text="!resolve <id> — mark fixed | !resolve all — clear all")
     await ctx.reply(embed=embed)
 
 
