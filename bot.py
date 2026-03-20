@@ -39,11 +39,22 @@ async def snapshot_bazaar():
         print(f"[tracker] Snapshot failed: {e}")
 
 
+@tasks.loop(seconds=ANALYSIS_INTERVAL)
+async def auto_analyze_feedback():
+    """Periodically analyze feedback to detect issues."""
+    try:
+        report = await analyze_feedback()
+        print(f"[feedback-agent] Analysis complete ({len(report)} chars)")
+    except Exception as e:
+        print(f"[feedback-agent] Analysis failed: {e}")
+
+
 @bot.event
 async def on_ready():
     print(f"Logged in as {bot.user} (ID: {bot.user.id})")
     print(f"Serving {len(bot.guilds)} guild(s)")
     snapshot_bazaar.start()
+    auto_analyze_feedback.start()
 
 
 # Track recent bot responses for reaction-based feedback
