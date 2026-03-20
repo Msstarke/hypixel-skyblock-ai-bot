@@ -22,6 +22,9 @@ SECRET_KEY = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
 DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", 5000))
 
 app = Flask(__name__)
+
+# Set by bot.py so the dashboard can reload the live knowledge base
+_live_knowledge_base = None
 app.secret_key = SECRET_KEY
 
 
