@@ -1,6 +1,6 @@
 """
 Render a Heart of the Mountain (HotM) tree visualization.
-Layout matches SkyCrypt's 9-column, 10-row grid exactly.
+Styled to match Minecraft inventory UI aesthetic.
 """
 import io
 from PIL import Image, ImageDraw, ImageFont
@@ -83,44 +83,48 @@ ALT_IDS = {
     "hungry_for_more": "dead_mans_chest",
 }
 
-# Colors
-BG = (18, 18, 28)
-NODE_BG = (32, 34, 48)
-NODE_LOCKED = (26, 26, 36)
-NODE_BORDER_LOCKED = (42, 42, 56)
-ACCENT = {
-    "mithril":  (0, 190, 170),
-    "gemstone": (190, 50, 190),
-    "glacite":  (60, 170, 230),
-    "token":    (230, 190, 50),
-    "all":      (230, 140, 40),
-}
-MAXED_GOLD = (255, 210, 0)
-ABILITY_GREEN = (40, 220, 90)
-WHITE = (235, 235, 240)
-GREY = (100, 100, 120)
-DIM = (45, 45, 58)
-BAR_BG = (22, 22, 34)
+# ── Minecraft-inspired color palette ──
+BG = (22, 22, 30)
+SLOT_BG = (50, 50, 60)           # Minecraft inventory slot gray
+SLOT_BORDER_DARK = (20, 20, 28)  # Bottom-right shadow
+SLOT_BORDER_LIGHT = (70, 70, 82) # Top-left highlight (3D bevel)
+LOCKED_BG = (30, 30, 38)
+LOCKED_BORDER = (40, 40, 50)
 
-# Layout
-NODE_W = 56
-NODE_H = 48
-GAP_X = 3
-GAP_Y = 3
-GRID_COLS = 7  # only 7 columns are used (0-6)
+ACCENT = {
+    "mithril":  (0, 210, 190),
+    "gemstone": (210, 60, 210),
+    "glacite":  (70, 180, 240),
+    "token":    (240, 200, 60),
+    "all":      (240, 150, 40),
+}
+MAXED_GOLD = (255, 215, 0)
+ABILITY_GREEN = (50, 240, 100)
+WHITE = (240, 240, 245)
+LIGHT_GREY = (180, 180, 195)
+GREY = (110, 110, 130)
+DIM_LINE = (55, 55, 70)
+BAR_BG = (30, 30, 40)
+BAR_BORDER = (20, 20, 28)
+
+# ── Layout ──
+NODE_W = 64
+NODE_H = 56
+GAP_X = 6
+GAP_Y = 6
+GRID_COLS = 7
 GRID_ROWS = 10
-MARGIN = 14
-HEADER_H = 28
-FOOTER_H = 42
+MARGIN = 18
+HEADER_H = 44
+FOOTER_H = 52
 
 GRID_W = GRID_COLS * NODE_W + (GRID_COLS - 1) * GAP_X
 GRID_H = GRID_ROWS * NODE_H + (GRID_ROWS - 1) * GAP_Y
 IMG_W = MARGIN * 2 + GRID_W
-IMG_H = HEADER_H + 6 + GRID_H + 6 + FOOTER_H
+IMG_H = HEADER_H + GRID_H + FOOTER_H
 
 
 def _pos_to_rc(pos):
-    """Convert SkyCrypt position to (row, col) in the 9-wide grid."""
     row = (pos - 1) // 9
     col = (pos - 1) % 9
     return row, col
@@ -130,17 +134,17 @@ def _fmt(n):
     if n >= 1_000_000:
         return f"{n / 1_000_000:.1f}M"
     if n >= 1_000:
-        return f"{n / 1_000:.0f}K"
+        return f"{n / 1_000:.1f}K"
     return str(n)
 
 
 def _font(size):
     for p in [
+        "C:/Windows/Fonts/segoeui.ttf",
         "C:/Windows/Fonts/consola.ttf",
         "C:/Windows/Fonts/cascadiamono.ttf",
-        "C:/Windows/Fonts/segoeui.ttf",
-        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
         "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSansMono.ttf",
     ]:
         try:
             return ImageFont.truetype(p, size)
@@ -149,14 +153,51 @@ def _font(size):
     return ImageFont.load_default()
 
 
+def _font_bold(size):
+    for p in [
+        "C:/Windows/Fonts/segoeuib.ttf",
+        "C:/Windows/Fonts/consolab.ttf",
+        "C:/Windows/Fonts/cascadiamonob.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
+    ]:
+        try:
+            return ImageFont.truetype(p, size)
+        except (OSError, IOError):
+            continue
+    return _font(size)
+
+
 def _center_text(draw, text, font, x, y, w, fill):
     bb = draw.textbbox((0, 0), text, font=font)
     tw = bb[2] - bb[0]
     draw.text((x + (w - tw) / 2, y), text, fill=fill, font=font)
 
 
+def _draw_slot(draw, x, y, w, h, fill, border_color=None, glow=False):
+    """Draw a Minecraft-style inventory slot with 3D bevel effect."""
+    # Main fill
+    draw.rectangle([x, y, x + w - 1, y + h - 1], fill=fill)
+
+    if border_color:
+        # Colored border (2px)
+        draw.rectangle([x, y, x + w - 1, y + h - 1], outline=border_color, width=2)
+        if glow:
+            # Soft outer glow: draw a slightly transparent border around
+            glow_color = (border_color[0], border_color[1], border_color[2])
+            draw.rectangle([x - 1, y - 1, x + w, y + h], outline=glow_color, width=1)
+    else:
+        # Standard Minecraft bevel: light top-left, dark bottom-right
+        # Top edge
+        draw.line([(x, y), (x + w - 1, y)], fill=SLOT_BORDER_LIGHT, width=1)
+        # Left edge
+        draw.line([(x, y), (x, y + h - 1)], fill=SLOT_BORDER_LIGHT, width=1)
+        # Bottom edge
+        draw.line([(x, y + h - 1), (x + w - 1, y + h - 1)], fill=SLOT_BORDER_DARK, width=1)
+        # Right edge
+        draw.line([(x + w - 1, y), (x + w - 1, y + h - 1)], fill=SLOT_BORDER_DARK, width=1)
+
+
 def _get_level(hotm_perks, api_id):
-    """Get perk level, checking both SkyCrypt and Hypixel API ID variants."""
     lvl = hotm_perks.get(api_id, 0)
     if lvl == 0:
         alt = ALT_IDS.get(api_id)
@@ -165,50 +206,82 @@ def _get_level(hotm_perks, api_id):
     return lvl
 
 
+def _lerp_color(c1, c2, t):
+    """Linearly interpolate between two colors."""
+    return tuple(int(a + (b - a) * t) for a, b in zip(c1, c2))
+
+
 def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
                      selected_ability: str = "", username: str = "") -> io.BytesIO:
     img = Image.new("RGB", (IMG_W, IMG_H), BG)
     draw = ImageDraw.Draw(img)
 
-    f_title = _font(12)
+    f_title = _font_bold(14)
+    f_subtitle = _font(10)
     f_name = _font(8)
-    f_lvl = _font(9)
-    f_powder = _font(10)
-    f_plabel = _font(7)
+    f_lvl = _font_bold(10)
+    f_powder_label = _font_bold(10)
+    f_powder_val = _font(12)
+    f_tier = _font(8)
 
-    # Header
-    title = f"{username}  ·  HotM {hotm_level}" if username else f"HotM {hotm_level}"
-    _center_text(draw, title, f_title, 0, 7, IMG_W, WHITE)
+    # ── Header ──
+    title = username if username else "HotM Tree"
+    _center_text(draw, title, f_title, 0, 8, IMG_W, WHITE)
+    subtitle = f"Heart of the Mountain {hotm_level}"
+    _center_text(draw, subtitle, f_subtitle, 0, 26, IMG_W, LIGHT_GREY)
 
     grid_x = MARGIN
-    grid_y = HEADER_H + 6
+    grid_y = HEADER_H
 
-    # Build position lookup for connection drawing
-    perk_positions = {}  # (row, col) -> api_id
+    # Build position lookup
+    perk_positions = {}
     for api_id, (_, pos, _, _, _) in PERKS.items():
         row, col = _pos_to_rc(pos)
         perk_positions[(row, col)] = api_id
 
-    # Draw connection lines
-    for api_id, (_, pos, _, _, _) in PERKS.items():
+    # ── Connection lines (draw first, behind nodes) ──
+    for api_id, (_, pos, _, ptype, _) in PERKS.items():
         row, col = _pos_to_rc(pos)
         x = grid_x + col * (NODE_W + GAP_X)
         y = grid_y + row * (NODE_H + GAP_Y)
         cx = x + NODE_W // 2
         cy_bot = y + NODE_H
 
+        lvl = _get_level(hotm_perks, api_id)
+        line_color = DIM_LINE
+
         # Vertical down
         if (row + 1, col) in perk_positions:
             ny = grid_y + (row + 1) * (NODE_H + GAP_Y)
-            draw.line([(cx, cy_bot), (cx, ny)], fill=DIM, width=1)
+            # Color the line if both nodes are unlocked
+            other_id = perk_positions[(row + 1, col)]
+            other_lvl = _get_level(hotm_perks, other_id)
+            if lvl > 0 and other_lvl > 0:
+                line_color = _lerp_color(DIM_LINE, ACCENT.get(ptype, DIM_LINE), 0.5)
+            else:
+                line_color = DIM_LINE
+            draw.line([(cx, cy_bot), (cx, ny)], fill=line_color, width=2)
 
         # Horizontal right
         if (row, col + 1) in perk_positions:
             rx = grid_x + (col + 1) * (NODE_W + GAP_X)
             mid_y = y + NODE_H // 2
-            draw.line([(x + NODE_W, mid_y), (rx, mid_y)], fill=DIM, width=1)
+            other_id = perk_positions[(row, col + 1)]
+            other_lvl = _get_level(hotm_perks, other_id)
+            if lvl > 0 and other_lvl > 0:
+                line_color = _lerp_color(DIM_LINE, ACCENT.get(ptype, DIM_LINE), 0.5)
+            else:
+                line_color = DIM_LINE
+            draw.line([(x + NODE_W, mid_y), (rx, mid_y)], fill=line_color, width=2)
 
-    # Draw nodes
+    # ── Tier labels on the left ──
+    for row in range(GRID_ROWS):
+        tier = 10 - row
+        ty = grid_y + row * (NODE_H + GAP_Y) + NODE_H // 2 - 4
+        tier_color = LIGHT_GREY if hotm_level >= tier else (50, 50, 60)
+        draw.text((3, ty), str(tier), fill=tier_color, font=f_tier)
+
+    # ── Draw nodes ──
     for api_id, (name, pos, max_lvl, ptype, is_ability) in PERKS.items():
         row, col = _pos_to_rc(pos)
         x = grid_x + col * (NODE_W + GAP_X)
@@ -221,68 +294,79 @@ def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
         tier_unlocked = hotm_level >= tier
         accent = ACCENT.get(ptype, ACCENT["mithril"])
 
-        # Check if this is the active ability
+        # Check active ability
         active = False
         if is_ability:
-            # Match against both SkyCrypt and API IDs
             possible_ids = {api_id}
             if api_id in ALT_IDS:
                 possible_ids.add(ALT_IDS[api_id])
             active = selected_ability in possible_ids
 
-        # Colors
+        # ── Node style ──
         if not unlocked:
-            fill = NODE_LOCKED
-            border = NODE_BORDER_LOCKED if tier_unlocked else (28, 28, 36)
+            fill = LOCKED_BG
+            border = LOCKED_BORDER if tier_unlocked else None
+            glow = False
         elif maxed:
-            fill = (35, 33, 12)
+            fill = (45, 40, 15)
             border = MAXED_GOLD
+            glow = True
         elif active:
-            fill = (12, 40, 20)
+            fill = (15, 45, 25)
             border = ABILITY_GREEN
+            glow = True
         else:
-            fill = (accent[0] // 8 + 8, accent[1] // 8 + 8, accent[2] // 8 + 8)
+            # Tinted fill based on powder type
+            fill = (accent[0] // 7 + 12, accent[1] // 7 + 12, accent[2] // 7 + 12)
             border = accent
+            glow = False
 
-        draw.rectangle([x, y, x + NODE_W - 1, y + NODE_H - 1], fill=fill, outline=border, width=1)
+        _draw_slot(draw, x, y, NODE_W, NODE_H, fill, border_color=border, glow=glow)
 
-        # Progress bar (2px at bottom)
+        # ── Progress bar (4px tall, inside node at bottom) ──
         if unlocked and max_lvl > 1:
-            bar_y = y + NODE_H - 4
-            bar_w = NODE_W - 4
+            bar_x = x + 4
+            bar_y = y + NODE_H - 8
+            bar_w = NODE_W - 8
+            bar_h = 4
             progress = min(lvl / max_lvl, 1.0)
-            draw.rectangle([x + 2, bar_y, x + 2 + bar_w, bar_y + 2], fill=BAR_BG)
+            # Bar background
+            draw.rectangle([bar_x, bar_y, bar_x + bar_w, bar_y + bar_h], fill=BAR_BG)
+            draw.rectangle([bar_x, bar_y, bar_x + bar_w, bar_y + bar_h], outline=BAR_BORDER, width=1)
             if progress > 0:
                 c = MAXED_GOLD if maxed else accent
-                draw.rectangle([x + 2, bar_y, x + 2 + int(bar_w * progress), bar_y + 2], fill=c)
+                pw = max(1, int(bar_w * progress))
+                draw.rectangle([bar_x + 1, bar_y + 1, bar_x + pw, bar_y + bar_h - 1], fill=c)
 
-        # Name text
+        # ── Name text ──
         lines = name.split("\n")
         name_color = WHITE if unlocked else GREY
+        text_y = y + 4
         for i, line in enumerate(lines):
-            _center_text(draw, line, f_name, x, y + 3 + i * 11, NODE_W, name_color)
+            _center_text(draw, line, f_name, x, text_y + i * 11, NODE_W, name_color)
 
-        # Level text
+        # ── Level text ──
         if is_ability:
             if active:
-                lt, lc = "ON", ABILITY_GREEN
+                lt, lc = "ACTIVE", ABILITY_GREEN
             elif unlocked:
                 lt, lc = f"Lvl {lvl}", accent
             else:
-                lt, lc = "·", DIM
+                lt, lc = "Locked", GREY
         elif maxed:
-            lt, lc = "MAX", MAXED_GOLD
+            lt, lc = "MAXED", MAXED_GOLD
         elif unlocked:
-            lt, lc = f"{lvl}/{max_lvl}", WHITE
+            lt, lc = f"{lvl}/{max_lvl}", LIGHT_GREY
         else:
-            lt, lc = "·", DIM
+            lt, lc = "Locked", (55, 55, 65)
 
-        lvl_y = y + 5 + len(lines) * 11
+        lvl_y = text_y + len(lines) * 11 + 1
         _center_text(draw, lt, f_lvl, x, lvl_y, NODE_W, lc)
 
-    # Footer
+    # ── Footer: Powder summary ──
     fy = IMG_H - FOOTER_H
-    draw.line([(MARGIN, fy + 2), (IMG_W - MARGIN, fy + 2)], fill=DIM, width=1)
+    # Separator line
+    draw.line([(MARGIN, fy + 4), (IMG_W - MARGIN, fy + 4)], fill=DIM_LINE, width=1)
 
     powders = [
         ("Mithril", powder.get("mithril", 0), ACCENT["mithril"]),
@@ -292,8 +376,13 @@ def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
     sw = (IMG_W - MARGIN * 2) // 3
     for i, (label, amt, color) in enumerate(powders):
         px = MARGIN + i * sw
-        draw.text((px + 2, fy + 7), label, fill=color, font=f_plabel)
-        draw.text((px + 2, fy + 20), _fmt(amt), fill=WHITE, font=f_powder)
+        # Colored dot
+        dot_y = fy + 16
+        draw.ellipse([px + 2, dot_y, px + 8, dot_y + 6], fill=color)
+        # Label
+        draw.text((px + 12, fy + 12), label, fill=color, font=f_powder_label)
+        # Value
+        draw.text((px + 12, fy + 28), _fmt(amt), fill=WHITE, font=f_powder_val)
 
     buf = io.BytesIO()
     img.save(buf, format="PNG")
