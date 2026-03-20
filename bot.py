@@ -577,6 +577,85 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
                 print(f"[bot] Skill calc tool failed: {e}")
                 pass  # fall through to AI
 
+        if tool == "mp_optimizer":
+            try:
+                from mp_optimizer import get_accessory_mp_rankings, format_mp_plan
+                # Get player's owned accessories if linked
+                owned_ids = set()
+                current_mp = 0
+                linked_uuid = get_linked_uuid(ctx.author.id)
+                linked_name = get_linked_username(ctx.author.id)
+                if linked_name:
+                    pdata = await ai.hypixel.get_player_data(linked_name, uuid=linked_uuid)
+                    if pdata:
+                        stats = pdata["stats"]
+                        current_mp = stats.get("magical_power", 0)
+                        for acc in stats.get("accessories", []):
+                            if acc.get("id"):
+                                owned_ids.add(acc["id"])
+
+                budget = _parse_budget(question)
+                rankings = await get_accessory_mp_rankings(ai.hypixel, owned_ids=owned_ids)
+                if rankings:
+                    plan = format_mp_plan(
+                        rankings, budget=budget,
+                        current_mp=current_mp, owned_ids=owned_ids,
+                        target_count=20,
+                    )
+                    recomb_price = rankings[0]["recomb_price"]
+                    title = "Cheapest MP Upgrades"
+                    if linked_name:
+                        title = f"MP Upgrades for {linked_name}"
+
+                    embed = discord.Embed(title=title, color=0x9B59B6)
+                    if current_mp:
+                        embed.description = f"Current MP: **{current_mp:,}**"
+                    embed.set_footer(
+                        text=f"Recombobulator 3000 price: {recomb_price:,.0f} coins | Prices from lowest BIN"
+                    )
+
+                    # Split plan into chunks for embed fields
+                    lines = plan.split("\n")
+                    summary = lines[0] if lines else ""
+                    detail_lines = [l for l in lines[1:] if l.strip()]
+
+                    if summary:
+                        embed.add_field(name="Plan", value=summary, inline=False)
+
+                    chunk = []
+                    chunk_len = 0
+                    field_num = 1
+                    for line in detail_lines:
+                        if chunk_len + len(line) + 1 > 1000:
+                            embed.add_field(
+                                name=f"Recommendations ({field_num})" if field_num > 1 else "Recommendations",
+                                value="\n".join(chunk), inline=False
+                            )
+                            chunk = []
+                            chunk_len = 0
+                            field_num += 1
+                        chunk.append(line)
+                        chunk_len += len(line) + 1
+                    if chunk:
+                        embed.add_field(
+                            name=f"Recommendations ({field_num})" if field_num > 1 else "Recommendations",
+                            value="\n".join(chunk), inline=False
+                        )
+
+                    msg = await ctx.reply(embed=embed)
+                    try:
+                        await msg.add_reaction("\U0001f44d")
+                        await msg.add_reaction("\U0001f44e")
+                    except Exception as e:
+                        print(f"[bot] Failed to add reactions: {e}")
+                    _recent_responses[msg.id] = (question, "[MP optimizer]", ctx.author.id, str(ctx.author))
+                    return
+            except Exception as e:
+                print(f"[bot] MP optimizer failed: {e}")
+                import traceback
+                traceback.print_exc()
+                pass  # fall through to AI
+
         # --- Default: AI response ---
         response = await ai.get_response(question, discord_user_id=ctx.author.id)
 
