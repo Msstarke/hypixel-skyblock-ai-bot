@@ -4,11 +4,6 @@ from pathlib import Path
 KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
 
 FILE_KEYWORDS = {
-    "mining_guide.md": ["mining", "pickaxe", "drill", "hotm", "heart of the mountain",
-                       "dwarven mines", "crystal hollows", "mining armor", "mining pet",
-                       "mining setup", "divan", "mineral armor", "pickonimbus", "scatha",
-                       "mithril golem", "silverfish pet", "bal pet", "gemstone",
-                       "powder", "commission", "glacite", "best mining", "mining guide"],
     "mining.md":      ["mining", "pickaxe", "drill", "hotm", "heart of the mountain",
                        "dwarven mines", "crystal hollows", "mining armor", "mining pet",
                        "mining setup", "divan", "mineral armor", "pickonimbus", "scatha",
@@ -17,22 +12,13 @@ FILE_KEYWORDS = {
     "skills.md":      ["skill", "farming", "combat", "fishing", "foraging",
                        "enchanting", "alchemy", "taming", "carpentry", "runecrafting",
                        "xp", "level up", "skill level", "skill xp"],
-    "dungeons_guide.md": ["dungeon armor", "dungeon weapon", "dungeon setup", "dungeon gear",
-                          "best dungeon", "early dungeon", "cata 0", "cata 1", "cata 2", "cata 3",
-                          "cata 4", "cata 5", "f1 armor", "f2 armor", "f3 armor", "f4 armor",
-                          "budget dungeon", "dungeons budget", "dungeon class", "berserk armor",
-                          "mage armor", "archer armor", "healer armor", "tank armor",
-                          "shadow assassin", "superior dragon", "strong dragon", "unstable dragon",
-                          "wise dragon", "young dragon", "necron", "aurora", "terror", "fervor",
-                          "goldor", "storm armor", "maxor", "hyperion", "livid dagger", "juju",
-                          "adaptive armor", "zombie soldier", "skeleton soldier",
-                          "wither armor", "wither set", "wither sets", "f6", "f7",
-                          "floor 6", "floor 7", "necrons armor", "maxors armor", "storms armor",
-                          "goldors armor", "f6 armor", "f7 armor", "f6 boss", "f7 boss",
-                          "berserk", "berserker", "best berserk", "best mage dungeon", "best archer dungeon"],
     "dungeons.md":    ["dungeon", "floor", "catacombs", "class", "archer", "berserk", "healer",
                        "mage", "tank", "secret", "boss", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
-                       "m1", "m2", "m3", "m4", "m5", "m6", "m7", "master mode", "scoring"],
+                       "m1", "m2", "m3", "m4", "m5", "m6", "m7", "master mode", "scoring",
+                       "dungeon armor", "dungeon weapon", "dungeon setup", "dungeon gear",
+                       "shadow assassin", "necron", "hyperion", "livid dagger", "juju",
+                       "wither armor", "wither set", "goldor", "storm armor", "maxor",
+                       "cata 0", "cata 1", "cata 2", "cata 3", "cata 4", "cata 5"],
     "slayer.md":      ["slayer", "revenant", "tarantula", "sven", "voidgloom", "inferno",
                        "vampire slayer", "slayer boss", "slayer xp", "slayer level"],
     "minions.md":     ["minion", "fuel", "storage", "compactor", "super compactor",
@@ -50,12 +36,9 @@ FILE_KEYWORDS = {
                        "instabuy", "instasell", "trade", "market"],
     "bestiary.md":    ["bestiary", "bestiaries", "mob kill", "mob grind", "kill count",
                        "grind mob", "grind mobs", "mob farming", "monster grind", "mob family"],
-    "obtaining.md":   ["recipe", "craft", "how to make", "how to get", "ingredients", "forge",
-                       "how do i get", "where do i get", "how to obtain", "divan recipe",
-                       "hyperion recipe", "necron recipe", "dragon armor recipe", "livid dagger",
-                       "how to craft", "forged", "dungeon drop", "dragon fragment"],
     "general.md":     ["fairy soul", "essence", "magic find", "kuudra", "how to", "guide",
-                       "tip", "beginner", "what is"],
+                       "tip", "beginner", "what is", "magical power", "accessory bag",
+                       "mp", "power stone"],
 }
 
 
@@ -78,7 +61,7 @@ def _split_sections(text: str) -> list[tuple[str, str]]:
 
 
 def _score_section(heading: str, content: str, q_words: set) -> int:
-    text = re.sub(r"[^\w\s]", "", (heading + " " + content[:300]).lower())
+    text = re.sub(r"[^\w\s]", "", (heading + " " + content[:500]).lower())
     score = 0
     for w in q_words:
         if len(w) < 3:
@@ -112,7 +95,15 @@ class KnowledgeBase:
         """Return community corrections content, or empty string if none."""
         return self._files.get("community_corrections.md", "")
 
-    def get_relevant_knowledge(self, question: str, max_chars: int = 35000) -> str:
+    def get_relevant_knowledge(self, question: str, max_chars: int = 35000,
+                                is_price_question: bool = False) -> str:
+        """Get relevant knowledge base content for a question.
+
+        For price questions, reduces budget to leave room for live data.
+        """
+        if is_price_question:
+            max_chars = min(max_chars, 15000)
+
         q = question.lower()
         q_norm = re.sub(r"[^\w\s]", "", q)
         q_words = set(q_norm.split())
@@ -120,18 +111,14 @@ class KnowledgeBase:
         # Pick top matching files (up to 3)
         file_scores: dict[str, int] = {}
         for fname, keywords in FILE_KEYWORDS.items():
+            if fname not in self._files:
+                continue
             score = sum(1 for kw in keywords if kw in q_norm)
             if score:
                 file_scores[fname] = score
 
         if not file_scores and "general.md" in self._files:
             file_scores["general.md"] = 1
-
-        # Always include obtaining.md for recipe/obtain questions — it often ties with other files
-        # and gets dropped, causing hallucination
-        RECIPE_TRIGGERS = {"recipe", "craft", "forge", "how to get", "how do i get", "how to craft", "how to make", "how to obtain"}
-        if any(t in q_norm for t in RECIPE_TRIGGERS) and "obtaining.md" in self._files:
-            file_scores["obtaining.md"] = file_scores.get("obtaining.md", 0) + 10
 
         top_files = sorted(file_scores, key=lambda f: file_scores[f], reverse=True)[:3]
 
