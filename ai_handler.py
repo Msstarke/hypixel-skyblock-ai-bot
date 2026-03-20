@@ -1209,10 +1209,14 @@ class AIHandler:
                             break
                 except Exception:
                     pass
-            # Live wiki fetch when knowledge base has little relevant content
+            # Live wiki fetch — use alongside KB for better coverage, not just fallback
             wiki_ctx = ""
-            kb_empty = len(static_ctx.strip()) < 100 and not live_ctx and not ah_ctx and not item_ctx
-            if kb_empty:
+            kb_thin = len(static_ctx.strip()) < 500
+            # Fetch wiki for non-price questions when KB is thin, or always for specific game mechanic questions
+            wiki_triggers = ["how does", "what does", "how to", "where", "wiki", "explain",
+                             "mechanic", "how do i", "what is the", "when does"]
+            wants_wiki = kb_thin or any(t in question.lower() for t in wiki_triggers)
+            if wants_wiki and not price_question:
                 try:
                     wiki_ctx = await wiki_context(question, max_chars=3000)
                 except Exception:
