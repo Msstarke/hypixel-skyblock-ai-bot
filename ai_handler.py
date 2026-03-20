@@ -140,7 +140,14 @@ class AIHandler:
             text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
             return self._filter_hallucinations(text)
         except Exception as e:
-            return f"AI error: {e}"
+            print(f"[ai] Player question AI error: {e}")
+            err_name = type(e).__name__.lower()
+            err_str = str(e).lower()
+            if "rate" in err_name or "rate" in err_str or "429" in err_str:
+                return "I'm getting too many questions right now, try again in a moment."
+            if any(w in err_name for w in ("timeout", "connect", "connection")) or any(w in err_str for w in ("timeout", "connect")):
+                return "Couldn't reach the AI service, try again in a moment."
+            return "Something went wrong, try again."
 
     # Known fake items/terms the AI likes to hallucinate
     _FAKE_TERMS = [
