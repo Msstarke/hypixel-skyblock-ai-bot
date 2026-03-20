@@ -103,8 +103,62 @@ def parse_nbt_items(b64data: str) -> list[dict]:
             item_id = str(extra.get('id', ''))
             raw_name = str(display.get('Name', ''))
             name = STRIP_COLOR.sub('', raw_name).strip() or item_id.replace('_', ' ').title()
-            if item_id:
-                items.append({'id': item_id, 'name': name})
+            if not item_id:
+                continue
+            count = int(item.get('Count', 1))
+            parsed = {'id': item_id, 'name': name, 'count': count}
+
+            # Extract modifiers for networth calculation
+            enchants = extra.get('enchantments', nbtlib.Compound())
+            if enchants:
+                parsed['enchantments'] = {str(k): int(v) for k, v in enchants.items()}
+
+            reforge = str(extra.get('modifier', ''))
+            if reforge:
+                parsed['reforge'] = reforge
+
+            if int(extra.get('rarity_upgrades', 0)) > 0:
+                parsed['recombobulated'] = True
+
+            hpb = int(extra.get('hot_potato_count', 0))
+            if hpb > 0:
+                parsed['hot_potato_count'] = hpb
+
+            stars = int(extra.get('upgrade_level', 0)) or int(extra.get('dungeon_item_level', 0))
+            if stars > 0:
+                parsed['stars'] = stars
+
+            skin = str(extra.get('skin', ''))
+            if skin:
+                parsed['skin'] = skin
+
+            gems = extra.get('gems', nbtlib.Compound())
+            if gems:
+                parsed['gems'] = {str(k): str(v) for k, v in gems.items()}
+
+            drill_fuel = str(extra.get('drill_part_fuel_tank', ''))
+            drill_engine = str(extra.get('drill_part_engine', ''))
+            drill_upgrade = str(extra.get('drill_part_upgrade_module', ''))
+            if drill_fuel:
+                parsed['drill_part_fuel_tank'] = drill_fuel
+            if drill_engine:
+                parsed['drill_part_engine'] = drill_engine
+            if drill_upgrade:
+                parsed['drill_part_upgrade_module'] = drill_upgrade
+
+            art_of_war = int(extra.get('art_of_war_count', 0))
+            if art_of_war:
+                parsed['art_of_war'] = art_of_war
+
+            wood_singularity = int(extra.get('wood_singularity_count', 0))
+            if wood_singularity:
+                parsed['wood_singularity'] = wood_singularity
+
+            etherwarp = int(extra.get('ethermerge', 0))
+            if etherwarp:
+                parsed['etherwarp'] = True
+
+            items.append(parsed)
         return items
     except Exception:
         return []
