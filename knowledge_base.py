@@ -85,6 +85,9 @@ FILE_KEYWORDS = {
                        "sea creature chance", "fishing festival", "lava fishing",
                        "barn fishing", "fishing fortune", "squid pet", "dolphin pet",
                        "fishing setup", "best fishing"],
+    "recent_changes.md": ["update", "patch", "nerf", "buff", "change", "new feature",
+                       "rework", "removed", "added", "recent", "latest",
+                       "current meta", "meta"],
 }
 
 
