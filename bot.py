@@ -75,6 +75,7 @@ async def on_ready():
     print(f"Serving {len(bot.guilds)} guild(s)")
     snapshot_bazaar.start()
     auto_analyze_feedback.start()
+    start_dashboard_thread()
 
 
 # Track recent bot responses for reaction-based feedback
