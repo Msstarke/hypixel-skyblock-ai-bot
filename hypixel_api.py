@@ -1212,16 +1212,34 @@ class HypixelAPI:
             categories[cat] = val
             all_bd.extend(bd)
 
-        # Pet values — SkyHelper prices format: LVL_100_<TIER>_<TYPE>
+        # Pet values — SkyHelper format: LVL_100_<TIER>_<TYPE>
+        # Interpolate based on XP between LVL_1 and LVL_100 prices
         pet_total = 0
         for pet in stats.get("pets", []):
             ptype = pet.get("type", "").upper()
             ptier = pet.get("tier", "").upper()
-            # SkyHelper format: LVL_100_LEGENDARY_MITHRIL_GOLEM
-            p = price_of(f"LVL_100_{ptier}_{ptype}")
-            if not p:
-                # Try without level (some pets don't have lvl 100 entries)
-                p = price_of(f"LVL_1_{ptier}_{ptype}")
+            pet_xp = pet.get("xp", 0)
+            base_id = f"{ptier}_{ptype}"
+            p1 = price_of(f"LVL_1_{base_id}")
+            p100 = price_of(f"LVL_100_{base_id}")
+            p200 = price_of(f"LVL_200_{base_id}")
+            # Estimate pet level from XP using our _pet_level helper
+            from player_stats import _pet_level, PET_XP_LEGENDARY
+            est_level = _pet_level(pet_xp, ptier)
+            if p200 and est_level >= 100:
+                # Golden dragon / special 200-level pets
+                p = p100 + (p200 - p100) * min((est_level - 100), 100) / 100
+            elif p100 and p1 and est_level < 100:
+                # Linear interpolation: fraction of XP toward max
+                # XP-to-max varies by tier but approximate with level ratio
+                frac = max(0, min(1, (est_level - 1) / 99))
+                p = p1 + (p100 - p1) * frac
+            elif p100:
+                p = p100
+            elif p1:
+                p = p1
+            else:
+                p = 0
             # Held item value
             held = pet.get("held_item", "")
             held_p = price_of(held) if held else 0
