@@ -271,7 +271,8 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
         if tool in ("flips", "flips_ah"):
             try:
                 mode = "ah" if tool == "flips_ah" else "baz"
-                embed = await _run_flips_tool(mode)
+                budget = _parse_budget(question)
+                embed = await _run_flips_tool(mode, budget=budget)
                 if embed:
                     msg = await ctx.reply(embed=embed)
                     try:
