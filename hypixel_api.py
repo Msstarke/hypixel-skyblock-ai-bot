@@ -1370,3 +1370,47 @@ class HypixelAPI:
     def commissions_needed(xp_needed: float, tier: int = 1) -> int:
         xp_per = COMMISSION_XP.get(tier, 2_750)
         return -(-int(xp_needed) // xp_per)  # ceiling division
+
+    async def get_election(self) -> Optional[dict]:
+        """Fetch current mayor/election data. No API key needed, 10-min cache."""
+        return await self._get(ELECTION_URL, "election", params={}, ttl=ELECTION_CACHE_TTL)
+
+    async def get_current_mayor(self) -> Optional[dict]:
+        """Return structured info about the current mayor, perks, and active election."""
+        data = await self.get_election()
+        if not data or not data.get("success"):
+            return None
+
+        result: dict = {}
+
+        # Current mayor info
+        mayor = data.get("mayor")
+        if mayor:
+            result["mayor"] = {
+                "key": mayor.get("key", ""),
+                "name": mayor.get("name", "Unknown"),
+                "perks": [
+                    {"name": p.get("name", ""), "description": p.get("description", "")}
+                    for p in mayor.get("perks", [])
+                ],
+                "minister": mayor.get("minister"),
+            }
+
+        # Current election info
+        current = data.get("current")
+        if current:
+            result["year"] = current.get("year")
+            candidates = []
+            for c in current.get("candidates", []):
+                candidates.append({
+                    "key": c.get("key", ""),
+                    "name": c.get("name", "Unknown"),
+                    "perks": [
+                        {"name": p.get("name", ""), "description": p.get("description", "")}
+                        for p in c.get("perks", [])
+                    ],
+                    "votes": c.get("votes", 0),
+                })
+            result["candidates"] = candidates
+
+        return result
