@@ -596,6 +596,11 @@ async def help_command(ctx: commands.Context):
         inline=False
     )
     embed.add_field(
+        name="!stats",
+        value="Show bot usage statistics — questions answered, vote ratios, linked accounts, and bazaar data.",
+        inline=False
+    )
+    embed.add_field(
         name="Examples",
         value=(
             "`!ai whats my networth` (requires !link)\n"
