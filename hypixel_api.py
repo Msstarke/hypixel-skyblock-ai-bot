@@ -999,15 +999,17 @@ class HypixelAPI:
             return data.get("profiles", [])
         return None
 
-    async def get_player_data(self, username: str, profile_name: str = None) -> Optional[dict]:
+    async def get_player_data(self, username: str, profile_name: str = None, uuid: str = None) -> Optional[dict]:
         """
         Fetch and parse player's Skyblock profile.
         Returns dict with 'username', 'profile_name', 'stats', and raw HotM fields.
         Optionally filter by profile_name (e.g. 'Coconut').
+        If uuid is provided, skip the Mojang username→UUID lookup (handles name changes).
         """
         from player_stats import parse_member, format_for_ai
 
-        uuid = await self.get_uuid(username)
+        if not uuid:
+            uuid = await self.get_uuid(username)
         if not uuid:
             return None
 
