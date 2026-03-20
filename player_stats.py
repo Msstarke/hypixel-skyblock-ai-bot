@@ -132,9 +132,19 @@ def parse_nbt_items(b64data: str) -> list[dict]:
             if skin:
                 parsed['skin'] = skin
 
-            gems = extra.get('gems', nbtlib.Compound())
-            if gems:
-                parsed['gems'] = {str(k): str(v) for k, v in gems.items()}
+            gems_raw = extra.get('gems', nbtlib.Compound())
+            if gems_raw:
+                gems_parsed = {}
+                for k, v in gems_raw.items():
+                    k_str = str(k)
+                    if k_str == 'unlocked_slots':
+                        gems_parsed[k_str] = [str(s) for s in v]
+                    elif hasattr(v, 'get') and 'quality' in v:
+                        # Compound with quality field: {uuid, quality}
+                        gems_parsed[k_str] = str(v.get('quality', ''))
+                    else:
+                        gems_parsed[k_str] = str(v)
+                parsed['gems'] = gems_parsed
 
             drill_fuel = str(extra.get('drill_part_fuel_tank', ''))
             drill_engine = str(extra.get('drill_part_engine', ''))
