@@ -1323,6 +1323,8 @@ class AIHandler:
                 system += f"\n\nLIVE AH PRICES:\n{ah_ctx}"
             if hist_ctx:
                 system += f"\n\nHistorical price data:\n{hist_ctx}"
+            if market_ctx:
+                system += f"\n\n{market_ctx}\nUse this real market data to make investment recommendations. Only recommend BAZAAR items. Reference specific items, their trends, and volumes from this data."
             if wiki_ctx:
                 system += f"\n\nWIKI DATA (live from Hypixel Skyblock wiki):\n{wiki_ctx}"
             if price_question and not live_ctx and not ah_ctx:
