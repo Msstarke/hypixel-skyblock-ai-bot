@@ -516,6 +516,26 @@ async def analyze_command(ctx: commands.Context, fresh: str = None):
         await ctx.reply(chunk)
 
 
+@bot.command(name="resolve")
+@commands.is_owner()
+async def resolve_command(ctx: commands.Context, target: str = None):
+    """Mark feedback as resolved (owner only). Use '!resolve all' or '!resolve <id>'."""
+    if not target:
+        await ctx.reply("Usage: `!resolve all` or `!resolve <id>`")
+        return
+
+    if target.lower() == "all":
+        count = resolve_all_feedback()
+        await ctx.reply(f"Resolved {count} feedback entries. `!analyze fresh` will now only show new issues.")
+    elif target.isdigit():
+        if resolve_feedback(int(target)):
+            await ctx.reply(f"Resolved feedback #{target}.")
+        else:
+            await ctx.reply(f"Feedback #{target} not found or already resolved.")
+    else:
+        await ctx.reply("Usage: `!resolve all` or `!resolve <id>`")
+
+
 @bot.event
 async def on_command_error(ctx: commands.Context, error):
     if isinstance(error, commands.CommandNotFound):
