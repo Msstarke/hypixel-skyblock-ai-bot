@@ -99,6 +99,14 @@ FILE_KEYWORDS = {
                        "cps", "time tower", "rabbit barn", "chocolate shop",
                        "stray rabbit", "golden rabbit", "hoppity hunt",
                        "egglocator", "coach jackrabbit", "rabbit shrine"],
+    "potions.md":     ["potion", "brew", "brewing", "god potion", "strength potion",
+                       "critical potion", "haste potion", "speed potion", "wisdom potion",
+                       "potion effect", "splash potion", "dungeon potion", "archery potion",
+                       "regeneration potion", "resistance potion", "mana potion",
+                       "absorption potion", "adrenaline potion", "spirit potion",
+                       "magic find potion", "pet luck potion", "true resistance",
+                       "agility potion", "spelunker", "potion duration",
+                       "god pot", "potion stacking"],
 }
 
 
