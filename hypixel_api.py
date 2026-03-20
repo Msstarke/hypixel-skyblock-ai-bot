@@ -1020,34 +1020,144 @@ class HypixelAPI:
 
     async def calculate_networth(self, stats: dict) -> dict:
         """
-        Calculate approximate networth from parsed player stats.
-        Returns {total, purse, bank, inventory, armor, wardrobe, pets, categories}.
+        Calculate networth using SkyHelper prices (same source as SkyCrypt).
+        Accounts for base item price + enchantments, reforges, recombobulator,
+        hot potato books, stars, drill parts, art of war, wood singularity, etherwarp.
         """
-        lbin = await self.get_lowest_bin()
-        baz = await self.get_bazaar()
+        prices = await self.get_skyhelper_prices()
+        if not prices:
+            # Fallback to lowestbin + bazaar
+            lbin = await self.get_lowest_bin()
+            baz = await self.get_bazaar()
+            prices = dict(lbin)
+            for k, v in baz.items():
+                if k not in prices:
+                    prices[k] = v.get("buy", 0)
 
-        def price_item(item_id: str) -> float:
-            """Get price for a single item ID."""
+        # Application worth multipliers (match SkyHelper-Networth-Go)
+        APP_WORTH = {
+            "enchantments": 0.85,
+            "reforge": 0.55,
+            "recombobulator": 1.0,
+            "hot_potato_book": 1.0,
+            "fuming_potato_book": 1.0,
+            "stars": 0.8,
+            "drill_part": 1.0,
+            "art_of_war": 1.0,
+            "wood_singularity": 1.0,
+            "etherwarp": 1.0,
+            "silex": 0.8,
+        }
+
+        # Essence cost per star tier (cumulative essence for upgrade_level)
+        # Varies by item type but we use the essence price directly
+        ESSENCE_PER_STAR = [0, 10, 20, 40, 80, 160]  # Stars 1-5
+        MASTER_STAR_ITEMS = [
+            "FIRST_MASTER_STAR", "SECOND_MASTER_STAR", "THIRD_MASTER_STAR",
+            "FOURTH_MASTER_STAR", "FIFTH_MASTER_STAR",
+        ]
+
+        STACKING_ENCHANTS = {
+            "CHAMPION", "CULTIVATING", "COMPACT", "EXPERTISE", "HECATOMB",
+            "TOXOPHILITE", "COUNTER_STRIKE",
+        }
+
+        def price_of(item_id: str) -> float:
+            return prices.get(item_id, 0)
+
+        def price_item_full(item: dict) -> float:
+            """Price a single item including all modifiers."""
+            item_id = item.get("id", "")
             if not item_id:
                 return 0
-            # Check lowestbin
-            p = lbin.get(item_id, 0)
-            if p:
-                return p
-            # Check bazaar
-            if item_id in baz:
-                return baz[item_id].get("buy", 0)
-            return 0
+            count = item.get("count", 1)
+
+            # Check for skinned variant
+            skin = item.get("skin", "")
+            if skin:
+                skinned_id = f"{item_id}_SKINNED_{skin}"
+                if price_of(skinned_id) > price_of(item_id):
+                    item_id = skinned_id
+
+            # Starred dungeon items
+            if item_id.startswith("STARRED_") and price_of(item_id) == 0:
+                base_id = item_id.replace("STARRED_", "", 1)
+                if price_of(base_id) > 0:
+                    item_id = base_id
+
+            base = price_of(item_id) * count
+            modifier_value = 0
+
+            # Enchantments
+            for ench_name, ench_level in item.get("enchantments", {}).items():
+                upper = ench_name.upper()
+                if upper in STACKING_ENCHANTS:
+                    ench_level = 1
+                ench_key = f"ENCHANTMENT_{upper}_{ench_level}"
+                ep = price_of(ench_key)
+                if ep > 0:
+                    modifier_value += ep * APP_WORTH["enchantments"]
+                # Silex (efficiency above 5)
+                if upper == "EFFICIENCY" and ench_level > 5:
+                    silex_count = ench_level - 5
+                    modifier_value += price_of("SIL_EX") * silex_count * APP_WORTH["silex"]
+
+            # Reforge
+            reforge = item.get("reforge", "")
+            if reforge:
+                stone_id = _REFORGE_TO_STONE.get(reforge.upper(), "")
+                if stone_id:
+                    modifier_value += price_of(stone_id) * APP_WORTH["reforge"]
+
+            # Recombobulator
+            if item.get("recombobulated"):
+                modifier_value += price_of("RECOMBOBULATOR_3000") * APP_WORTH["recombobulator"]
+
+            # Hot potato books
+            hpb = item.get("hot_potato_count", 0)
+            if hpb > 0:
+                normal = min(hpb, 10)
+                fuming = max(0, hpb - 10)
+                modifier_value += price_of("HOT_POTATO_BOOK") * normal * APP_WORTH["hot_potato_book"]
+                modifier_value += price_of("FUMING_POTATO_BOOK") * fuming * APP_WORTH["fuming_potato_book"]
+
+            # Stars (essence stars 1-5 + master stars 6-10)
+            stars = item.get("stars", 0)
+            if stars > 0:
+                # Master stars (6-10)
+                master = max(0, stars - 5)
+                for i in range(min(master, 5)):
+                    modifier_value += price_of(MASTER_STAR_ITEMS[i]) * APP_WORTH["stars"]
+
+            # Drill parts
+            for part_key in ("drill_part_fuel_tank", "drill_part_engine", "drill_part_upgrade_module"):
+                part_id = item.get(part_key, "")
+                if part_id:
+                    modifier_value += price_of(part_id) * APP_WORTH["drill_part"]
+
+            # Art of War
+            if item.get("art_of_war"):
+                modifier_value += price_of("THE_ART_OF_WAR") * APP_WORTH["art_of_war"]
+
+            # Wood Singularity
+            if item.get("wood_singularity"):
+                modifier_value += price_of("WOOD_SINGULARITY") * APP_WORTH["wood_singularity"]
+
+            # Etherwarp
+            if item.get("etherwarp"):
+                modifier_value += price_of("ETHERWARP_CONDUIT") * APP_WORTH["etherwarp"]
+                modifier_value += price_of("ETHERWARP_MERGER") * APP_WORTH["etherwarp"]
+
+            return base + modifier_value
 
         def price_items(items: list[dict]) -> tuple[float, list[tuple[str, float]]]:
-            """Price a list of {id, name} items. Returns (total, [(name, price)])."""
             total = 0
             breakdown = []
             for item in items:
-                p = price_item(item.get("id", ""))
+                p = price_item_full(item)
                 if p > 0:
                     total += p
-                    breakdown.append((item.get("name", item["id"]), p))
+                    breakdown.append((item.get("name", item.get("id", "?")), p))
             return total, breakdown
 
         # Price each category
@@ -1057,22 +1167,24 @@ class HypixelAPI:
         wardrobe_val, wardrobe_bd = price_items(stats.get("wardrobe", []))
         ender_val, ender_bd = price_items(stats.get("ender_chest", []))
 
-        # Pet values
+        # Pet values — SkyHelper prices uses PET_<TYPE>_<TIER> keys
         pet_total = 0
         pet_bd = []
         for pet in stats.get("pets", []):
-            pet_id = f"PET_{pet.get('type', '')}_{pet.get('tier', '')}"
-            # Pets use a different naming in lowestbin: [Lvl X] Pet Name
-            # Try common patterns
-            p = price_item(pet.get("type", ""))
+            ptype = pet.get("type", "").upper()
+            ptier = pet.get("tier", "").upper()
+            pet_id = f"PET_{ptype}"
+            # Try tier-specific first, then generic
+            p = price_of(f"{pet_id}_{ptier}")
             if not p:
-                p = price_item(f"{pet.get('type', '')}_{pet.get('tier', '')}")
-            # Also price held item
-            held_p = price_item(pet.get("held_item", ""))
+                p = price_of(pet_id)
+            # Held item value
+            held = pet.get("held_item", "")
+            held_p = price_of(held) if held else 0
             val = p + held_p
             if val > 0:
                 pet_total += val
-                name = f"{pet.get('type', '').title()} ({pet.get('tier', '')[0]})"
+                name = f"{ptype.title()} ({ptier[0] if ptier else '?'})"
                 pet_bd.append((name, val))
 
         purse = stats.get("purse", 0)
