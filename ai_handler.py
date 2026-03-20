@@ -79,7 +79,12 @@ class AIHandler:
 
         data = await self.hypixel.get_player_data(username, profile_name)
         if not data:
-            return f"Couldn't find player **{username}** — check the spelling."
+            return (
+                f"Couldn't find player **{username}**. A few things to check:\n"
+                f"- Double-check the spelling of the username\n"
+                f"- Make sure API access is enabled in your Hypixel settings (main menu > Settings > API)\n"
+                f"- Use their current username, not an old one"
+            )
 
         # ── HotM commission calc (code path, no AI needed) ─────────────────
         if "hotm" in q or "heart of the mountain" in q:
