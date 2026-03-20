@@ -97,11 +97,12 @@ def _detect_tool(question: str, has_linked: bool) -> str | None:
         return "hotm"
 
     # Flips
-    if q in ("flips", "bazaar flips", "best flips", "flip opportunities", "what to flip",
-             "money making", "show flips"):
+    flip_words = ["flip", "flips", "flipping", "what to flip", "good flip", "best flip",
+                  "money making", "show flips", "flip opportunities", "bazaar flip"]
+    if any(w in q for w in flip_words):
+        if any(w in q for w in ["ah", "auction", "bin", "snipe"]):
+            return "flips_ah"
         return "flips"
-    if q in ("ah flips", "auction flips", "bin flips", "snipes", "ah snipes"):
-        return "flips_ah"
 
     return None
 
