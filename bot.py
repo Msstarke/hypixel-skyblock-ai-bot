@@ -131,6 +131,18 @@ def _detect_tool(question: str, has_linked: bool) -> str | None:
     if any(w in q for w in recipe_words):
         return "recipe"
 
+    # MP optimizer — accessory/talisman MP questions
+    mp_words = ["cheapest accessory", "cheapest accessories", "cheapest talisman", "cheapest talismans",
+                "cheap mp", "cheap magical power", "maximize mp", "maximise mp", "max mp",
+                "mp for lowest cost", "mp for cheapest", "best mp", "most mp per coin",
+                "accessory for mp", "accessories for mp", "talisman for mp", "talismans for mp",
+                "what accessories should i get", "what talismans should i get",
+                "mp upgrade", "mp optimization", "mp optimisation", "increase mp",
+                "raise mp", "boost mp", "more mp", "need more mp",
+                "recomb or buy", "recombobulate or buy", "should i recomb"]
+    if any(w in q for w in mp_words):
+        return "mp_optimizer"
+
     # Skill calculator — XP questions
     skill_calc_patterns = [
         r"how much xp .* (?:to|for) .* \d+",
