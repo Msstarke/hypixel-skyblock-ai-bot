@@ -1345,11 +1345,18 @@ class AIHandler:
                 system += (
                     "\n\nLINKED PLAYER STATS (this user's actual Skyblock profile):\n"
                     + linked_summary
-                    + "\nIMPORTANT: This user has linked their account. You MUST reference their actual "
-                    "gear, levels, and stats. For upgrade questions, look at what they currently have and "
-                    "recommend the specific next upgrade for each slot/skill. Name exact items to buy, "
-                    "exact enchants to add, exact gems to slot, exact HotM perks to unlock. "
-                    "Don't give generic advice — they want to know exactly what to do next."
+                    + "\nIMPORTANT: This user has linked their account. Rules for personalized responses:"
+                    "\n1. ALWAYS reference their actual stats. Say 'your Mining 45' not 'your mining level'."
+                    "\n2. For upgrades, look at what they CURRENTLY have and recommend the NEXT step up."
+                    "   Name exact items, enchants, gems, reforges, and HotM perks."
+                    "\n3. Prioritize by impact: what single change gives them the biggest boost?"
+                    "\n4. If they have low skill average, suggest which skill to grind and where."
+                    "\n5. If their Magic Power is low for their progression, flag it."
+                    "\n6. If they have unspent powder, tell them exactly which HotM perks to level."
+                    "\n7. Compare their gear to what's appropriate for their level — if undergeared, say so."
+                    "\n8. If their slayers are behind their combat level, suggest which to do."
+                    "\n9. Give coin estimates when possible (e.g. 'upgrade to X for ~5M')."
+                    "\n10. Never give generic advice that ignores their stats."
                 )
 
             try:
