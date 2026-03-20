@@ -964,6 +964,11 @@ async def help_command(ctx: commands.Context):
         inline=False
     )
     embed.add_field(
+        name="!mp [ign]",
+        value="Cheapest accessories to max your MP — factors in recombobulation vs buying.",
+        inline=False
+    )
+    embed.add_field(
         name="!bazaar <item> / !flips / !flips ah",
         value="Bazaar prices, flip opportunities, and AH snipes.",
         inline=False
