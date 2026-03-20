@@ -354,6 +354,66 @@ def _run_skill_calc_tool(question: str) -> str | None:
         )
 
 
+async def _run_mayor_tool():
+    """Fetch current mayor and election data and return a Discord embed."""
+    data = await ai.hypixel.get_current_mayor()
+    if not data:
+        return None
+
+    mayor_info = data.get("mayor")
+    if not mayor_info:
+        return None
+
+    embed = discord.Embed(
+        title=f"Mayor: {mayor_info['name']}",
+        color=0xFFD700,
+    )
+
+    # Mayor perks
+    perks_text = ""
+    for perk in mayor_info.get("perks", []):
+        name = perk.get("name", "Unknown")
+        desc = perk.get("description", "No description.")
+        perks_text += f"**{name}** — {desc}\n"
+    if perks_text:
+        embed.add_field(name="Mayor Perks", value=perks_text.strip(), inline=False)
+
+    # Minister info
+    minister = mayor_info.get("minister")
+    if minister and isinstance(minister, dict):
+        minister_name = minister.get("name", "Unknown")
+        minister_perk = minister.get("perk", {})
+        perk_name = minister_perk.get("name", "") if isinstance(minister_perk, dict) else ""
+        perk_desc = minister_perk.get("description", "") if isinstance(minister_perk, dict) else ""
+        minister_text = f"**{minister_name}**"
+        if perk_name:
+            minister_text += f"\nPerk: **{perk_name}** — {perk_desc}"
+        embed.add_field(name="Minister", value=minister_text, inline=False)
+
+    # Year info
+    year = data.get("year")
+    if year:
+        embed.set_footer(text=f"SkyBlock Year {year}")
+
+    # Current election candidates
+    candidates = data.get("candidates", [])
+    if candidates:
+        # Sort by votes descending
+        candidates.sort(key=lambda c: c.get("votes", 0), reverse=True)
+        cand_text = ""
+        for c in candidates:
+            name = c.get("name", "Unknown")
+            votes = c.get("votes", 0)
+            perk_names = ", ".join(p.get("name", "") for p in c.get("perks", []) if p.get("name"))
+            vote_str = f" — {votes:,} votes" if votes else ""
+            cand_text += f"**{name}**{vote_str}\n"
+            if perk_names:
+                cand_text += f"  Perks: {perk_names}\n"
+        embed.add_field(name="Current Election Candidates", value=cand_text.strip(), inline=False)
+
+    return embed
+
+
 async def _run_hotm_tool(ctx, username: str, mc_uuid: str = None):
     """Run HotM tree visualization inline."""
     from hotm_render import render_hotm_tree
