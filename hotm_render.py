@@ -63,19 +63,51 @@ DIM = (55, 55, 70)
 BAR_BG = (25, 25, 38)
 PROGRESS_BG = (40, 40, 55)
 
+# --- Short display names (fit in small nodes) ---
+SHORT_NAMES = {
+    "mining_speed": "M. Speed",
+    "mining_speed_boost": "Spd Boost",
+    "precision_mining": "Precision",
+    "efficient_miner": "Efficient",
+    "mining_fortune": "M. Fortune",
+    "quick_forge": "Q. Forge",
+    "seasoned_mineman": "Seasoned",
+    "gem_lover": "Gem Lover",
+    "old_school": "Old School",
+    "professional": "Professnl",
+    "lonesome_miner": "Lonesome",
+    "daily_powder": "Daily Pwr",
+    "fortunate_mineman": "Fortunate",
+    "great_explorer": "Explorer",
+    "speedy_mineman": "Speedy",
+    "powder_buff": "Pwr Buff",
+    "tunnel_vision": "Tunnel V.",
+    "warm_hearted": "Warm Heart",
+    "maniac_miner": "Maniac",
+    "titanium_insanium": "Titanium",
+    "keep_it_cool": "Keep Cool",
+    "subterranean_fisher": "Sub Fisher",
+    "front_loaded": "Front Load",
+    "no_stone_unturned": "No Stone",
+    "gemstone_infusion": "Gem Infuse",
+    "core_of_the_mountain": "COTM",
+    "sheer_force": "Sheer Frce",
+}
+
 # --- Layout ---
-NODE_SIZE = 48  # square
-GAP = 6
+NODE_W = 62
+NODE_H = 50
+GAP = 5
 COLS = 5
 ROWS = 10
-MARGIN = 30
-TIER_LABEL_W = 24
-HEADER_H = 36
-FOOTER_H = 50
+MARGIN = 24
+TIER_LABEL_W = 20
+HEADER_H = 34
+FOOTER_H = 48
 
-GRID_W = TIER_LABEL_W + COLS * NODE_SIZE + (COLS - 1) * GAP
+GRID_W = TIER_LABEL_W + COLS * NODE_W + (COLS - 1) * GAP
 IMG_W = MARGIN * 2 + GRID_W
-IMG_H = HEADER_H + MARGIN + ROWS * NODE_SIZE + (ROWS - 1) * GAP + MARGIN + FOOTER_H
+IMG_H = HEADER_H + MARGIN + ROWS * NODE_H + (ROWS - 1) * GAP + MARGIN + FOOTER_H
 
 
 def _fmt(n: int) -> str:
