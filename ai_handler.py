@@ -1280,6 +1280,16 @@ class AIHandler:
                 text = re.sub(r"<think>[\s\S]*?</think>", "", text, flags=re.IGNORECASE).strip()
                 if len(text) > MAX_DISCORD_LEN:
                     text = text[:MAX_DISCORD_LEN] + "…"
+
+                # Log unanswered questions
+                _NO_INFO = ["don't have that info", "don't have enough info", "unavailable",
+                            "i'm not sure", "not in my knowledge", "don't have info"]
+                if any(phrase in text.lower() for phrase in _NO_INFO):
+                    try:
+                        log_unanswered(question, discord_user_id)
+                    except Exception:
+                        pass
+
                 return text
             except Exception as e:
                 return f"AI error: {e}"
