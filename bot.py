@@ -263,12 +263,14 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
                     try:
                         await msg.add_reaction("👍")
                         await msg.add_reaction("👎")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[bot] Failed to add reactions: {e}")
                     _recent_responses[msg.id] = (question, "[HotM tree image]", ctx.author.id, str(ctx.author))
                     return
-            except Exception:
-                pass  # fall through to AI
+            except Exception as e:
+                print(f"[bot] HotM tool failed for {linked_ign}: {e}")
+                await ctx.reply("Couldn't load your HotM data right now. Let me try answering with AI instead.")
+                # fall through to AI
 
         # --- Tool: Flips ---
         if tool in ("flips", "flips_ah"):
