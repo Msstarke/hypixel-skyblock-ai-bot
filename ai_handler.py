@@ -6,6 +6,8 @@ from hypixel_api import HypixelAPI, HOTM_XP
 from knowledge_base import KnowledgeBase
 from reforges import pick_reforge, normalize_stat, STAT_ALIASES
 from user_links import get_linked_username
+from wiki_lookup import wiki_context
+from feedback import log_unanswered
 
 PRICE_KEYWORDS = [
     "cost", "price", "worth", "buy", "sell", "bazaar", "coins",
