@@ -7,6 +7,7 @@ from bazaar_tracker import BazaarTracker, SNAPSHOT_INTERVAL
 from user_links import link_user, unlink_user, get_linked_username
 from corrections import submit_correction, get_pending, approve_correction, reject_correction
 from feedback import log_vote, log_unanswered, get_bad_responses, get_unanswered, get_feedback_stats
+from feedback_agent import analyze_feedback, get_last_analysis, ANALYSIS_INTERVAL
 
 load_dotenv()
 
