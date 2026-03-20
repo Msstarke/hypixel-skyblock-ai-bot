@@ -89,6 +89,11 @@ FILE_KEYWORDS = {
     "recent_changes.md": ["update", "patch", "nerf", "buff", "change", "new feature",
                        "rework", "removed", "added", "recent", "latest",
                        "current meta", "meta"],
+    "chocolate_factory.md": ["chocolate", "chocolate factory", "hoppity", "rabbit",
+                       "easter", "dark cacao", "chocolate egg", "chocolate production",
+                       "cps", "time tower", "rabbit barn", "chocolate shop",
+                       "stray rabbit", "golden rabbit", "hoppity hunt",
+                       "egglocator", "coach jackrabbit", "rabbit shrine"],
 }
 
 
