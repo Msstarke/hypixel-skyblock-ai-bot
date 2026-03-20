@@ -633,7 +633,13 @@ async def link_command(ctx: commands.Context, *, username: str = None):
         await ctx.reply(f"Couldn't find Hypixel Skyblock data for **{username}**. Check the spelling and make sure Skyblock API is enabled in Hypixel settings.")
         return
 
-    link_user(ctx.author.id, username)
+    # Store UUID so name changes don't break the link
+    mc_uuid = None
+    try:
+        mc_uuid = await ai.hypixel.get_uuid(username)
+    except Exception:
+        pass
+    link_user(ctx.author.id, username, mc_uuid=mc_uuid)
     profile = data.get("profile_name", "?")
     await ctx.reply(f"Linked! **{username}** (profile: {profile}). I'll now use your stats for personalized advice when you use `!ai`.")
 
