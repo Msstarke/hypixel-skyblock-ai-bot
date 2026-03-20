@@ -317,17 +317,19 @@ async def hotm_command(ctx: commands.Context, *, username: str = None):
     from hypixel_api import HOTM_XP
 
     # Resolve username
+    mc_uuid = None
     if not username:
         linked = get_linked_username(ctx.author.id)
         if linked:
             username = linked
+            mc_uuid = get_linked_uuid(ctx.author.id)
         else:
             await ctx.reply("Usage: `!hotm <username>` or link your account with `!link <username>`")
             return
 
     async with ctx.typing():
         try:
-            data = await ai.hypixel.get_player_data(username)
+            data = await ai.hypixel.get_player_data(username, uuid=mc_uuid)
         except Exception as e:
             await ctx.reply(f"Error fetching data: {e}")
             return
