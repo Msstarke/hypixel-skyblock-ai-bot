@@ -318,16 +318,28 @@ def format_for_ai(username: str, profile_name: str, stats: dict) -> str:
     if sb_xp:
         lines.append(f"Skyblock Level: {int(sb_xp / 100)}")
 
-    # Money
-    purse = stats.get('purse', 0)
-    bank = stats.get('bank', 0)
-    money_parts = []
-    if purse:
-        money_parts.append(f"Purse: {_format_number(purse)}")
-    if bank:
-        money_parts.append(f"Bank: {_format_number(bank)}")
-    if money_parts:
-        lines.append(" | ".join(money_parts))
+    # Networth + Money
+    nw = stats.get('networth')
+    if nw and nw.get('total'):
+        lines.append(f"Estimated Networth: {_format_number(nw['total'])} (Purse: {_format_number(nw.get('purse', 0))} | Bank: {_format_number(nw.get('bank', 0))} | Items: {_format_number(nw.get('items_total', 0))})")
+        cats = nw.get('categories', {})
+        cat_parts = [f"{k}: {_format_number(v)}" for k, v in cats.items() if v > 0]
+        if cat_parts:
+            lines.append("NW breakdown: " + " | ".join(cat_parts))
+        top = nw.get('top_items', [])
+        if top:
+            top_parts = [f"{name}: {_format_number(price)}" for name, price in top[:5]]
+            lines.append("Top items: " + " | ".join(top_parts))
+    else:
+        purse = stats.get('purse', 0)
+        bank = stats.get('bank', 0)
+        money_parts = []
+        if purse:
+            money_parts.append(f"Purse: {_format_number(purse)}")
+        if bank:
+            money_parts.append(f"Bank: {_format_number(bank)}")
+        if money_parts:
+            lines.append(" | ".join(money_parts))
 
     # Skills
     skill_parts = [f"{k} {v['level']}" for k, v in stats.get('skills', {}).items() if v['level'] > 0]
