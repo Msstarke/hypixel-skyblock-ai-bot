@@ -313,6 +313,32 @@ def parse_member(member: dict) -> dict:
     stats['wardrobe']  = parse_nbt_items(inv.get('wardrobe_contents', {}).get('data', ''))
     stats['inventory'] = parse_nbt_items(inv.get('inv_contents', {}).get('data', ''))
     stats['ender_chest'] = parse_nbt_items(inv.get('ender_chest_contents', {}).get('data', ''))
+    stats['personal_vault'] = parse_nbt_items(inv.get('personal_vault_contents', {}).get('data', ''))
+
+    # Bags
+    bags = inv.get('bag_contents', {})
+    stats['accessories'] = parse_nbt_items(bags.get('talisman_bag', {}).get('data', ''))
+    stats['fishing_bag'] = parse_nbt_items(bags.get('fishing_bag', {}).get('data', ''))
+    stats['potion_bag'] = parse_nbt_items(bags.get('potion_bag', {}).get('data', ''))
+    stats['quiver'] = parse_nbt_items(bags.get('quiver', {}).get('data', ''))
+    stats['sacks_bag'] = parse_nbt_items(bags.get('sacks_bag', {}).get('data', ''))
+
+    # Backpack storage
+    storage_items = []
+    bp_data = member.get('backpack_contents', inv.get('backpack_contents', {}))
+    for _key, bp in bp_data.items() if isinstance(bp_data, dict) else []:
+        if isinstance(bp, dict) and 'data' in bp:
+            storage_items.extend(parse_nbt_items(bp['data']))
+    stats['storage'] = storage_items
+
+    # Sacks (raw material counts — priced as basic items)
+    sacks_counts = inv.get('sacks_counts', {})
+    stats['sacks'] = {k: v for k, v in sacks_counts.items() if isinstance(v, (int, float)) and v > 0}
+
+    # Essence counts
+    essence_raw = member.get('currencies', {}).get('essence', {})
+    stats['essence_counts'] = {k: v.get('current', 0) if isinstance(v, dict) else 0
+                               for k, v in essence_raw.items()}
 
     return stats
 
