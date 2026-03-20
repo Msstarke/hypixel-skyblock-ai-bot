@@ -162,17 +162,16 @@ def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
 
     # Draw connection lines between tiers (subtle vertical lines)
     for tier in range(1, 10):
-        row = 9 - tier  # tier 1 = row 9 (bottom)
+        row = 9 - tier
         row_above = row - 1
-        y_bot = grid_y + row * (NODE_SIZE + GAP) + NODE_SIZE
-        y_top = grid_y + row_above * (NODE_SIZE + GAP)
+        y_bot = grid_y + row * (NODE_H + GAP) + NODE_H
+        y_top = grid_y + row_above * (NODE_H + GAP)
 
-        # Find occupied columns in both tiers
         cols_this = [info["col"] for info in HOTM_PERKS.values() if info["tier"] == tier]
         cols_above = [info["col"] for info in HOTM_PERKS.values() if info["tier"] == tier + 1]
 
         for c in set(cols_this) & set(cols_above):
-            cx = grid_x + c * (NODE_SIZE + GAP) + NODE_SIZE // 2
+            cx = grid_x + c * (NODE_W + GAP) + NODE_W // 2
             draw.line([(cx, y_bot), (cx, y_top)], fill=DIM, width=1)
 
     # Draw nodes
