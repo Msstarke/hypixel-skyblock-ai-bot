@@ -330,6 +330,9 @@ def format_for_ai(username: str, profile_name: str, stats: dict) -> str:
         if top:
             top_parts = [f"{name}: {_format_number(price)}" for name, price in top[:5]]
             lines.append("Top items: " + " | ".join(top_parts))
+        # Warn if inventory data is missing (API disabled)
+        if not stats.get('armor') and not stats.get('inventory'):
+            lines.append("NOTE: Inventory API is disabled — armor/inventory/wardrobe items not included in networth. Enable it in Hypixel settings for accurate networth.")
     else:
         purse = stats.get('purse', 0)
         bank = stats.get('bank', 0)
