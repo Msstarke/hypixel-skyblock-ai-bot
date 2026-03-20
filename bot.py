@@ -925,8 +925,8 @@ async def link_command(ctx: commands.Context, *, username: str = None):
     mc_uuid = None
     try:
         mc_uuid = await ai.hypixel.get_uuid(username)
-    except Exception:
-        pass
+    except Exception as e:
+        print(f"[bot] UUID lookup failed for {username}: {e}")
     link_user(ctx.author.id, username, mc_uuid=mc_uuid)
     profile = data.get("profile_name", "?")
     await ctx.reply(f"Linked! **{username}** (profile: {profile}). I'll now use your stats for personalized advice when you use `!ai`.")
