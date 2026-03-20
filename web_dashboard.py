@@ -118,7 +118,8 @@ def login_required(f):
 def login():
     error = ""
     if request.method == "POST":
-        if request.form.get("password") == DASHBOARD_PASSWORD:
+        pwd = os.getenv("DASHBOARD_PASSWORD", "changeme")
+        if request.form.get("password") == pwd:
             session["authenticated"] = True
             session.permanent = True
             return redirect(url_for("dashboard"))
