@@ -116,7 +116,7 @@ class HypixelAPI:
         async with aiohttp.ClientSession() as session:
             async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
                 if resp.status == 200:
-                    data = await resp.json()
+                    data = await resp.json(content_type=None)
                     self._cache[cache_key] = {"data": data, "ts": time.time()}
                     return data
         return None
