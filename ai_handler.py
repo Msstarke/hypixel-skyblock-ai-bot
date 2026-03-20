@@ -135,6 +135,30 @@ class AIHandler:
         except Exception as e:
             return f"AI error: {e}"
 
+    # Known fake items/terms the AI likes to hallucinate
+    _FAKE_TERMS = [
+        "spelunker reforge", "spelunker ix", "spelunker i ", "spelunker ii", "spelunker tier",
+        "hotmines", "hot mines menu",
+        "refined mineral", "mineral armor upgrade",
+        "mithril powder boost",
+        "divan's drill", "divans drill", "divan drill",
+        "very lucky reforge",
+        "abiphone flip", "wither bow",
+        "sniper helmet", "sniper bow",
+        "fortune iii",  # should be Fortune IV in skyblock
+        "sharpness v",  # not a mining enchant
+        "smite v",  # not a mining enchant
+    ]
+
+    def _filter_hallucinations(self, text: str) -> str:
+        """Flag known hallucinated terms in AI responses."""
+        lower = text.lower()
+        found = [t for t in self._FAKE_TERMS if t in lower]
+        if found:
+            warning = "\n\n⚠️ *This response may contain inaccurate information. Please verify in-game or on the wiki.*"
+            text += warning
+        return text
+
     def _needs_live_data(self, question: str) -> bool:
         q = question.lower()
         return any(kw in q for kw in PRICE_KEYWORDS)
