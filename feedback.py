@@ -64,26 +64,41 @@ def log_unanswered(question: str, discord_id: int = None) -> None:
 
 
 def get_bad_responses(limit: int = 10) -> list[dict]:
-    """Get recent thumbs-down responses for review."""
+    """Get recent unresolved thumbs-down responses for review."""
     rows = _con.execute(
-        "SELECT * FROM feedback WHERE vote = 'down' ORDER BY created_at DESC LIMIT ?",
+        "SELECT * FROM feedback WHERE vote = 'down' AND resolved = 0 ORDER BY created_at DESC LIMIT ?",
         (limit,),
     ).fetchall()
     return [dict(r) for r in rows]
 
 
 def get_unanswered(limit: int = 20) -> list[dict]:
-    """Get recent unanswered questions."""
+    """Get recent unresolved unanswered questions."""
     rows = _con.execute(
-        "SELECT * FROM unanswered ORDER BY created_at DESC LIMIT ?",
+        "SELECT * FROM unanswered WHERE resolved = 0 ORDER BY created_at DESC LIMIT ?",
         (limit,),
     ).fetchall()
     return [dict(r) for r in rows]
 
 
 def get_feedback_stats() -> dict:
-    """Get summary stats."""
+    """Get summary stats (unresolved only)."""
     up = _con.execute("SELECT COUNT(*) FROM feedback WHERE vote = 'up'").fetchone()[0]
-    down = _con.execute("SELECT COUNT(*) FROM feedback WHERE vote = 'down'").fetchone()[0]
-    unans = _con.execute("SELECT COUNT(*) FROM unanswered").fetchone()[0]
+    down = _con.execute("SELECT COUNT(*) FROM feedback WHERE vote = 'down' AND resolved = 0").fetchone()[0]
+    unans = _con.execute("SELECT COUNT(*) FROM unanswered WHERE resolved = 0").fetchone()[0]
     return {"thumbs_up": up, "thumbs_down": down, "unanswered": unans}
+
+
+def resolve_feedback(feedback_id: int) -> bool:
+    """Mark a specific feedback entry as resolved."""
+    cur = _con.execute("UPDATE feedback SET resolved = 1 WHERE id = ? AND resolved = 0", (feedback_id,))
+    _con.commit()
+    return cur.rowcount > 0
+
+
+def resolve_all_feedback() -> int:
+    """Mark all unresolved downvotes and unanswered questions as resolved. Returns count resolved."""
+    c1 = _con.execute("UPDATE feedback SET resolved = 1 WHERE vote = 'down' AND resolved = 0").rowcount
+    c2 = _con.execute("UPDATE unanswered SET resolved = 1 WHERE resolved = 0").rowcount
+    _con.commit()
+    return c1 + c2
