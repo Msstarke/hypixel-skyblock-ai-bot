@@ -111,12 +111,12 @@ def _detect_tool(question: str, has_linked: bool) -> str | None:
     return None
 
 
-async def _run_hotm_tool(ctx, username: str):
+async def _run_hotm_tool(ctx, username: str, mc_uuid: str = None):
     """Run HotM tree visualization inline."""
     from hotm_render import render_hotm_tree
     from hypixel_api import HOTM_XP
 
-    data = await ai.hypixel.get_player_data(username)
+    data = await ai.hypixel.get_player_data(username, uuid=mc_uuid)
     if not data:
         return None
 
