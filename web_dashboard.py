@@ -445,7 +445,7 @@ DASHBOARD_HTML = """
       </div>
     </div>
     <div class="actions">
-      <button class="btn btn-action" onclick="fixWithAI({{ item.id }}, '{{ item.question|e }}', '{{ item.response|e }}')">Fix with AI</button>
+      <button class="btn btn-action" data-id="{{ item.id }}" data-q="{{ item.question|e }}" data-r="{{ item.response|e }}" onclick="fixWithAI(this.dataset.id, this.dataset.q, this.dataset.r)">Fix with AI</button>
       <button class="btn btn-resolve" onclick="resolveItem('feedback', {{ item.id }})">Mark Resolved</button>
     </div>
   </div>
