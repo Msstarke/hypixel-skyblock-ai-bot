@@ -293,6 +293,23 @@ def parse_member(member: dict) -> dict:
     stats['mithril_powder'] = mc.get('powder_mithril', 0)
     stats['gemstone_powder'] = mc.get('powder_gemstone', 0)
     stats['glacite_powder'] = mc.get('powder_glacite', 0)
+    stats['mithril_powder_total'] = mc.get('powder_mithril_total', 0)
+    stats['gemstone_powder_total'] = mc.get('powder_gemstone_total', 0)
+    stats['glacite_powder_total'] = mc.get('powder_glacite_total', 0)
+    stats['powder_spent_mithril'] = mc.get('powder_spent_mithril', 0)
+    stats['powder_spent_gemstone'] = mc.get('powder_spent_gemstone', 0)
+    stats['powder_spent_glacite'] = mc.get('powder_spent_glacite', 0)
+
+    # ── HotM Perks (from skill_tree.nodes.mining) ─────────────────────────
+    hotm_nodes_raw = skill_tree.get('nodes', {}).get('mining', {})
+    hotm_perks = {}
+    for k, v in hotm_nodes_raw.items():
+        if k.startswith('toggle_'):
+            continue  # skip toggle flags
+        if isinstance(v, (int, float)) and v > 0:
+            hotm_perks[k] = int(v)
+    stats['hotm_perks'] = hotm_perks
+    stats['hotm_selected_ability'] = skill_tree.get('selected_ability', {}).get('mining', '')
 
     # ── Kuudra ──────────────────────────────────────────────────────────────
     kuudra = member.get('nether_island_player_data', {}).get('kuudra_completed_tiers', {})
