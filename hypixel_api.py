@@ -1224,11 +1224,12 @@ class HypixelAPI:
 
                 # Gemstone chamber unlock costs (Divan's armor)
                 unlocked = gems.get("unlocked_slots", [])
-                if unlocked and _is_divans_armor(item.get("id", "")):
+                item_id_upper = item.get("id", "").upper()
+                is_divans = item_id_upper.startswith("DIVAN_") and item_id_upper != "DIVAN_DRILL"
+                if unlocked and is_divans:
+                    chamber_price = price_of("GEMSTONE_CHAMBER")
                     for _slot in unlocked:
-                        # Each Divan chamber costs coins + items to unlock
-                        # Approximate: each chamber ~3M in materials on average
-                        modifier_value += 3_000_000 * APP_WORTH["gemstone_chambers"]
+                        modifier_value += chamber_price * APP_WORTH["gemstone_chambers"]
 
             return base + modifier_value
 
