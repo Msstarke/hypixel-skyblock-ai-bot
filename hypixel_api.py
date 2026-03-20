@@ -1172,7 +1172,7 @@ class HypixelAPI:
                 # Master stars (6-10)
                 master = max(0, stars - 5)
                 for i in range(min(master, 5)):
-                    modifier_value += price_of(MASTER_STAR_ITEMS[i]) * APP_WORTH["stars"]
+                    modifier_value += price_of(MASTER_STAR_ITEMS[i]) * APP_WORTH["master_star"]
 
             # Drill parts
             for part_key in ("drill_part_fuel_tank", "drill_part_engine", "drill_part_upgrade_module"):
