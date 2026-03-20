@@ -268,6 +268,147 @@ class BazaarTracker:
         flips.sort(key=lambda x: x["score"], reverse=True)
         return flips[:top_n]
 
+    def get_market_analysis(self, top_n: int = 10) -> dict:
+        """
+        Deep market analysis using all available historical data.
+        Returns trends, momentum, volume patterns, and investment signals.
+        """
+        now = int(time.time())
+        analysis = {
+            "rising_items": [],      # items with sustained price increases
+            "falling_items": [],     # items with sustained price decreases
+            "volume_surges": [],     # unusual volume spikes
+            "stable_margins": [],    # items with consistent flip margins over time
+            "data_span_hours": 0,
+        }
+
+        # How much data do we have?
+        span = self._con.execute("SELECT MIN(ts), MAX(ts) FROM snapshots").fetchone()
+        if not span or not span[0]:
+            return analysis
+        analysis["data_span_hours"] = round((span[1] - span[0]) / 3600, 1)
+
+        # --- Rising/Falling: compare 24h avg vs 6h avg ---
+        # Items where recent price is significantly different from longer-term avg
+        hours_24 = now - 24 * 3600
+        hours_6 = now - 6 * 3600
+
+        rows = self._con.execute("""
+            SELECT s1.item_id,
+                   s1.avg_buy as avg_buy_24h,
+                   s2.avg_buy as avg_buy_6h,
+                   s1.avg_vol as avg_vol_24h,
+                   s1.avg_sell as avg_sell_24h,
+                   s2.avg_sell as avg_sell_6h
+            FROM (
+                SELECT item_id, AVG(buy_price) as avg_buy, AVG(sell_price) as avg_sell,
+                       AVG(buy_vol_week) as avg_vol, COUNT(*) as pts
+                FROM snapshots WHERE ts >= ? AND buy_price > 0
+                GROUP BY item_id HAVING pts >= 10
+            ) s1
+            JOIN (
+                SELECT item_id, AVG(buy_price) as avg_buy, AVG(sell_price) as avg_sell, COUNT(*) as pts
+                FROM snapshots WHERE ts >= ? AND buy_price > 0
+                GROUP BY item_id HAVING pts >= 3
+            ) s2 ON s1.item_id = s2.item_id
+            WHERE s1.avg_buy > 10
+        """, (hours_24, hours_6)).fetchall()
+
+        rising = []
+        falling = []
+        for r in rows:
+            if r["avg_buy_24h"] <= 0:
+                continue
+            pct = ((r["avg_buy_6h"] - r["avg_buy_24h"]) / r["avg_buy_24h"]) * 100
+            vol = r["avg_vol_24h"] or 0
+            if vol < 1000:
+                continue  # skip low volume items
+            entry = {
+                "id": r["item_id"],
+                "name": r["item_id"].replace("_", " ").title(),
+                "price_24h": round(r["avg_buy_24h"], 1),
+                "price_6h": round(r["avg_buy_6h"], 1),
+                "change_pct": round(pct, 2),
+                "weekly_vol": int(vol),
+            }
+            if pct > 3:
+                rising.append(entry)
+            elif pct < -3:
+                falling.append(entry)
+
+        analysis["rising_items"] = sorted(rising, key=lambda x: x["change_pct"], reverse=True)[:top_n]
+        analysis["falling_items"] = sorted(falling, key=lambda x: x["change_pct"])[:top_n]
+
+        # --- Stable margins: items with consistent spreads (good for reliable flipping) ---
+        margin_rows = self._con.execute("""
+            SELECT item_id,
+                   AVG(buy_price) as avg_buy,
+                   AVG(sell_price) as avg_sell,
+                   AVG(buy_price - sell_price) as avg_margin,
+                   MIN(buy_price - sell_price) as min_margin,
+                   MAX(buy_price - sell_price) as max_margin,
+                   AVG(buy_vol_week) as avg_vol,
+                   COUNT(*) as pts
+            FROM snapshots
+            WHERE ts >= ? AND buy_price > 0 AND sell_price > 0
+            GROUP BY item_id
+            HAVING pts >= 10 AND avg_buy > avg_sell AND avg_buy > 10
+        """, (hours_24,)).fetchall()
+
+        stable = []
+        for r in margin_rows:
+            avg_margin = r["avg_margin"]
+            if avg_margin <= 0:
+                continue
+            margin_pct = (avg_margin / r["avg_buy"]) * 100 - 1.25  # minus tax
+            if margin_pct < 1.5:
+                continue
+            vol = r["avg_vol"] or 0
+            if vol < 5000:
+                continue
+            # Stability: how consistent is the margin?
+            margin_range = r["max_margin"] - r["min_margin"]
+            stability = 1 - min(1, margin_range / (avg_margin * 2)) if avg_margin > 0 else 0
+            if stability < 0.3:
+                continue  # too volatile
+            stable.append({
+                "id": r["item_id"],
+                "name": r["item_id"].replace("_", " ").title(),
+                "avg_buy": round(r["avg_buy"], 1),
+                "avg_sell": round(r["avg_sell"], 1),
+                "margin_pct": round(margin_pct, 2),
+                "stability": round(stability, 2),
+                "weekly_vol": int(vol),
+            })
+        analysis["stable_margins"] = sorted(stable, key=lambda x: x["margin_pct"] * x["stability"], reverse=True)[:top_n]
+
+        return analysis
+
+    def format_market_analysis_for_ai(self) -> str:
+        """Format market analysis as a context string for AI investment questions."""
+        a = self.get_market_analysis()
+        if a["data_span_hours"] < 1:
+            return ""
+
+        lines = [f"BAZAAR MARKET ANALYSIS (based on {a['data_span_hours']:.0f}h of data):"]
+
+        if a["rising_items"]:
+            lines.append("\nRISING PRICES (buy price increasing — potentially sell opportunity):")
+            for item in a["rising_items"][:5]:
+                lines.append(f"  {item['name']}: {item['price_24h']:,.0f} → {item['price_6h']:,.0f} ({item['change_pct']:+.1f}%) vol:{item['weekly_vol']:,}/wk")
+
+        if a["falling_items"]:
+            lines.append("\nFALLING PRICES (buy price decreasing — potentially buy opportunity):")
+            for item in a["falling_items"][:5]:
+                lines.append(f"  {item['name']}: {item['price_24h']:,.0f} → {item['price_6h']:,.0f} ({item['change_pct']:+.1f}%) vol:{item['weekly_vol']:,}/wk")
+
+        if a["stable_margins"]:
+            lines.append("\nSTABLE FLIP MARGINS (consistent profit, low risk):")
+            for item in a["stable_margins"][:5]:
+                lines.append(f"  {item['name']}: buy {item['avg_buy']:,.0f} sell {item['avg_sell']:,.0f} margin:{item['margin_pct']:.1f}% stability:{item['stability']:.0%} vol:{item['weekly_vol']:,}/wk")
+
+        return "\n".join(lines)
+
     def format_history_for_ai(self, item_id: str, hours: int = 24) -> str:
         """Compact history string for injection into AI context."""
         rows = self.get_history(item_id, hours)
