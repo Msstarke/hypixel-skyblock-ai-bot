@@ -479,6 +479,43 @@ async def feedback_command(ctx: commands.Context):
     await ctx.reply(embed=embed)
 
 
+@bot.command(name="analyze")
+@commands.is_owner()
+async def analyze_command(ctx: commands.Context, fresh: str = None):
+    """Run feedback analysis agent (owner only). Use '!analyze fresh' to force a new analysis."""
+    if fresh and fresh.lower() == "fresh":
+        await ctx.reply("Running fresh feedback analysis... this may take a moment.")
+        try:
+            report = await analyze_feedback()
+        except Exception as e:
+            await ctx.reply(f"Analysis failed: {e}")
+            return
+    else:
+        report = get_last_analysis()
+        if not report:
+            await ctx.reply("No previous analysis found. Running fresh analysis...")
+            try:
+                report = await analyze_feedback()
+            except Exception as e:
+                await ctx.reply(f"Analysis failed: {e}")
+                return
+
+    # Split into chunks for Discord's 2000 char limit
+    chunks = []
+    while report:
+        if len(report) <= 1900:
+            chunks.append(report)
+            break
+        split_at = report.rfind("\n", 0, 1900)
+        if split_at == -1:
+            split_at = 1900
+        chunks.append(report[:split_at])
+        report = report[split_at:].lstrip("\n")
+
+    for chunk in chunks:
+        await ctx.reply(chunk)
+
+
 @bot.event
 async def on_command_error(ctx: commands.Context, error):
     if isinstance(error, commands.CommandNotFound):
