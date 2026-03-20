@@ -255,9 +255,9 @@ def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
     # Tier labels
     for tier in range(1, 11):
         row = 9 - (tier - 1)
-        y = grid_y + row * (NODE_SIZE + GAP)
+        y = grid_y + row * (NODE_H + GAP)
         color = WHITE if hotm_level >= tier else DIM
-        draw.text((MARGIN + 2, y + NODE_SIZE // 2 - 5), str(tier), fill=color, font=f_small)
+        draw.text((MARGIN + 2, y + NODE_H // 2 - 5), str(tier), fill=color, font=f_small)
 
     # Footer — powder amounts
     fy = IMG_H - FOOTER_H
