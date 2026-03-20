@@ -386,6 +386,11 @@ async def help_command(ctx: commands.Context):
         inline=False
     )
     embed.add_field(
+        name="!hotm [username]",
+        value="View a player's Heart of the Mountain tree as an image. Uses linked account if no name given.",
+        inline=False
+    )
+    embed.add_field(
         name="!link <ign>",
         value="Link your Minecraft account for personalized advice, networth, and stats.",
         inline=False
