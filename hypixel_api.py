@@ -974,6 +974,28 @@ class HypixelAPI:
 
         return "\n".join(lines)
 
+    async def _uuid_to_name(self, uuid: str) -> Optional[str]:
+        """Reverse lookup: UUID → current Minecraft username via Mojang API."""
+        uuid_nodash = uuid.replace("-", "")
+        cache_key = f"name_{uuid_nodash}"
+        if self._cache_valid(cache_key, 3600):
+            return self._cache[cache_key]["data"]
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.get(
+                    f"https://sessionserver.mojang.com/session/minecraft/profile/{uuid_nodash}",
+                    timeout=aiohttp.ClientTimeout(total=8),
+                ) as resp:
+                    if resp.status == 200:
+                        data = await resp.json()
+                        name = data.get("name")
+                        if name:
+                            self._cache[cache_key] = {"data": name, "ts": time.time()}
+                            return name
+        except Exception:
+            pass
+        return None
+
     async def get_uuid(self, username: str) -> Optional[str]:
         """Get Mojang UUID for a username."""
         cache_key = f"uuid_{username.lower()}"
