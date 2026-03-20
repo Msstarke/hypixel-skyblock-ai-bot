@@ -1207,8 +1207,14 @@ class AIHandler:
                             break
                 except Exception:
                     pass
-            # Warn if knowledge base came back empty AND no live data — high hallucination risk
+            # Live wiki fetch when knowledge base has little relevant content
+            wiki_ctx = ""
             kb_empty = len(static_ctx.strip()) < 100 and not live_ctx and not ah_ctx and not item_ctx
+            if kb_empty:
+                try:
+                    wiki_ctx = await wiki_context(question, max_chars=3000)
+                except Exception:
+                    pass
             cata_level = self._extract_cata_level(question)
             cata_note = (
                 f"- The user has stated their Catacombs level is {cata_level}. "
