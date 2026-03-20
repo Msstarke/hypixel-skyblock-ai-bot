@@ -11,7 +11,7 @@ from typing import Optional
 
 DB_PATH = Path(__file__).parent / "data" / "bazaar_history.db"
 SNAPSHOT_INTERVAL = 300  # 5 minutes
-KEEP_DAYS = 7            # auto-prune data older than 7 days
+KEEP_DAYS = 90           # keep 90 days for long-term analysis
 
 
 def _connect() -> sqlite3.Connection:
