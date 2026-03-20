@@ -26,6 +26,25 @@ if raw.strip():
     ALLOWED_CHANNELS = {int(c.strip()) for c in raw.split(",") if c.strip().isdigit()}
 
 
+def _split_message(text: str, limit: int = 1900) -> list[str]:
+    """Split a long message into chunks that fit Discord's character limit."""
+    if len(text) <= limit:
+        return [text]
+    chunks = []
+    while text:
+        if len(text) <= limit:
+            chunks.append(text)
+            break
+        split_at = text.rfind("\n", 0, limit)
+        if split_at == -1:
+            split_at = text.rfind(" ", 0, limit)
+        if split_at == -1:
+            split_at = limit
+        chunks.append(text[:split_at])
+        text = text[split_at:].lstrip("\n")
+    return chunks
+
+
 @tasks.loop(seconds=SNAPSHOT_INTERVAL)
 async def snapshot_bazaar():
     """Snapshot all Bazaar prices every 5 minutes for trend analysis."""
