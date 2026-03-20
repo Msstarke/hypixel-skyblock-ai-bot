@@ -25,7 +25,7 @@ def _get_all_feedback(limit: int = 50) -> list[dict]:
         con = sqlite3.connect(DB_PATH)
         con.row_factory = sqlite3.Row
         rows = con.execute(
-            "SELECT * FROM feedback ORDER BY created_at DESC LIMIT ?",
+            "SELECT * FROM feedback WHERE resolved = 0 ORDER BY created_at DESC LIMIT ?",
             (limit,),
         ).fetchall()
         con.close()
