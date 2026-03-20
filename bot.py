@@ -75,20 +75,25 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
     async with ctx.typing():
         response = await ai.get_response(question, discord_user_id=ctx.author.id)
 
-    msg = await ctx.reply(response)
+    # Split long responses into multiple messages instead of truncating
+    chunks = _split_message(response)
+    msg = None
+    for chunk in chunks:
+        msg = await ctx.reply(chunk)
 
-    # Add reaction buttons for feedback
-    try:
-        await msg.add_reaction("👍")
-        await msg.add_reaction("👎")
-    except Exception:
-        pass
+    # Add reaction buttons to the last message for feedback
+    if msg:
+        try:
+            await msg.add_reaction("👍")
+            await msg.add_reaction("👎")
+        except Exception:
+            pass
 
-    # Track for reaction handler
-    _recent_responses[msg.id] = (question, response, ctx.author.id, str(ctx.author))
-    if len(_recent_responses) > MAX_TRACKED:
-        oldest = next(iter(_recent_responses))
-        del _recent_responses[oldest]
+        # Track for reaction handler
+        _recent_responses[msg.id] = (question, response, ctx.author.id, str(ctx.author))
+        if len(_recent_responses) > MAX_TRACKED:
+            oldest = next(iter(_recent_responses))
+            del _recent_responses[oldest]
 
 
 @bot.command(name="bazaar")
