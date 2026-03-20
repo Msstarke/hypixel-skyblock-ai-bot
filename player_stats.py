@@ -83,8 +83,16 @@ def parse_nbt_items(b64data: str) -> list[dict]:
     if not HAS_NBT or not b64data:
         return []
     try:
+        import tempfile, os
         raw = base64.b64decode(b64data)
-        f = nbtlib.load(fileobj=io.BytesIO(raw))
+        # nbtlib 2.x requires a file path, not a file object
+        with tempfile.NamedTemporaryFile(suffix='.nbt', delete=False) as tmp:
+            tmp.write(raw)
+            tmp_path = tmp.name
+        try:
+            f = nbtlib.load(tmp_path, gzipped=True)
+        finally:
+            os.unlink(tmp_path)
         items = []
         for item in f.get('i', []):
             if not item:
