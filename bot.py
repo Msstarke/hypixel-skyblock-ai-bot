@@ -557,8 +557,8 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
                     try:
                         await msg.add_reaction("\U0001f44d")
                         await msg.add_reaction("\U0001f44e")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[bot] Failed to add reactions: {e}")
                     _recent_responses[msg.id] = (question, result, ctx.author.id, str(ctx.author))
                     return
             except Exception as e:
