@@ -1004,6 +1004,88 @@ class HypixelAPI:
             "xp_to_hotm_10": max(0, HOTM_XP[10] - hotm_xp),
         }
 
+    async def calculate_networth(self, stats: dict) -> dict:
+        """
+        Calculate approximate networth from parsed player stats.
+        Returns {total, purse, bank, inventory, armor, wardrobe, pets, categories}.
+        """
+        lbin = await self.get_lowest_bin()
+        baz = await self.get_bazaar()
+
+        def price_item(item_id: str) -> float:
+            """Get price for a single item ID."""
+            if not item_id:
+                return 0
+            # Check lowestbin
+            p = lbin.get(item_id, 0)
+            if p:
+                return p
+            # Check bazaar
+            if item_id in baz:
+                return baz[item_id].get("buy", 0)
+            return 0
+
+        def price_items(items: list[dict]) -> tuple[float, list[tuple[str, float]]]:
+            """Price a list of {id, name} items. Returns (total, [(name, price)])."""
+            total = 0
+            breakdown = []
+            for item in items:
+                p = price_item(item.get("id", ""))
+                if p > 0:
+                    total += p
+                    breakdown.append((item.get("name", item["id"]), p))
+            return total, breakdown
+
+        # Price each category
+        armor_val, armor_bd = price_items(stats.get("armor", []))
+        equip_val, equip_bd = price_items(stats.get("equipment", []))
+        inv_val, inv_bd = price_items(stats.get("inventory", []))
+        wardrobe_val, wardrobe_bd = price_items(stats.get("wardrobe", []))
+        ender_val, ender_bd = price_items(stats.get("ender_chest", []))
+
+        # Pet values
+        pet_total = 0
+        pet_bd = []
+        for pet in stats.get("pets", []):
+            pet_id = f"PET_{pet.get('type', '')}_{pet.get('tier', '')}"
+            # Pets use a different naming in lowestbin: [Lvl X] Pet Name
+            # Try common patterns
+            p = price_item(pet.get("type", ""))
+            if not p:
+                p = price_item(f"{pet.get('type', '')}_{pet.get('tier', '')}")
+            # Also price held item
+            held_p = price_item(pet.get("held_item", ""))
+            val = p + held_p
+            if val > 0:
+                pet_total += val
+                name = f"{pet.get('type', '').title()} ({pet.get('tier', '')[0]})"
+                pet_bd.append((name, val))
+
+        purse = stats.get("purse", 0)
+        bank = stats.get("bank", 0)
+
+        items_total = armor_val + equip_val + inv_val + wardrobe_val + ender_val + pet_total
+        total = purse + bank + items_total
+
+        return {
+            "total": total,
+            "purse": purse,
+            "bank": bank,
+            "items_total": items_total,
+            "categories": {
+                "armor": armor_val,
+                "equipment": equip_val,
+                "inventory": inv_val,
+                "wardrobe": wardrobe_val,
+                "ender_chest": ender_val,
+                "pets": pet_total,
+            },
+            "top_items": sorted(
+                armor_bd + equip_bd + inv_bd + wardrobe_bd + ender_bd + pet_bd,
+                key=lambda x: x[1], reverse=True
+            )[:10],
+        }
+
     def _xp_to_hotm_level(self, xp: float) -> int:
         level = 1
         for lvl, req in enumerate(HOTM_XP):
