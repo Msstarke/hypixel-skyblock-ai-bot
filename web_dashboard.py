@@ -280,10 +280,9 @@ def api_apply_fix():
     from corrections import apply_to_knowledge
     apply_to_knowledge(topic, correction, "AI Feedback Agent")
 
-    # Reload knowledge base
-    from knowledge_base import KnowledgeBase
-    kb = KnowledgeBase()
-    kb.reload()
+    # Reload the bot's live knowledge base so it takes effect immediately
+    if _live_knowledge_base:
+        _live_knowledge_base.reload()
 
     # Mark the feedback as resolved
     if feedback_id:
