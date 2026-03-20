@@ -247,13 +247,14 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
         return
 
     linked_ign = get_linked_username(ctx.author.id)
+    linked_uuid = get_linked_uuid(ctx.author.id) if linked_ign else None
     tool = _detect_tool(question, has_linked=bool(linked_ign))
 
     async with ctx.typing():
         # --- Tool: HotM tree ---
         if tool == "hotm" and linked_ign:
             try:
-                result = await _run_hotm_tool(ctx, linked_ign)
+                result = await _run_hotm_tool(ctx, linked_ign, mc_uuid=linked_uuid)
                 if result:
                     embed, file = result
                     msg = await ctx.reply(embed=embed, file=file)
