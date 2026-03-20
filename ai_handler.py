@@ -156,6 +156,9 @@ class AIHandler:
         """Flag known hallucinated terms in AI responses."""
         lower = text.lower()
         found = [t for t in self._FAKE_TERMS if t in lower]
+        # Check for Auspicious on armor (common hallucination)
+        if "auspicious" in lower and any(w in lower for w in ["helmet", "chestplate", "leggings", "boots", "armor piece"]):
+            found.append("auspicious on armor")
         if found:
             warning = "\n\n⚠️ *This response may contain inaccurate information. Please verify in-game or on the wiki.*"
             text += warning
