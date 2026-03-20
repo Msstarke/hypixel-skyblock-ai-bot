@@ -283,12 +283,13 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
                     try:
                         await msg.add_reaction("👍")
                         await msg.add_reaction("👎")
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        print(f"[bot] Failed to add reactions: {e}")
                     _recent_responses[msg.id] = (question, "[Flips data]", ctx.author.id, str(ctx.author))
                     return
-            except Exception:
-                pass  # fall through to AI
+            except Exception as e:
+                print(f"[bot] Flips tool failed: {e}")
+                # fall through to AI
 
         # --- Default: AI response ---
         response = await ai.get_response(question, discord_user_id=ctx.author.id)
