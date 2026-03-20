@@ -32,6 +32,12 @@ def _connect() -> sqlite3.Connection:
             created_at   INTEGER NOT NULL
         )
     """)
+    # Add resolved column to existing tables (safe to re-run)
+    for table in ("feedback", "unanswered"):
+        try:
+            con.execute(f"ALTER TABLE {table} ADD COLUMN resolved INTEGER NOT NULL DEFAULT 0")
+        except sqlite3.OperationalError:
+            pass  # column already exists
     return con
 
 
