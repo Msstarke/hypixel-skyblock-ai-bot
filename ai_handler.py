@@ -1173,7 +1173,9 @@ class AIHandler:
                 except Exception as e:
                     live_ctx = f"(Live price fetch failed: {e})"
 
-            static_ctx = self.knowledge.get_relevant_knowledge(question)
+            static_ctx = self.knowledge.get_relevant_knowledge(
+                question, is_price_question=price_question
+            )
 
             if self._needs_ah_data(question):
                 try:
