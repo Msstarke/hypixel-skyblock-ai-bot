@@ -305,8 +305,8 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
         try:
             await msg.add_reaction("👍")
             await msg.add_reaction("👎")
-        except Exception:
-            pass
+        except Exception as e:
+            print(f"[bot] Failed to add reactions: {e}")
 
         # Track for reaction handler
         _recent_responses[msg.id] = (question, response, ctx.author.id, str(ctx.author))
