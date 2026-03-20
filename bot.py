@@ -156,7 +156,28 @@ async def _run_hotm_tool(ctx, username: str):
     return embed, file
 
 
-async def _run_flips_tool(mode: str = "baz"):
+def _parse_budget(question: str) -> int | None:
+    """Extract a coin budget from the question, e.g. '1 billion', '500m', '10 mil'."""
+    q = question.lower().replace(",", "").replace("_", "")
+    import re as _re
+    m = _re.search(r'(\d+(?:\.\d+)?)\s*(b(?:illion)?|m(?:il(?:lion)?)?|k)\b', q)
+    if m:
+        num = float(m.group(1))
+        unit = m.group(2)[0]
+        if unit == 'b':
+            return int(num * 1_000_000_000)
+        elif unit == 'm':
+            return int(num * 1_000_000)
+        elif unit == 'k':
+            return int(num * 1_000)
+    # Try bare large numbers
+    m = _re.search(r'\b(\d{6,})\b', q)
+    if m:
+        return int(m.group(1))
+    return None
+
+
+async def _run_flips_tool(mode: str = "baz", budget: int | None = None):
     """Run flips lookup inline, return embed or None."""
     if mode == "ah":
         flips = await ai.hypixel.get_ah_flips()
@@ -180,18 +201,39 @@ async def _run_flips_tool(mode: str = "baz"):
             flips = await ai.hypixel.get_bazaar_flips()
         if not flips:
             return None
-        embed = discord.Embed(title="Top Bazaar Flip Opportunities", color=0x2ECC71)
+        title = "Top Bazaar Flip Opportunities"
+        if budget:
+            title += f" (Budget: {budget:,.0f} coins)"
+        embed = discord.Embed(title=title, color=0x2ECC71)
         for f in flips[:8]:
             trend_icon = {"rising": "\u2191", "falling": "\u2193", "stable": "\u2192"}.get(f.get("trend", ""), "")
+            buy_price = f['buy']
+            # Calculate suggested volume based on budget and weekly volume
+            if budget and buy_price > 0:
+                # Invest up to 20% of budget per item, capped by weekly volume
+                max_spend = budget * 0.2
+                max_qty = int(max_spend / buy_price)
+                weekly_vol = f.get('weekly_vol', 0)
+                # Don't suggest more than 5% of weekly volume (to avoid moving the market)
+                safe_qty = min(max_qty, int(weekly_vol * 0.05)) if weekly_vol > 0 else max_qty
+                safe_qty = max(1, safe_qty)
+                invest_cost = safe_qty * buy_price
+                expected_profit = safe_qty * f['margin']
+                vol_line = f"\nSuggested: **{safe_qty:,}x** ({invest_cost:,.0f} coins) → ~**{expected_profit:,.0f}** profit"
+            else:
+                vol_line = ""
             embed.add_field(
                 name=f["name"],
                 value=(
                     f"Buy: **{f['buy']:,.1f}** | Sell: **{f['sell']:,.1f}**\n"
                     f"Margin: **+{f['margin']:,.1f}** ({f['margin_pct']}%) | Vol: **{f['weekly_vol']:,}**/wk"
                     + (f" {trend_icon}" if trend_icon else "")
+                    + vol_line
                 ),
                 inline=False,
             )
+        if budget:
+            embed.set_footer(text="Suggested volumes use ≤20% budget per item, ≤5% weekly volume. Bazaar only.")
         return embed
 
 
