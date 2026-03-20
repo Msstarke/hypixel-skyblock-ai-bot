@@ -913,7 +913,8 @@ async def link_command(ctx: commands.Context, *, username: str = None):
         # Verify the username exists on Hypixel
         try:
             data = await ai.hypixel.get_player_data(username)
-        except Exception:
+        except Exception as e:
+            print(f"[bot] Link player data fetch failed for {username}: {e}")
             data = None
 
     if not data:
