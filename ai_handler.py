@@ -1274,8 +1274,11 @@ class AIHandler:
                 system += (
                     "\n\nLINKED PLAYER STATS (this user's actual Skyblock profile):\n"
                     + linked_summary
-                    + "\nUse these stats to give personalized advice — reference their actual gear, "
-                    "skill levels, slayer progress, etc. when relevant to the question."
+                    + "\nIMPORTANT: This user has linked their account. You MUST reference their actual "
+                    "gear, levels, and stats. For upgrade questions, look at what they currently have and "
+                    "recommend the specific next upgrade for each slot/skill. Name exact items to buy, "
+                    "exact enchants to add, exact gems to slot, exact HotM perks to unlock. "
+                    "Don't give generic advice — they want to know exactly what to do next."
                 )
 
             try:
