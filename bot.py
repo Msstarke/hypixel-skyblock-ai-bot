@@ -4,7 +4,7 @@ from discord.ext import commands, tasks
 from dotenv import load_dotenv
 from ai_handler import AIHandler
 from bazaar_tracker import BazaarTracker, SNAPSHOT_INTERVAL
-from user_links import link_user, unlink_user, get_linked_username
+from user_links import link_user, unlink_user, get_linked_username, get_linked_uuid, update_uuid, update_username
 from corrections import submit_correction, get_pending, approve_correction, reject_correction
 from feedback import log_vote, log_unanswered, get_bad_responses, get_unanswered, get_feedback_stats, resolve_feedback, resolve_all_feedback
 from feedback_agent import analyze_feedback, get_last_analysis, ANALYSIS_INTERVAL
