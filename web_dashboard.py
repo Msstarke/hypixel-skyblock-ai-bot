@@ -424,7 +424,19 @@ DASHBOARD_HTML = """
     <div class="question">Q: {{ item.question }}</div>
     <div class="response" id="resp-{{ item.id }}">A: {{ item.response }}</div>
     <span class="expand-btn" onclick="toggleExpand('resp-{{ item.id }}')">Show more</span>
+    <div class="fix-area" id="fix-area-{{ item.id }}" style="display:none;">
+      <div class="fix-loading" id="fix-loading-{{ item.id }}">Analyzing...</div>
+      <div class="fix-result" id="fix-result-{{ item.id }}" style="display:none;">
+        <div class="fix-topic"><strong>Topic:</strong> <span id="fix-topic-{{ item.id }}"></span></div>
+        <div class="fix-correction" id="fix-correction-{{ item.id }}" contenteditable="true"></div>
+        <div class="actions" style="margin-top:0.5rem;">
+          <button class="btn btn-resolve" onclick="applyFix({{ item.id }})">Apply Fix</button>
+          <button class="btn btn-unresolve" onclick="dismissFix({{ item.id }})">Dismiss</button>
+        </div>
+      </div>
+    </div>
     <div class="actions">
+      <button class="btn btn-action" onclick="fixWithAI({{ item.id }}, '{{ item.question|e }}', '{{ item.response|e }}')">Fix with AI</button>
       <button class="btn btn-resolve" onclick="resolveItem('feedback', {{ item.id }})">Mark Resolved</button>
     </div>
   </div>
