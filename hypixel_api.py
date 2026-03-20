@@ -987,6 +987,14 @@ class HypixelAPI:
         member["_bank_balance"] = bank_balance
 
         stats = parse_member(member)
+
+        # Calculate networth
+        try:
+            networth = await self.calculate_networth(stats)
+            stats["networth"] = networth
+        except Exception:
+            stats["networth"] = None
+
         summary = format_for_ai(username, pname, stats)
 
         # Keep HotM fields at top level for backwards compat
