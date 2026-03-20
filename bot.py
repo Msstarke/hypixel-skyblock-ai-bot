@@ -100,7 +100,9 @@ def _detect_tool(question: str, has_linked: bool) -> str | None:
     flip_words = ["flip", "flips", "flipping", "what to flip", "good flip", "best flip",
                   "money making", "show flips", "flip opportunities", "bazaar flip",
                   "invest", "investment", "what to invest", "what should i invest"]
-    if any(w in q for w in flip_words):
+    # Long-term investment questions should go to AI, not flips tool
+    long_term = any(w in q for w in ["hold", "long term", "days", "week", "month", "hold onto"])
+    if any(w in q for w in flip_words) and not long_term:
         if any(w in q for w in ["ah", "auction", "bin", "snipe"]):
             return "flips_ah"
         return "flips"
