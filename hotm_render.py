@@ -184,8 +184,8 @@ def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
         ptype = info["powder"]
 
         row = 9 - (tier - 1)
-        x = grid_x + col * (NODE_SIZE + GAP)
-        y = grid_y + row * (NODE_SIZE + GAP)
+        x = grid_x + col * (NODE_W + GAP)
+        y = grid_y + row * (NODE_H + GAP)
 
         lvl = hotm_perks.get(node_id, 0)
         unlocked = lvl > 0
@@ -209,12 +209,12 @@ def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
             fill = (accent[0] // 6, accent[1] // 6, accent[2] // 6)
             border = accent
 
-        draw.rectangle([x, y, x + NODE_SIZE - 1, y + NODE_SIZE - 1], fill=fill, outline=border, width=1)
+        draw.rectangle([x, y, x + NODE_W - 1, y + NODE_H - 1], fill=fill, outline=border, width=1)
 
         # Progress bar at bottom of node (3px tall)
         if unlocked and max_lvl > 1:
-            bar_y = y + NODE_SIZE - 5
-            bar_w = NODE_SIZE - 6
+            bar_y = y + NODE_H - 5
+            bar_w = NODE_W - 6
             progress = min(lvl / max_lvl, 1.0)
             draw.rectangle([x + 3, bar_y, x + 3 + bar_w, bar_y + 3], fill=PROGRESS_BG)
             if progress > 0:
@@ -222,25 +222,19 @@ def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
                 draw.rectangle([x + 3, bar_y, x + 3 + int(bar_w * progress), bar_y + 3], fill=bar_color)
 
         # Perk name (top of node)
-        name = info["name"]
-        # Truncate long names
-        if len(name) > 10:
-            parts = name.split(" ")
-            if len(parts) >= 2:
-                name = parts[0][:7]
+        name = SHORT_NAMES.get(node_id, info["name"])
         name_color = WHITE if unlocked else GREY
         bb = draw.textbbox((0, 0), name, font=f_tiny)
         tw = bb[2] - bb[0]
-        nx = x + (NODE_SIZE - tw) / 2
-        draw.text((nx, y + 3), name, fill=name_color, font=f_tiny)
+        draw.text((x + (NODE_W - tw) / 2, y + 4), name, fill=name_color, font=f_tiny)
 
         # Level text (middle)
         if is_ability:
             if active_ability:
-                lvl_text = "ON"
+                lvl_text = "ACTIVE"
                 lvl_color = ABILITY_GREEN
             elif unlocked:
-                lvl_text = f"L{lvl}"
+                lvl_text = f"Lvl {lvl}"
                 lvl_color = accent
             else:
                 lvl_text = "--"
@@ -257,7 +251,7 @@ def render_hotm_tree(hotm_perks: dict, powder: dict, hotm_level: int,
 
         bb = draw.textbbox((0, 0), lvl_text, font=f_small)
         tw = bb[2] - bb[0]
-        draw.text((x + (NODE_SIZE - tw) / 2, y + 17), lvl_text, fill=lvl_color, font=f_small)
+        draw.text((x + (NODE_W - tw) / 2, y + 20), lvl_text, fill=lvl_color, font=f_small)
 
     # Tier labels
     for tier in range(1, 11):
