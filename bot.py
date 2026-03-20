@@ -110,7 +110,230 @@ def _detect_tool(question: str, has_linked: bool) -> str | None:
     if any(w in q for w in ["snipe", "snipes", "sniping", "ah snipe"]):
         return "flips_ah"
 
+    # Price lookup — simple "how much is X", "price of X", "bazaar X"
+    price_patterns = ["how much is", "how much does", "how much do", "price of", "price for",
+                      "bazaar price", "ah price", "cost of", "what does .* cost",
+                      "what does .* sell for", "what is .* worth"]
+    # Direct bazaar/price queries (short questions, not complex AI questions)
+    if any(w in q for w in ["bazaar ", "ah price"]):
+        if len(q.split()) <= 8:
+            return "price"
+    import re as _re
+    for pat in price_patterns:
+        if _re.search(pat, q):
+            return "price"
+
+    # Recipe lookup — crafting questions
+    recipe_words = ["recipe for", "recipe of", "how to craft", "how do i craft", "how do you craft",
+                    "how to make", "how do i make", "how do you make", "what do i need to make",
+                    "what do i need to craft", "crafting recipe", "craft recipe",
+                    "ingredients for", "materials for", "what's in a", "whats in a"]
+    if any(w in q for w in recipe_words):
+        return "recipe"
+
+    # Skill calculator — XP questions
+    skill_calc_patterns = [
+        r"how much xp .* (?:to|for) .* \d+",
+        r"xp (?:to|for|needed|required|until) .* \d+",
+        r"xp .* level \d+",
+        r"how many .* (?:to|for) .* \d+",
+        r"(?:mining|combat|farming|foraging|fishing|enchanting|alchemy|taming|carpentry|catacombs|dungeon)\s+\d+\s+xp",
+        r"\d+\s+(?:mining|combat|farming|foraging|fishing|enchanting|alchemy|taming|carpentry|catacombs)",
+        r"(?:zombie|spider|wolf|enderman|blaze|vampire|revenant|tarantula|sven|voidgloom|inferno)\s+slayer\s+\d+",
+        r"slayer\s+\d+",
+    ]
+    for pat in skill_calc_patterns:
+        if _re.search(pat, q):
+            return "skill_calc"
+
     return None
+
+
+def _extract_item_name(question: str, prefixes: list[str]) -> str:
+    """Extract an item name from a question by stripping known prefixes."""
+    q = question.lower().strip()
+    for prefix in prefixes:
+        import re as _re
+        m = _re.search(prefix, q)
+        if m:
+            item = q[m.end():].strip().rstrip("?.,! ")
+            if item:
+                return item
+    # Fallback: return everything after removing common filler words
+    for word in ["the", "a", "an", "some"]:
+        q = q.replace(f" {word} ", " ")
+    return q.strip().rstrip("?.,! ")
+
+
+async def _run_price_tool(question: str, hypixel_api):
+    """Look up price for an item from Bazaar and/or AH. Returns embed or None."""
+    prefixes = ["how much (?:is|does|do) (?:a |an |the )?", "price (?:of|for) (?:a |an |the )?",
+                "bazaar price (?:of|for )?", "ah price (?:of|for )?", "bazaar ",
+                "cost of (?:a |an |the )?", "what (?:is|does) (?:a |an |the )?.* (?:cost|sell for|worth)"]
+    item_name = _extract_item_name(question, prefixes)
+    if not item_name or len(item_name) < 2:
+        return None
+
+    embed = discord.Embed(title=f"Price: {item_name.title()}", color=0x3498DB)
+    found = False
+
+    # Try Bazaar first
+    baz_results = await hypixel_api.search_bazaar(item_name)
+    if baz_results:
+        found = True
+        for r in baz_results[:5]:
+            name = r['id'].replace('_', ' ').title()
+            embed.add_field(
+                name=f"{name} (Bazaar)",
+                value=f"Buy order: **{r['buy']:,.1f}** coins\nSell offer: **{r['sell']:,.1f}** coins",
+                inline=False,
+            )
+
+    # Also try AH
+    ah_results = await hypixel_api.search_ah(item_name)
+    if ah_results:
+        found = True
+        for r in ah_results[:3]:
+            embed.add_field(
+                name=f"{r['name']} ({r['source']})",
+                value=f"Price: **{r['price']:,.0f}** coins",
+                inline=False,
+            )
+
+    return embed if found else None
+
+
+async def _run_recipe_tool(question: str, hypixel_api):
+    """Look up crafting recipe for an item. Returns embed or None."""
+    prefixes = ["recipe (?:for|of) (?:a |an |the )?", "how (?:to|do (?:i|you)) (?:craft|make) (?:a |an |the )?",
+                "what do i need to (?:craft|make) (?:a |an |the )?", "crafting recipe (?:for )?",
+                "craft recipe (?:for )?", "ingredients for (?:a |an |the )?",
+                "materials for (?:a |an |the )?", "what'?s in (?:a |an |the )?"]
+    item_name = _extract_item_name(question, prefixes)
+    if not item_name or len(item_name) < 2:
+        return None
+
+    item = await hypixel_api.find_item(item_name)
+    if not item:
+        return None
+
+    recipe = hypixel_api.get_recipe(item["id"])
+    name = item.get("name", item["id"].replace("_", " ").title())
+
+    embed = discord.Embed(title=f"Recipe: {name}", color=0xF1C40F)
+
+    if item.get("tier"):
+        embed.description = f"Rarity: {item['tier'].title()}"
+
+    if recipe:
+        ingredients = []
+        for mat_id, count in recipe["i"].items():
+            mat_name = mat_id.replace("_", " ").title()
+            ingredients.append(f"**{count}x** {mat_name}")
+
+        rtype = recipe.get("t", "craft")
+        if rtype == "forge":
+            dur = recipe.get("d", 0)
+            dur_str = f" ({dur // 3600}h)" if dur else ""
+            embed.add_field(name=f"Forge Recipe{dur_str}", value="\n".join(ingredients), inline=False)
+        else:
+            embed.add_field(name="Crafting Recipe", value="\n".join(ingredients), inline=False)
+
+        output_count = recipe.get("c", 1)
+        if output_count and output_count > 1:
+            embed.set_footer(text=f"Produces {output_count}x per craft")
+    else:
+        embed.add_field(name="Recipe", value="No recipe data available for this item.", inline=False)
+        if item.get("category"):
+            embed.add_field(name="Category", value=item["category"].replace("_", " ").title(), inline=True)
+
+    return embed
+
+
+def _run_skill_calc_tool(question: str) -> str | None:
+    """Calculate XP needed for a skill/slayer level. Returns text or None."""
+    from player_stats import SKILL_XP, SKILL_MAX, SLAYER_XP
+    import re as _re
+
+    q = question.lower().strip()
+
+    skill_aliases = {
+        "mining": "Mining", "combat": "Combat", "farming": "Farming",
+        "foraging": "Foraging", "fishing": "Fishing", "enchanting": "Enchanting",
+        "alchemy": "Alchemy", "taming": "Taming", "carpentry": "Carpentry",
+        "runecrafting": "Runecrafting", "social": "Social",
+        "catacombs": "Catacombs", "dungeon": "Catacombs", "dungeons": "Catacombs",
+    }
+    slayer_aliases = {
+        "zombie": "Revenant", "revenant": "Revenant", "rev": "Revenant",
+        "spider": "Tarantula", "tarantula": "Tarantula", "tara": "Tarantula",
+        "wolf": "Sven", "sven": "Sven",
+        "enderman": "Voidgloom", "voidgloom": "Voidgloom", "eman": "Voidgloom",
+        "blaze": "Inferno", "inferno": "Inferno",
+        "vampire": "Vampire", "vamp": "Vampire",
+    }
+
+    skill_name = None
+    target_level = None
+    is_slayer = False
+
+    # Check for slayer patterns first
+    for alias, canonical in slayer_aliases.items():
+        m = _re.search(rf'{alias}\s+slayer\s+(\d+)', q)
+        if m:
+            skill_name = canonical
+            target_level = int(m.group(1))
+            is_slayer = True
+            break
+        m = _re.search(rf'slayer.*{alias}\s+(\d+)', q)
+        if m:
+            skill_name = canonical
+            target_level = int(m.group(1))
+            is_slayer = True
+            break
+
+    if not skill_name:
+        for alias, canonical in skill_aliases.items():
+            m = _re.search(rf'{alias}\s+(?:level\s+)?(\d+)', q)
+            if m:
+                skill_name = canonical
+                target_level = int(m.group(1))
+                break
+            m = _re.search(rf'(\d+)\s+{alias}', q)
+            if m:
+                skill_name = canonical
+                target_level = int(m.group(1))
+                break
+
+    if not skill_name or target_level is None:
+        return None
+
+    if is_slayer:
+        if target_level < 1 or target_level >= len(SLAYER_XP):
+            return f"Slayer level {target_level} is out of range (max level {len(SLAYER_XP) - 1})."
+        total_xp = SLAYER_XP[target_level]
+        prev_xp = SLAYER_XP[target_level - 1] if target_level > 0 else 0
+        xp_this_level = total_xp - prev_xp
+        return (
+            f"**{skill_name} Slayer Level {target_level}**\n"
+            f"Total XP needed: **{total_xp:,}**\n"
+            f"XP for this level alone: **{xp_this_level:,}**"
+        )
+    else:
+        cap = SKILL_MAX.get(skill_name, 50) if skill_name != "Catacombs" else 50
+        if target_level < 1 or target_level > cap:
+            return f"{skill_name} level {target_level} is out of range (max level {cap})."
+        if target_level >= len(SKILL_XP):
+            return f"No XP data available for {skill_name} level {target_level}."
+        total_xp = SKILL_XP[target_level]
+        prev_xp = SKILL_XP[target_level - 1] if target_level > 0 else 0
+        xp_this_level = total_xp - prev_xp
+        return (
+            f"**{skill_name} Level {target_level}**\n"
+            f"Total XP needed: **{total_xp:,}**\n"
+            f"XP for this level alone: **{xp_this_level:,}**\n"
+            f"(Cumulative from level 0 to {target_level})"
+        )
 
 
 async def _run_hotm_tool(ctx, username: str, mc_uuid: str = None):
