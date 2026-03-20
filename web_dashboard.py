@@ -551,6 +551,56 @@ async function loadAnalysis() {
   document.getElementById('analysis-content').textContent = data.report;
 }
 
+// --- Fix with AI ---
+const fixData = {};  // store fix data per feedback id
+
+async function fixWithAI(id, question, response) {
+  const area = document.getElementById('fix-area-' + id);
+  const loading = document.getElementById('fix-loading-' + id);
+  const result = document.getElementById('fix-result-' + id);
+  area.style.display = 'block';
+  loading.style.display = 'block';
+  result.style.display = 'none';
+
+  const resp = await fetch('/api/fix', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({question, response})
+  });
+  const data = await resp.json();
+  loading.style.display = 'none';
+
+  if (data.ok) {
+    document.getElementById('fix-topic-' + id).textContent = data.topic;
+    document.getElementById('fix-correction-' + id).textContent = data.correction;
+    fixData[id] = {topic: data.topic};
+    result.style.display = 'block';
+  } else {
+    loading.textContent = 'Error: ' + data.error;
+    loading.style.display = 'block';
+  }
+}
+
+async function applyFix(id) {
+  const topic = fixData[id]?.topic || 'General';
+  const correction = document.getElementById('fix-correction-' + id).textContent.trim();
+  if (!correction) return;
+
+  const resp = await fetch('/api/apply-fix', {
+    method: 'POST', headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({topic, correction, feedback_id: id})
+  });
+  const data = await resp.json();
+  if (data.ok) {
+    const card = document.getElementById('feedback-' + id);
+    card.style.borderLeftColor = '#4ecca3';
+    card.querySelector('.fix-area').innerHTML = '<div style="color:#4ecca3;">Fix applied & resolved</div>';
+  }
+}
+
+function dismissFix(id) {
+  document.getElementById('fix-area-' + id).style.display = 'none';
+}
+
 // Format timestamps
 document.querySelectorAll('.meta').forEach(el => {
   el.innerHTML = el.innerHTML.replace(/(\d{10,})/, (match) => {
