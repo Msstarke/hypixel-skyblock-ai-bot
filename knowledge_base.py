@@ -30,7 +30,7 @@ FILE_KEYWORDS = {
                        "best armor", "best sword"],
     "pets.md":        ["pet", "pet item", "pet xp", "pet ability", "best pet"],
     "collections.md": ["collection", "unlock", "collection reward"],
-    "locations.md":   ["location", "zone", "area", "spider den", "the end", "crimson isle",
+    "locations.md":   ["location", "zone", "area", "spider den", "the end",
                        "the park", "deep caverns", "dwarven mines", "crystal hollows",
                        "glacite", "where to", "where is", "grind spot", "best place"],
     "economy.md":     ["bazaar", "auction", "npc price", "coin", "profit", "flip",
