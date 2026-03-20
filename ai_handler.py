@@ -1236,9 +1236,18 @@ class AIHandler:
                 except Exception:
                     pass
 
-            # Inject historical trend data if tracker has data and question involves a specific item
+            # Inject historical trend data if tracker has data
             hist_ctx = ""
+            market_ctx = ""
             if self.tracker and price_question:
+                # For investment/flip questions, inject full market analysis
+                invest_words = ["invest", "investment", "flip", "money making", "hold", "profit",
+                                "what to buy", "market", "trending"]
+                if any(w in question.lower() for w in invest_words):
+                    try:
+                        market_ctx = self.tracker.format_market_analysis_for_ai()
+                    except Exception:
+                        pass
                 try:
                     phrases = self._extract_search_phrases(question)
                     for phrase in phrases[:3]:
