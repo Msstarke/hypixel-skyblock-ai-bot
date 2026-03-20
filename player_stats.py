@@ -486,20 +486,27 @@ def format_for_ai(username: str, profile_name: str, stats: dict) -> str:
     # HotM + Powder
     hotm_xp = stats.get('hotm_xp', 0)
     hotm_lvl = sum(1 for req in HOTM_XP[1:] if hotm_xp >= req)
-    mithril_p = stats.get('mithril_powder', 0)
-    gemstone_p = stats.get('gemstone_powder', 0)
-    glacite_p = stats.get('glacite_powder', 0)
-    hotm_line = f"HotM: {hotm_lvl}"
-    powder_parts = []
-    if mithril_p:
-        powder_parts.append(f"Mithril: {_format_number(mithril_p)}")
-    if gemstone_p:
-        powder_parts.append(f"Gemstone: {_format_number(gemstone_p)}")
-    if glacite_p:
-        powder_parts.append(f"Glacite: {_format_number(glacite_p)}")
-    if powder_parts:
-        hotm_line += " | Powder: " + ", ".join(powder_parts)
-    lines.append(hotm_line)
+    lines.append(f"HotM: {hotm_lvl}")
+
+    # Powder (available / total spent)
+    for ptype in ('mithril', 'gemstone', 'glacite'):
+        avail = stats.get(f'{ptype}_powder', 0)
+        spent = stats.get(f'powder_spent_{ptype}', 0)
+        total = stats.get(f'{ptype}_powder_total', 0)
+        if avail or spent or total:
+            lines.append(f"  {ptype.title()} Powder: {_format_number(avail)} available, {_format_number(spent)} spent (total earned: {_format_number(total)})")
+
+    # HotM Perks
+    hotm_perks = stats.get('hotm_perks', {})
+    if hotm_perks:
+        perk_parts = [f"{k.replace('_', ' ').title()}: lvl {v}" for k, v in sorted(hotm_perks.items())]
+        lines.append("HotM Perks: " + " | ".join(perk_parts))
+    else:
+        lines.append("HotM Perks: None unlocked")
+
+    selected_ability = stats.get('hotm_selected_ability', '')
+    if selected_ability:
+        lines.append(f"Selected HotM Ability: {selected_ability.replace('_', ' ').title()}")
 
     # Accessories / Magic Power
     mp = stats.get('magical_power', 0)
