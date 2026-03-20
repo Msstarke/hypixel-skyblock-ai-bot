@@ -20,6 +20,7 @@ bot = commands.Bot(command_prefix="!", intents=intents, help_command=None)
 ai = AIHandler()
 tracker = BazaarTracker()
 ai.tracker = tracker  # share tracker with AI handler for context injection
+web_dashboard._live_knowledge_base = ai.knowledge  # let dashboard reload live KB
 
 # Optional: restrict to specific channel IDs
 ALLOWED_CHANNELS = set()
