@@ -15,7 +15,9 @@ COFLNET_HISTORY_URL = "https://sky.coflnet.com/api/item/price/{item_id}/history/
 MOJANG_URL = "https://api.mojang.com/users/profiles/minecraft"
 PROFILES_URL = "https://api.hypixel.net/v2/skyblock/profiles"
 ITEMS_URL = "https://api.hypixel.net/resources/skyblock/items"  # no API key needed
+ELECTION_URL = "https://api.hypixel.net/v2/resources/skyblock/election"  # no API key needed
 ITEMS_CACHE_TTL = 3600  # 1 hour — items rarely change
+ELECTION_CACHE_TTL = 600  # 10 minutes
 
 CACHE_TTL = 300  # 5 minutes
 PLAYER_CACHE_TTL = 120  # 2 minutes for player data
