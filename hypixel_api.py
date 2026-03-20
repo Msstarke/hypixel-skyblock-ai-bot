@@ -1076,19 +1076,22 @@ class HypixelAPI:
                 if k not in prices:
                     prices[k] = v.get("buy", 0)
 
-        # Application worth multipliers (match SkyHelper-Networth-Go)
+        # Application worth multipliers (exact match: SkyHelper-Networth-Go)
         APP_WORTH = {
             "enchantments": 0.85,
-            "reforge": 0.55,
-            "recombobulator": 1.0,
+            "reforge": 1.0,
+            "recombobulator": 0.8,
             "hot_potato_book": 1.0,
-            "fuming_potato_book": 1.0,
-            "stars": 0.8,
+            "fuming_potato_book": 0.6,
+            "master_star": 1.0,
+            "essence": 0.75,
             "drill_part": 1.0,
-            "art_of_war": 1.0,
-            "wood_singularity": 1.0,
+            "art_of_war": 0.6,
+            "wood_singularity": 0.5,
             "etherwarp": 1.0,
-            "silex": 0.8,
+            "silex": 0.75,
+            "gemstone": 1.0,
+            "gemstone_chambers": 0.9,
         }
 
         # Essence cost per star tier (cumulative essence for upgrade_level)
