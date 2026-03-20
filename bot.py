@@ -839,54 +839,57 @@ async def help_command(ctx: commands.Context):
     )
     embed.add_field(
         name="!ai <question>",
-        value="Ask anything about Skyblock. Fetches live Bazaar prices when relevant.",
+        value="Ask anything about Skyblock — prices, builds, guides, personalized advice.",
         inline=False
     )
     embed.add_field(
-        name="!bazaar <item>",
-        value="Quick Bazaar price lookup by item name.",
+        name="!profile [ign]",
+        value="Full profile overview — networth, skills, slayers, gear, pets.",
         inline=False
     )
     embed.add_field(
-        name="!flips",
-        value="Top Bazaar flip opportunities ranked by margin × liquidity.",
+        name="!skills [ign]",
+        value="View all skill levels and skill average.",
         inline=False
     )
     embed.add_field(
-        name="!flips ah",
-        value="Top AH BIN snipe opportunities (buy cheap, relist at median).",
+        name="!slayer [ign]",
+        value="View slayer levels and XP.",
         inline=False
     )
     embed.add_field(
-        name="!hotm [username]",
-        value="View a player's Heart of the Mountain tree as an image. Uses linked account if no name given.",
+        name="!dungeons [ign]",
+        value="Dungeon stats — catacombs level, classes, floor completions.",
         inline=False
     )
     embed.add_field(
-        name="!link <ign>",
-        value="Link your Minecraft account for personalized advice, networth, and stats.",
+        name="!pets [ign]",
+        value="View all pets with levels and rarities.",
+        inline=False
+    )
+    embed.add_field(
+        name="!hotm [ign]",
+        value="Heart of the Mountain tree as an image.",
+        inline=False
+    )
+    embed.add_field(
+        name="!bazaar <item> / !flips / !flips ah",
+        value="Bazaar prices, flip opportunities, and AH snipes.",
+        inline=False
+    )
+    embed.add_field(
+        name="!link <ign> / !unlink",
+        value="Link your Minecraft account for personalized advice.",
         inline=False
     )
     embed.add_field(
         name="!correct <topic> | <correction>",
-        value="Submit a correction if the bot gets something wrong. Reviewed by admins.",
+        value="Submit a correction if the bot gets something wrong.",
         inline=False
     )
     embed.add_field(
         name="!stats",
-        value="Show bot usage statistics — questions answered, vote ratios, linked accounts, and bazaar data.",
-        inline=False
-    )
-    embed.add_field(
-        name="Examples",
-        value=(
-            "`!ai whats my networth` (requires !link)\n"
-            "`!ai hypermax divan helmet`\n"
-            "`!ai whats the craft cost for glossy mineral helmet`\n"
-            "`!bazaar enchanted diamond`\n"
-            "`!flips` / `!flips ah`\n"
-            "`!correct minions | T11 snow minion makes ~1.2M/day with diamond spreading`"
-        ),
+        value="Bot usage statistics.",
         inline=False
     )
     await ctx.send(embed=embed)
