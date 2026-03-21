@@ -131,7 +131,7 @@ class HypixelAPI:
 
     async def get_lowest_bin(self) -> dict:
         """Fetch lowest BIN prices from moulberry.codes (keyed by item ID)."""
-        data = await self._get(LOWEST_BIN_URL, "lowest_bin", params={}, ttl=AH_CACHE_TTL)
+        data = await self._get(LOWEST_BIN_URL, "lowest_bin", params={}, ttl=AH_CACHE_TTL, timeout=30)
         return data or {}
 
     async def get_skyhelper_prices(self) -> dict:
