@@ -6,10 +6,10 @@ Provides trend analysis, volatility detection, and demand surge alerts.
 import sqlite3
 import time
 import asyncio
-from pathlib import Path
 from typing import Optional
+from data_dir import DATA_DIR
 
-DB_PATH = Path(__file__).parent / "data" / "bazaar_history.db"
+DB_PATH = DATA_DIR / "bazaar_history.db"
 SNAPSHOT_INTERVAL = 300  # 5 minutes
 KEEP_DAYS = 90           # keep 90 days for long-term analysis
 
