@@ -148,6 +148,7 @@ def api_unlink():
     try:
         from user_links import unlink_ingame
         removed = unlink_ingame(mc_username)
+        print(f"[ingame] {mc_username} unlinked (was_linked={removed})")
         return jsonify({"ok": True, "was_linked": removed})
     except Exception as e:
         print(f"[api/unlink] Error: {e}")
