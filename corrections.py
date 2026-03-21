@@ -91,7 +91,6 @@ def reject_correction(correction_id: int) -> bool:
 
 def apply_to_knowledge(topic: str, correction: str, submitter: str) -> None:
     """Append an approved correction to the community corrections knowledge file."""
-    CORRECTIONS_FILE.parent.mkdir(exist_ok=True)
     header = ""
     if not CORRECTIONS_FILE.exists():
         header = "# Community Corrections\n\n"
