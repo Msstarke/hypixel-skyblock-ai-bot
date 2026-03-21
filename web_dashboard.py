@@ -609,7 +609,7 @@ function dismissFix(id) {
 
 // Format timestamps
 document.querySelectorAll('.meta').forEach(el => {
-  el.innerHTML = el.innerHTML.replace(/(\d{10,})/, (match) => {
+  el.innerHTML = el.innerHTML.replace(/(\\d{10,})/, (match) => {
     return new Date(parseInt(match) * 1000).toLocaleString();
   });
 });
