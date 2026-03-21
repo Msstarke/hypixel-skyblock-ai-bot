@@ -4,9 +4,9 @@ Stores UUID (permanent) alongside username (display only).
 """
 import sqlite3
 import time
-from pathlib import Path
+from data_dir import DATA_DIR
 
-DB_PATH = Path(__file__).parent / "data" / "user_links.db"
+DB_PATH = DATA_DIR / "user_links.db"
 
 
 def _connect() -> sqlite3.Connection:
