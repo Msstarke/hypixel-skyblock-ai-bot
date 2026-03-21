@@ -51,6 +51,8 @@ def api_ask():
         return jsonify({"error": "Question too long (max 500 chars)"}), 400
 
     mc_username = data.get("username", "")
+    _start = time.time()
+    print(f"[ingame] {mc_username or 'unknown'} asked: {question[:100]}")
 
     # Check if in-game user has a linked IGN for personalized responses
     from user_links import get_ingame_linked
