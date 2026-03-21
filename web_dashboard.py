@@ -123,6 +123,7 @@ def api_link():
     try:
         from user_links import link_ingame
         link_ingame(mc_username, ign)
+        print(f"[ingame] {mc_username} linked to IGN: {ign}")
         return jsonify({"ok": True, "linked": ign})
     except Exception as e:
         print(f"[api/link] Error: {e}")
