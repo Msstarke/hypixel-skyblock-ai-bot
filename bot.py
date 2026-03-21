@@ -21,6 +21,7 @@ ai = AIHandler()
 tracker = BazaarTracker()
 ai.tracker = tracker  # share tracker with AI handler for context injection
 web_dashboard._live_knowledge_base = ai.knowledge  # let dashboard reload live KB
+web_dashboard._live_ai_handler = ai  # let in-game API use the AI handler
 
 # Optional: restrict to specific channel IDs
 ALLOWED_CHANNELS = set()
