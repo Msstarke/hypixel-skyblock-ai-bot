@@ -144,7 +144,6 @@ async def analyze_feedback() -> str:
     report += "## AI Analysis\n" + ai_analysis
 
     # Persist to file
-    ANALYSIS_FILE.parent.mkdir(exist_ok=True)
     ANALYSIS_FILE.write_text(report, encoding="utf-8")
 
     return report
