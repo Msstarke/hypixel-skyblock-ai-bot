@@ -700,13 +700,17 @@ MOD_DIR = Path(__file__).parent / "fabric-mod" / "dist"
 
 @app.route("/api/mod/version")
 def api_mod_version():
-    """Returns the latest mod version. The mod checks this on startup."""
+    """Returns the latest mod version and update message. The mod checks this on startup."""
     version_file = MOD_DIR / "version.txt"
+    message_file = MOD_DIR / "update_message.txt"
     if version_file.exists():
         version = version_file.read_text().strip()
     else:
         version = "1.0.0"
-    return jsonify({"version": version})
+    message = ""
+    if message_file.exists():
+        message = message_file.read_text().strip()
+    return jsonify({"version": version, "message": message})
 
 
 @app.route("/api/mod/download")
