@@ -1528,7 +1528,7 @@ async def stats_command(ctx: commands.Context):
         ratio_text = "No votes yet"
 
     # Linked accounts
-    links_db = data_dir / "user_links.db"
+    links_db = DATA_DIR / "user_links.db"
     linked_accounts = 0
     if links_db.exists():
         con = sqlite3.connect(links_db)
