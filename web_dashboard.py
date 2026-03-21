@@ -644,11 +644,20 @@ def api_ask():
 
     mc_username = data.get("username", "")
 
+    # Check if in-game user has a linked IGN for personalized responses
+    from user_links import get_ingame_linked
+    linked_ign = get_ingame_linked(mc_username) if mc_username else None
+
+    # If linked, inject IGN context into the question
+    ingame_question = question
+    if linked_ign:
+        ingame_question = f"[player:{linked_ign}] {question}"
+
     # Run the async AI handler in the event loop
     try:
         loop = asyncio.new_event_loop()
         response = loop.run_until_complete(
-            _live_ai_handler.get_response(question, ingame=True)
+            _live_ai_handler.get_response(ingame_question, ingame=True)
         )
         loop.close()
     except Exception as e:
