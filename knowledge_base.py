@@ -187,6 +187,10 @@ class KnowledgeBase:
             return
         for f in KNOWLEDGE_DIR.glob("*.md"):
             self._files[f.name] = f.read_text(encoding="utf-8")
+        # Also load community corrections from persistent data dir (Railway volume)
+        corrections_file = DATA_DIR / "community_corrections.md"
+        if corrections_file.exists():
+            self._files["community_corrections.md"] = corrections_file.read_text(encoding="utf-8")
 
     def reload(self):
         self._files.clear()
