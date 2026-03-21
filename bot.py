@@ -1760,4 +1760,6 @@ async def on_command_error(ctx: commands.Context, error):
     raise error
 
 
+# Start the API server BEFORE the Discord bot so Railway's health check gets a response
+start_dashboard_thread()
 bot.run(os.getenv("DISCORD_TOKEN"))
