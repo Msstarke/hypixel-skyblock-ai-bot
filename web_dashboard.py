@@ -694,6 +694,36 @@ def api_health():
     return jsonify({"status": "ok", "ai_ready": _live_ai_handler is not None})
 
 
+# --- Mod auto-update endpoints ---
+
+MOD_DIR = Path(__file__).parent / "fabric-mod" / "dist"
+
+@app.route("/api/mod/version")
+def api_mod_version():
+    """Returns the latest mod version. The mod checks this on startup."""
+    version_file = MOD_DIR / "version.txt"
+    if version_file.exists():
+        version = version_file.read_text().strip()
+    else:
+        version = "1.0.0"
+    return jsonify({"version": version})
+
+
+@app.route("/api/mod/download")
+def api_mod_download():
+    """Serves the latest mod jar for auto-update."""
+    from flask import send_from_directory
+    # Find the jar in dist/
+    if not MOD_DIR.exists():
+        return jsonify({"error": "No mod builds available"}), 404
+    jars = list(MOD_DIR.glob("*.jar"))
+    if not jars:
+        return jsonify({"error": "No mod jar found"}), 404
+    jar = jars[0]
+    return send_from_directory(str(MOD_DIR), jar.name, as_attachment=True,
+                               download_name="hypixelai-mod.jar")
+
+
 def run_dashboard():
     """Run the dashboard as a standalone server."""
     print(f"[dashboard] Starting on port {DASHBOARD_PORT}")
