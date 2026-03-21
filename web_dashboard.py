@@ -738,9 +738,13 @@ def api_unlink():
     if not mc_username:
         return jsonify({"error": "Missing username"}), 400
 
-    from user_links import unlink_ingame
-    removed = unlink_ingame(mc_username)
-    return jsonify({"ok": True, "was_linked": removed})
+    try:
+        from user_links import unlink_ingame
+        removed = unlink_ingame(mc_username)
+        return jsonify({"ok": True, "was_linked": removed})
+    except Exception as e:
+        print(f"[api/unlink] Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/health")
