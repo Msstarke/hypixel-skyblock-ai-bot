@@ -3,9 +3,9 @@ SQLite storage for bot response feedback (thumbs up/down) and unanswered questio
 """
 import sqlite3
 import time
-from pathlib import Path
+from data_dir import DATA_DIR
 
-DB_PATH = Path(__file__).parent / "data" / "feedback.db"
+DB_PATH = DATA_DIR / "feedback.db"
 
 
 def _connect() -> sqlite3.Connection:
