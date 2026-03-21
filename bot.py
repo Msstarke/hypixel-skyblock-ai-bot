@@ -1398,7 +1398,12 @@ async def mp_command(ctx: commands.Context, *, username: str = None):
             if acc.get("id"):
                 owned_ids.add(acc["id"])
 
-        rankings = await get_accessory_mp_rankings(ai.hypixel, owned_ids=owned_ids)
+        try:
+            rankings = await get_accessory_mp_rankings(ai.hypixel, owned_ids=owned_ids)
+        except Exception as e:
+            print(f"[bot] MP optimizer failed: {e}")
+            await ctx.reply("Couldn't fetch accessory price data right now — the price API may be slow. Try again in a moment.")
+            return
         if not rankings:
             await ctx.reply("Couldn't fetch accessory price data right now. Try again in a moment.")
             return
