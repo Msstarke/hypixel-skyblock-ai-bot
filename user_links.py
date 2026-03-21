@@ -10,7 +10,6 @@ DB_PATH = DATA_DIR / "user_links.db"
 
 
 def _connect() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(exist_ok=True)
     con = sqlite3.connect(DB_PATH, check_same_thread=False)
     con.execute("PRAGMA journal_mode=WAL")
     con.execute("""
