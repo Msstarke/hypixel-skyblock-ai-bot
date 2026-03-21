@@ -714,9 +714,13 @@ def api_link():
     if not mc_username or not ign:
         return jsonify({"error": "Missing username or ign"}), 400
 
-    from user_links import link_ingame, get_ingame_linked
-    link_ingame(mc_username, ign)
-    return jsonify({"ok": True, "linked": ign})
+    try:
+        from user_links import link_ingame
+        link_ingame(mc_username, ign)
+        return jsonify({"ok": True, "linked": ign})
+    except Exception as e:
+        print(f"[api/link] Error: {e}")
+        return jsonify({"error": str(e)}), 500
 
 
 @app.route("/api/unlink", methods=["POST"])
