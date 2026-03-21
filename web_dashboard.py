@@ -648,7 +648,7 @@ def api_ask():
     try:
         loop = asyncio.new_event_loop()
         response = loop.run_until_complete(
-            _live_ai_handler.get_response(question, mc_username=mc_username)
+            _live_ai_handler.get_response(question)
         )
         loop.close()
     except Exception as e:
