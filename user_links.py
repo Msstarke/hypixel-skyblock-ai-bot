@@ -79,3 +79,44 @@ def get_linked_uuid(discord_id: int) -> str | None:
         "SELECT mc_uuid FROM links WHERE discord_id = ?", (discord_id,)
     ).fetchone()
     return row[0] if row else None
+
+
+# --- In-game (MC username) links ---
+# Uses mc_username as the key instead of discord_id.
+# Stored in a separate table so in-game users get personalized responses too.
+
+def _ensure_ingame_table():
+    _con.execute("""
+        CREATE TABLE IF NOT EXISTS ingame_links (
+            mc_username  TEXT PRIMARY KEY COLLATE NOCASE,
+            linked_ign   TEXT NOT NULL,
+            linked_at    INTEGER NOT NULL
+        )
+    """)
+    _con.commit()
+
+_ensure_ingame_table()
+
+
+def link_ingame(mc_username: str, ign: str) -> None:
+    """Link an in-game user to a Skyblock IGN."""
+    _con.execute(
+        "INSERT OR REPLACE INTO ingame_links (mc_username, linked_ign, linked_at) VALUES (?, ?, ?)",
+        (mc_username.strip(), ign.strip(), int(time.time())),
+    )
+    _con.commit()
+
+
+def unlink_ingame(mc_username: str) -> bool:
+    """Unlink an in-game user. Returns True if a link existed."""
+    cur = _con.execute("DELETE FROM ingame_links WHERE mc_username = ?", (mc_username.strip(),))
+    _con.commit()
+    return cur.rowcount > 0
+
+
+def get_ingame_linked(mc_username: str) -> str | None:
+    """Get the linked IGN for an in-game user, or None."""
+    row = _con.execute(
+        "SELECT linked_ign FROM ingame_links WHERE mc_username = ?", (mc_username.strip(),)
+    ).fetchone()
+    return row[0] if row else None
