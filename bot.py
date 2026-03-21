@@ -553,6 +553,10 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
     linked_uuid = get_linked_uuid(ctx.author.id) if linked_ign else None
     tool = _detect_tool(question, has_linked=bool(linked_ign))
 
+    import time as _time
+    _start = _time.time()
+    print(f"[discord] {ctx.author} asked: {question[:100]}")
+
     async with ctx.typing():
         # --- Tool: HotM tree ---
         if tool == "hotm" and linked_ign:
