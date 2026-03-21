@@ -6,17 +6,17 @@ import os
 import time
 import sqlite3
 from collections import Counter
-from pathlib import Path
 from groq import AsyncGroq
 
 from feedback import get_bad_responses, get_unanswered, get_feedback_stats
+from data_dir import DATA_DIR
 
 # How often to auto-analyze (seconds) — default 6 hours
 ANALYSIS_INTERVAL = int(os.getenv("FEEDBACK_ANALYSIS_INTERVAL", 21600))
 
 # File to persist last analysis results
-ANALYSIS_FILE = Path(__file__).parent / "data" / "last_analysis.txt"
-DB_PATH = Path(__file__).parent / "data" / "feedback.db"
+ANALYSIS_FILE = DATA_DIR / "last_analysis.txt"
+DB_PATH = DATA_DIR / "feedback.db"
 
 
 def _get_all_feedback(limit: int = 50) -> list[dict]:
