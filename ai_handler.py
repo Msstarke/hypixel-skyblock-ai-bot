@@ -1361,9 +1361,11 @@ class AIHandler:
 
             if ingame:
                 system += (
-                    "\n\nIN-GAME MODE: This response will be displayed in Minecraft chat. "
-                    "Be EXTREMELY brief — 2-4 short sentences max. No bullet points, no numbered lists, "
-                    "no headers. Just give the key answer directly. Skip disclaimers and caveats."
+                    "\n\nIN-GAME MODE: This is Minecraft chat. Be super blunt. "
+                    "1-2 sentences MAX. No fluff, no 'you could try', no 'I recommend'. "
+                    "Just state the answer like a wiki lookup. No lists, no bullets, no headers. "
+                    "Example: 'Jungle Axe. 40k on AH. Chop wood to get Foraging XP.' "
+                    "If they ask what to do, tell them exactly what to do in as few words as possible."
                 )
 
             try:
