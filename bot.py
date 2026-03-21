@@ -761,6 +761,8 @@ async def ai_command(ctx: commands.Context, *, question: str = None):
             print(f"[bot] Failed to add reactions: {e}")
 
         # Track for reaction handler
+        _elapsed = round(_time.time() - _start, 1)
+        print(f"[discord] Replied to {ctx.author} in {_elapsed}s ({len(response)} chars)")
         _recent_responses[msg.id] = (question, response, ctx.author.id, str(ctx.author))
         if len(_recent_responses) > MAX_TRACKED:
             oldest = next(iter(_recent_responses))
