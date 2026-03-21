@@ -1,0 +1,66 @@
+# Feedback Analysis Report
+_2026-03-22 08:09_
+
+**Feedback Stats:** 31 upvotes, 3 downvotes, 0 unanswered
+
+**Downvoted topics (most common):**
+  - price: 1 downvotes, 6 upvotes
+  - magical power: 1 downvotes, 1 upvotes
+
+**Recent downvoted Q&A pairs:**
+1. [2026-03-21] Q: whats the greenhouse
+   A: The Greenhouse is a farming area on the Hub island that lets you grow crops year‑round without needing a farm plot. It contains rows of tilled soil, water channels, and a light source, and you can pla
+2. [2026-03-21] Q: how should i get into kuudra
+   A: **How to start Kuudra (step‑by‑step for your current profile)**  
+
+1. **Raise Combat to 27 – 30**  
+   - Your Combat 21 is below the Hot tier requirement (27).  
+   - Farm high‑damage mobs (e.g. Reven
+3. [2026-03-20] Q: what accessories should i get to maximise mp for the lowest cost
+   A: Your MP is only 18, so you’re far from the 100‑200 MP you’d want even for early dungeons. The cheapest way to boost it is to fill each accessory line with the lowest‑tier piece you can get for free or
+
+---
+
+## AI Analysis
+## Hypixel Skyblock Discord Bot – Feedback Analysis & Action Plan  
+*31 up‑votes, 3 down‑votes, 0 unanswered*  
+
+---
+
+### 1. Patterns – Where the negative feedback clusters  
+
+| Down‑voted topic | Votes | Typical complaint |
+|------------------|-------|-------------------|
+| **price** | 1 ↓ / 6 ↑ | Answers are cut‑off, missing current market values, or show stale data. |
+| **magical power (MP)** | 1 ↓ / 1 ↑ | Guidance on accessories is vague, assumes wrong baseline stats, and lacks cost breakdowns. |
+| **General** | – | Answers are **truncated**, **over‑generic**, or **missing key details** (e.g., “the greenhouse” description stops mid‑sentence). |
+
+The three recent down‑voted Q&A pairs illustrate the same three symptoms:
+
+1. **Truncation / incomplete output** – the greenhouse answer stops mid‑sentence.  
+2. **Over‑personalised but inaccurate advice** – Kuudra guide assumes a combat level that may not match the user’s profile and ends abruptly.  
+3. **Wrong baseline assumptions** – MP accessory answer assumes the user’s MP is 18 and gives “cheapest” options without showing actual item prices or tier‑by‑tier recommendations.
+
+---
+
+### 2. Root Causes – Why users are unhappy  
+
+| Root Cause | Evidence | Impact |
+|------------|----------|--------|
+| **Answer truncation** – the bot hits a character limit or fails to paginate. | All three down‑voted answers end mid‑sentence. | High – users never receive the full answer they asked for. |
+| **Static / outdated knowledge base** – price tables and MP scaling are hard‑coded or not refreshed. | “price” topic receives down‑votes despite many up‑votes; users likely see stale or missing numbers. | Medium‑High – price is a core metric for most players. |
+| **Assumed player stats** – the bot uses generic numbers (e.g., MP = 18) instead of reading the user’s profile. | MP answer tells the user they are far from 100‑200 MP without confirming their actual MP. | Medium – leads to irrelevant advice. |
+| **Poor formatting / readability** – long blocks of text without bullet points or headings. | Kuudra guide is a dense paragraph; greenhouse answer lacks clear steps. | Low‑Medium – reduces perceived usefulness. |
+| **Missing contextual data** – no links, screenshots, or references to in‑game locations. | Greenhouse description never mentions “Hub → Greenhouse entrance” or a map link. | Low‑Medium – hurts new‑player onboarding. |
+
+---
+
+### 3. Fixes – Specific, Actionable Improvements (ranked by impact)
+
+| Rank | Fix | How to implement | Expected benefit |
+|------|-----|------------------|------------------|
+| **1️⃣** | **Prevent truncation – add pagination or auto‑split** | • Detect when a response exceeds Discord’s 2000‑character limit.<br>• Split into numbered follow‑up messages automatically.<br>• Add a “More?” button to fetch the next page. | Users always receive the complete answer; immediate drop in down‑votes. |
+| **2️⃣** | **Live price lookup** | • Integrate the Hypixel Skyblock API (or a community price‑tracker) to fetch current Bazaar/auction prices at query time.<br>• Cache for 5 min to avoid rate limits. | Accurate, up‑to‑date price info → higher trust and up‑votes. |
+| **3️⃣** | **Profile‑aware MP & accessory recommendations** | • Require the user to link their in‑game UUID (or provide a “/setprofile” command).<br>• Pull current MP, accessory slots, and budget from the API.<br>• Generate a table: *Accessory → Tier → Cost → MP gain*. | Advice becomes personalized, eliminating “wrong baseline” complaints. |
+| **4️⃣** | **Enhanced knowledge‑base entries** | • Rewrite greenhouse, Kuudra, and MP accessory articles with:<br> - Clear headings & bullet points.<br> - Map links / screenshots.<br> - Step‑by‑step checklists.<br>• Store as markdown so the bot can render nicely. | Improves readability, helps new players, reduces “generic” feedback. |
+| **5️⃣** | **Scheduled knowledge‑base refresh** | • Set a weekly job to pull the latest item
