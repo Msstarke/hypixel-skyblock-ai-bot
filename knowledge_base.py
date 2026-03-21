@@ -1,5 +1,6 @@
 import re
 from pathlib import Path
+from data_dir import DATA_DIR
 
 KNOWLEDGE_DIR = Path(__file__).parent / "knowledge"
 
