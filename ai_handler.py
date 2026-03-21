@@ -1359,6 +1359,13 @@ class AIHandler:
                     "\n10. Never give generic advice that ignores their stats."
                 )
 
+            if ingame:
+                system += (
+                    "\n\nIN-GAME MODE: This response will be displayed in Minecraft chat. "
+                    "Be EXTREMELY brief — 2-4 short sentences max. No bullet points, no numbered lists, "
+                    "no headers. Just give the key answer directly. Skip disclaimers and caveats."
+                )
+
             try:
                 resp = await self.client.chat.completions.create(
                     model=self.model,
@@ -1366,7 +1373,7 @@ class AIHandler:
                         {"role": "system", "content": system},
                         {"role": "user", "content": question},
                     ],
-                    max_tokens=2000,
+                    max_tokens=300 if ingame else 2000,
                     temperature=0.1,
                 )
                 text = resp.choices[0].message.content.strip()
