@@ -697,6 +697,48 @@ def api_ask():
     })
 
 
+@app.route("/api/link", methods=["POST"])
+def api_link():
+    """Link an in-game user to a Skyblock IGN."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Missing JSON body"}), 400
+
+    if INGAME_API_KEY:
+        if data.get("api_key", "") != INGAME_API_KEY:
+            return jsonify({"error": "Invalid API key"}), 401
+
+    mc_username = data.get("username", "").strip()
+    ign = data.get("ign", "").strip()
+
+    if not mc_username or not ign:
+        return jsonify({"error": "Missing username or ign"}), 400
+
+    from user_links import link_ingame, get_ingame_linked
+    link_ingame(mc_username, ign)
+    return jsonify({"ok": True, "linked": ign})
+
+
+@app.route("/api/unlink", methods=["POST"])
+def api_unlink():
+    """Unlink an in-game user."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Missing JSON body"}), 400
+
+    if INGAME_API_KEY:
+        if data.get("api_key", "") != INGAME_API_KEY:
+            return jsonify({"error": "Invalid API key"}), 401
+
+    mc_username = data.get("username", "").strip()
+    if not mc_username:
+        return jsonify({"error": "Missing username"}), 400
+
+    from user_links import unlink_ingame
+    removed = unlink_ingame(mc_username)
+    return jsonify({"ok": True, "was_linked": removed})
+
+
 @app.route("/api/health")
 def api_health():
     """Health check endpoint."""
