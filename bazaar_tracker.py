@@ -15,7 +15,6 @@ KEEP_DAYS = 90           # keep 90 days for long-term analysis
 
 
 def _connect() -> sqlite3.Connection:
-    DB_PATH.parent.mkdir(exist_ok=True)
     con = sqlite3.connect(DB_PATH)
     con.row_factory = sqlite3.Row
     con.execute("PRAGMA journal_mode=WAL")
