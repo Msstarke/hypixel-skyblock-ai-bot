@@ -19,7 +19,7 @@ load_dotenv()
 DB_PATH = Path(__file__).parent / "data" / "feedback.db"
 DASHBOARD_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "changeme")
 SECRET_KEY = os.getenv("FLASK_SECRET_KEY", secrets.token_hex(32))
-DASHBOARD_PORT = int(os.getenv("DASHBOARD_PORT", 5000))
+DASHBOARD_PORT = int(os.getenv("PORT", os.getenv("DASHBOARD_PORT", 5000)))
 
 app = Flask(__name__)
 
