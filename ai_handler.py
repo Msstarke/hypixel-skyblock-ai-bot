@@ -1120,7 +1120,13 @@ class AIHandler:
             if os.getenv("HYPIXEL_API_KEY"):
                 _NON_ITEM_WORDS = {"what", "why", "how", "when", "where", "who", "is", "are",
                                    "can", "do", "does", "should", "would", "best", "guide",
-                                   "tell", "explain", "help", "tips", "i", "my", "the"}
+                                   "tell", "explain", "help", "tips", "i", "my", "the",
+                                   "hi", "hello", "hey", "sup", "yo", "test", "testing",
+                                   "thanks", "thank", "ty", "thx", "ok", "okay", "lol",
+                                   "lmao", "bruh", "nice", "cool", "yes", "no", "yeah",
+                                   "nah", "please", "pls", "stop", "start", "go", "bye",
+                                   "good", "bad", "idk", "wdym", "huh", "hmm", "oh",
+                                   "ping", "work", "working", "works", "broken", "fix"}
                 q_words = re.sub(r"[^\w\s]", "", question.lower()).split()
                 if 1 <= len(q_words) <= 5 and not any(w in _NON_ITEM_WORDS for w in q_words):
                     item_phrase = " ".join(q_words)
