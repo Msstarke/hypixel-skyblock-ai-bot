@@ -108,7 +108,7 @@ class HypixelAPI:
         entry = self._cache.get(key)
         return entry is not None and time.time() - entry["ts"] < ttl
 
-    async def _get(self, url: str, cache_key: str, params: dict = None, ttl: int = CACHE_TTL) -> Optional[dict]:
+    async def _get(self, url: str, cache_key: str, params: dict = None, ttl: int = CACHE_TTL, timeout: int = 10) -> Optional[dict]:
         if self._cache_valid(cache_key, ttl):
             return self._cache[cache_key]["data"]
         if params is None:
@@ -116,7 +116,7 @@ class HypixelAPI:
         elif self.api_key and "key" not in params:
             params["key"] = self.api_key
         async with aiohttp.ClientSession() as session:
-            async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=10)) as resp:
+            async with session.get(url, params=params, timeout=aiohttp.ClientTimeout(total=timeout)) as resp:
                 if resp.status == 200:
                     data = await resp.json(content_type=None)
                     self._cache[cache_key] = {"data": data, "ts": time.time()}
