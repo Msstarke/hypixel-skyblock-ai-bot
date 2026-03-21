@@ -5,9 +5,10 @@ Users submit corrections, owner reviews and approves/rejects them.
 import sqlite3
 import time
 from pathlib import Path
+from data_dir import DATA_DIR
 
-DB_PATH = Path(__file__).parent / "data" / "corrections.db"
-CORRECTIONS_FILE = Path(__file__).parent / "knowledge" / "community_corrections.md"
+DB_PATH = DATA_DIR / "corrections.db"
+CORRECTIONS_FILE = DATA_DIR / "community_corrections.md"
 MAX_CORRECTION_LEN = 1000
 MAX_PENDING_PER_USER = 3
 
