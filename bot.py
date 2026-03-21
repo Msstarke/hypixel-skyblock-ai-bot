@@ -1536,7 +1536,7 @@ async def stats_command(ctx: commands.Context):
         con.close()
 
     # Bazaar data
-    baz_db = data_dir / "bazaar_history.db"
+    baz_db = DATA_DIR / "bazaar_history.db"
     baz_snapshots = 0
     baz_span_text = "No data yet"
     if baz_db.exists():
