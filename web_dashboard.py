@@ -618,6 +618,82 @@ document.querySelectorAll('.meta').forEach(el => {
 """
 
 
+# --- In-game API endpoint ---
+
+@app.route("/api/ask", methods=["POST"])
+def api_ask():
+    """API endpoint for in-game mod. Accepts JSON: {question, api_key, username?}"""
+    if not _live_ai_handler:
+        return jsonify({"error": "AI handler not ready"}), 503
+
+    data = request.get_json(silent=True)
+    if not data or "question" not in data:
+        return jsonify({"error": "Missing 'question' field"}), 400
+
+    # Authenticate with API key
+    if INGAME_API_KEY:
+        provided_key = data.get("api_key", "")
+        if provided_key != INGAME_API_KEY:
+            return jsonify({"error": "Invalid API key"}), 401
+
+    question = data["question"].strip()
+    if not question:
+        return jsonify({"error": "Empty question"}), 400
+    if len(question) > 500:
+        return jsonify({"error": "Question too long (max 500 chars)"}), 400
+
+    mc_username = data.get("username", "")
+
+    # Run the async AI handler in the event loop
+    try:
+        loop = asyncio.new_event_loop()
+        response = loop.run_until_complete(
+            _live_ai_handler.get_response(question, mc_username=mc_username)
+        )
+        loop.close()
+    except Exception as e:
+        print(f"[api] Error processing question: {e}")
+        return jsonify({"error": "Failed to generate response"}), 500
+
+    # Strip markdown formatting for in-game chat
+    import re
+    clean = response
+    clean = re.sub(r'\*\*(.+?)\*\*', r'\1', clean)  # bold
+    clean = re.sub(r'\*(.+?)\*', r'\1', clean)       # italic
+    clean = re.sub(r'`(.+?)`', r'\1', clean)          # inline code
+    clean = re.sub(r'#{1,3}\s+', '', clean)            # headers
+    clean = re.sub(r'\[(.+?)\]\(.+?\)', r'\1', clean)  # links
+
+    # Split into chat-friendly chunks (Minecraft chat limit ~256 chars per line)
+    lines = clean.split("\n")
+    chat_lines = []
+    for line in lines:
+        line = line.strip()
+        if not line:
+            continue
+        while len(line) > 250:
+            # Find a space to break at
+            idx = line.rfind(" ", 0, 250)
+            if idx == -1:
+                idx = 250
+            chat_lines.append(line[:idx])
+            line = line[idx:].strip()
+        if line:
+            chat_lines.append(line)
+
+    return jsonify({
+        "response": clean,
+        "chat_lines": chat_lines[:20],  # max 20 lines for chat
+        "username": mc_username,
+    })
+
+
+@app.route("/api/health")
+def api_health():
+    """Health check endpoint."""
+    return jsonify({"status": "ok", "ai_ready": _live_ai_handler is not None})
+
+
 def run_dashboard():
     """Run the dashboard as a standalone server."""
     print(f"[dashboard] Starting on port {DASHBOARD_PORT}")
