@@ -1506,12 +1506,10 @@ async def unlink_command(ctx: commands.Context):
 async def stats_command(ctx: commands.Context):
     """Show bot usage statistics."""
     import sqlite3
-    from pathlib import Path
-
-    data_dir = Path(__file__).parent / "data"
+    from data_dir import DATA_DIR
 
     # Feedback stats
-    fb_db = data_dir / "feedback.db"
+    fb_db = DATA_DIR / "feedback.db"
     total_feedback = upvotes = downvotes = unanswered = 0
     if fb_db.exists():
         con = sqlite3.connect(fb_db)
