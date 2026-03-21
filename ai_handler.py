@@ -1065,7 +1065,7 @@ class AIHandler:
             return ""
         return "Auction House prices (live):\n" + "\n".join(lines)
 
-    async def get_response(self, question: str, discord_user_id: int = None) -> str:
+    async def get_response(self, question: str, discord_user_id: int = None, ingame: bool = False) -> str:
         async with self.semaphore:
             price_question = self._needs_live_data(question)
 
