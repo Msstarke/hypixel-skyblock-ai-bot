@@ -789,37 +789,10 @@ def run_dashboard():
     app.run(host="0.0.0.0", port=DASHBOARD_PORT, debug=False)
 
 
-def start_ngrok():
-    """Start ngrok tunnel for public access."""
-    import subprocess
-    import shutil
-    ngrok_path = shutil.which("ngrok")
-    if not ngrok_path:
-        # Try known winget install path
-        candidate = Path.home() / "AppData/Local/Microsoft/WinGet/Packages"
-        for p in candidate.rglob("ngrok.exe"):
-            ngrok_path = str(p)
-            break
-    if not ngrok_path:
-        print("[ngrok] ngrok not found, skipping tunnel")
-        return
-    try:
-        subprocess.Popen(
-            [ngrok_path, "http", str(DASHBOARD_PORT),
-             "--url=literate-totally-civet.ngrok-free.app", "--log=false"],
-            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-        )
-        print(f"[ngrok] Tunnel started: https://literate-totally-civet.ngrok-free.app")
-    except Exception as e:
-        print(f"[ngrok] Failed to start: {e}")
-
-
 def start_dashboard_thread():
     """Start the dashboard in a background thread (call from bot.py)."""
     t = threading.Thread(target=run_dashboard, daemon=True)
     t.start()
-    # Start ngrok tunnel
-    start_ngrok()
     return t
 
 
