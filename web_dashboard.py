@@ -25,6 +25,10 @@ app = Flask(__name__)
 
 # Set by bot.py so the dashboard can reload the live knowledge base
 _live_knowledge_base = None
+_live_ai_handler = None  # Set by bot.py for in-game API
+
+# API key for in-game mod authentication (set in .env as INGAME_API_KEY)
+INGAME_API_KEY = os.getenv("INGAME_API_KEY", "")
 app.secret_key = SECRET_KEY
 
 
