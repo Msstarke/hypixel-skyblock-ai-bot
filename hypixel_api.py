@@ -868,7 +868,7 @@ class HypixelAPI:
 
     async def get_all_items(self) -> dict[str, dict]:
         """Fetch all Skyblock items, keyed by item ID. Cached for 1 hour."""
-        data = await self._get(ITEMS_URL, "all_items", params={}, ttl=ITEMS_CACHE_TTL)  # no API key
+        data = await self._get(ITEMS_URL, "all_items", params={}, ttl=ITEMS_CACHE_TTL, timeout=30)  # no API key
         if not data:
             return {}
         return {item["id"]: item for item in data.get("items", [])}
