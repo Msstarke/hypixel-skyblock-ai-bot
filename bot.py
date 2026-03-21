@@ -1670,6 +1670,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     question, response, author_id, author_name = _recent_responses[msg_id]
     vote = "up" if emoji == "👍" else "down"
     log_vote(user.id, str(user), question, response, vote)
+    print(f"[feedback] {user} voted {emoji} on: {question[:60]}")
 
 
 @bot.command(name="feedback")
