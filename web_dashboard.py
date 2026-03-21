@@ -69,6 +69,9 @@ def api_ask():
         print(f"[api] Error processing question: {e}")
         return jsonify({"error": "Failed to generate response"}), 500
 
+    _elapsed = round(time.time() - _start, 1)
+    print(f"[ingame] Replied to {mc_username or 'unknown'} in {_elapsed}s ({len(response)} chars)")
+
     # Strip markdown formatting for in-game chat
     clean = response
     clean = re.sub(r'\*\*(.+?)\*\*', r'\1', clean)  # bold
