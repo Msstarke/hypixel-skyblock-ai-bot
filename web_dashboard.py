@@ -82,11 +82,31 @@ def api_ask():
     from user_links import get_ingame_linked
     linked_ign = get_ingame_linked(mc_username) if mc_username else None
 
+    # Check if this is a HOTM question — fetch visual data BEFORE AI call
+    hotm_data = None
+    is_hotm_question = "hotm" in question.lower() or "heart of the mountain" in question.lower()
+    if is_hotm_question:
+        try:
+            loop_hotm = asyncio.new_event_loop()
+            hotm_data = loop_hotm.run_until_complete(_extract_hotm_data(_live_ai_handler, mc_username, linked_ign))
+            loop_hotm.close()
+        except Exception:
+            pass
+
+    # Modify question for AI when HOTM visual data will be shown
+    ai_question = question
+    if hotm_data and is_hotm_question:
+        ai_question = (
+            question + "\n\n[SYSTEM: The player's HotM tree grid is being displayed visually as a pixel art grid. "
+            "Do NOT list individual perks or tiers. Instead, give a brief summary: their HotM level, "
+            "key recommendations for what to upgrade next, and powder spending advice. Keep it to 3-6 lines.]"
+        )
+
     # Run the async AI handler in the event loop
     try:
         loop = asyncio.new_event_loop()
         response = loop.run_until_complete(
-            _live_ai_handler.get_response(question, ingame=True, mc_ign=linked_ign)
+            _live_ai_handler.get_response(ai_question, ingame=True, mc_ign=linked_ign)
         )
         loop.close()
     except Exception as e:
@@ -120,16 +140,6 @@ def api_ask():
             line = line[idx:].strip()
         if line:
             chat_lines.append(line)
-
-    # Check if the response contains HOTM tree data — send structured data for pixel art rendering
-    hotm_data = None
-    if "HotM Tree" in response or "hotm" in question.lower():
-        try:
-            loop2 = asyncio.new_event_loop()
-            hotm_data = loop2.run_until_complete(_extract_hotm_data(_live_ai_handler, mc_username, linked_ign))
-            loop2.close()
-        except Exception:
-            pass
 
     result = {
         "response": clean,
