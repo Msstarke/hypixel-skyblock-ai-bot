@@ -438,7 +438,8 @@ def _format_hotm_tree(hotm_lvl: int, perks: dict, selected_ability: str) -> str:
         [(0, 'gemstone_infusion'), (1, 'crystalline'), (2, 'gifts_from_the_departed'), (3, 'mining_master'), (4, 'hungry_for_more'), (5, 'vanguard_seeker'), (6, 'sheer_force')],  # Tier 10
     ]
 
-    lines = [f"HotM Tree (Level {hotm_lvl}/10):"]
+    # §a=green(maxed) §e=gold(leveled) §7=gray(unlocked/0) §8=dark_gray(locked) §b=aqua(ability) §c=red(locked tier)
+    lines = [f"§eHotM Tree§r (Level §b{hotm_lvl}§r/10):"]
 
     # Display top to bottom (tier 10 at top)
     for tier_idx in range(len(TREE) - 1, -1, -1):
@@ -453,13 +454,15 @@ def _format_hotm_tree(hotm_lvl: int, perks: dict, selected_ability: str) -> str:
             lvl = perks.get(api_id, 0)
 
             if locked:
-                parts.append(f"[{name}: -]")
+                parts.append(f"§8[{name}]§r")
             elif lvl > 0:
-                sel = "*" if is_ability and api_id == selected_ability else ""
+                sel = "§d*§r" if is_ability and api_id == selected_ability else ""
                 if max_lvl == 1:
-                    parts.append(f"[{name}: ON{sel}]")
+                    parts.append(f"§a[{name}]§r{sel}")
+                elif lvl >= max_lvl:
+                    parts.append(f"§a[{name} §2{lvl}§a]§r")
                 else:
-                    parts.append(f"[{name}: {lvl}/{max_lvl}{sel}]")
+                    parts.append(f"§e[{name} §6{lvl}§e/{max_lvl}]§r{sel}")
             else:
                 parts.append(f"[{name}: 0]")
         lines.append(f"  T{tier}: {' '.join(parts)}")
