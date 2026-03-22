@@ -557,37 +557,47 @@ public class SkyAIOverlay implements HudRenderCallback {
 
             if (feedbackVote != null) {
                 // Already voted — show confirmation
-                String msg = feedbackVote.equals("up") ? "\u2714 Thanks for the feedback!" : "\u2716 Noted — we'll improve!";
+                String msg = feedbackVote.equals("up") ? "\u2714 Thanks for the feedback!" : "\u2716 Noted \u2014 we'll improve!";
                 int msgColor = feedbackVote.equals("up") ? COLOR_GREEN : COLOR_GOLD;
                 int msgW = tr.getWidth(msg);
                 context.drawText(tr, msg, x + (contentW - msgW) / 2, fbY + 3,
                         withAlpha(msgColor, alpha), false);
             } else {
-                // Show vote prompt
-                String correctLabel = "\u2714 !correct";
-                String wrongLabel = "\u2716 !wrong";
-                int correctW = tr.getWidth(correctLabel);
-                int wrongW = tr.getWidth(wrongLabel);
-                int gap = 16;
-                int totalBtnW = correctW + gap + wrongW;
+                // Show keybind buttons
+                // [Y] Correct    [N] Wrong
+                String yKey = "[Y]";
+                String correctLabel = " Correct";
+                String nKey = "[N]";
+                String wrongLabel = " Wrong";
+
+                int yKeyW = tr.getWidth(yKey);
+                int correctLabelW = tr.getWidth(correctLabel);
+                int nKeyW = tr.getWidth(nKey);
+                int wrongLabelW = tr.getWidth(wrongLabel);
+                int gap = 14;
+                int totalBtnW = yKeyW + correctLabelW + gap + nKeyW + wrongLabelW;
                 int btnX = x + (contentW - totalBtnW) / 2;
 
-                // Correct button
-                int correctBgX = btnX - 3;
-                int correctBgW = correctW + 6;
-                fillRounded(context, correctBgX, fbY + 1, correctBgW, FEEDBACK_BAR_H - 2, 1,
-                        col(0x44, 0x22, 0x88, 0x22, alpha));
-                context.drawText(tr, correctLabel, btnX, fbY + 3,
-                        withAlpha(COLOR_GREEN, alpha), false);
+                // Correct button background
+                int correctFullW = yKeyW + correctLabelW + 6;
+                fillRounded(context, btnX - 3, fbY + 1, correctFullW, FEEDBACK_BAR_H - 2, 2,
+                        col(0x55, 0x22, 0x88, 0x22, alpha));
+                // Key highlight
+                fill(context, btnX - 1, fbY + 2, btnX + yKeyW + 1, fbY + FEEDBACK_BAR_H - 2,
+                        col(0x44, 0x33, 0xAA, 0x33, alpha));
+                context.drawText(tr, yKey, btnX, fbY + 3, withAlpha(COLOR_GREEN, alpha), false);
+                context.drawText(tr, correctLabel, btnX + yKeyW, fbY + 3, withAlpha(COLOR_GREEN, alpha), false);
 
-                // Wrong button
-                int wrongX = btnX + correctW + gap;
-                int wrongBgX = wrongX - 3;
-                int wrongBgW = wrongW + 6;
-                fillRounded(context, wrongBgX, fbY + 1, wrongBgW, FEEDBACK_BAR_H - 2, 1,
-                        col(0x44, 0x88, 0x22, 0x22, alpha));
-                context.drawText(tr, wrongLabel, wrongX, fbY + 3,
-                        withAlpha(COLOR_RED, alpha), false);
+                // Wrong button background
+                int wrongX = btnX + yKeyW + correctLabelW + gap;
+                int wrongFullW = nKeyW + wrongLabelW + 6;
+                fillRounded(context, wrongX - 3, fbY + 1, wrongFullW, FEEDBACK_BAR_H - 2, 2,
+                        col(0x55, 0x88, 0x22, 0x22, alpha));
+                // Key highlight
+                fill(context, wrongX - 1, fbY + 2, wrongX + nKeyW + 1, fbY + FEEDBACK_BAR_H - 2,
+                        col(0x44, 0xAA, 0x33, 0x33, alpha));
+                context.drawText(tr, nKey, wrongX, fbY + 3, withAlpha(COLOR_RED, alpha), false);
+                context.drawText(tr, wrongLabel, wrongX + nKeyW, fbY + 3, withAlpha(COLOR_RED, alpha), false);
             }
         }
 

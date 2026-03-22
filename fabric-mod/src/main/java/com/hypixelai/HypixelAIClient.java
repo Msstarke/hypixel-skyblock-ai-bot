@@ -2,11 +2,16 @@ package com.hypixelai;
 
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.option.KeyBinding;
+import net.minecraft.client.util.InputUtil;
 import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
+import net.minecraft.util.Identifier;
+import org.lwjgl.glfw.GLFW;
 
 import java.io.*;
 import java.net.HttpURLConnection;
@@ -18,6 +23,10 @@ public class HypixelAIClient implements ClientModInitializer {
 
     private static long lastRequest = 0;
     private static final long COOLDOWN_MS = 3000;
+
+    // Keybinds for feedback
+    private static KeyBinding keyCorrect;
+    private static KeyBinding keyWrong;
 
     // Color scheme
     private static final Formatting ACCENT = Formatting.GOLD;
@@ -35,12 +44,32 @@ public class HypixelAIClient implements ClientModInitializer {
         // Register HUD overlay
         SkyAIOverlay.register();
 
+        // Register feedback keybinds
+        KeyBinding.Category skyaiCategory = KeyBinding.Category.create(
+                Identifier.of("hypixelai", "category"));
+        keyCorrect = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.hypixelai.correct", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_Y,
+                skyaiCategory));
+        keyWrong = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.hypixelai.wrong", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_N,
+                skyaiCategory));
+
         // Check for updates in background
         new Thread(() -> HypixelAIUpdater.checkForUpdate(), "HypixelAI-Updater").start();
 
         // Show update message when player joins a world
         final boolean[] notified = {false};
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // Handle feedback keybinds
+            if (client.player != null && SkyAIOverlay.hasPendingFeedback()) {
+                if (keyCorrect.wasPressed()) {
+                    handleFeedback("up");
+                }
+                if (keyWrong.wasPressed()) {
+                    handleFeedback("down");
+                }
+            }
+
             if (!notified[0] && client.player != null && HypixelAIUpdater.isUpdatePending()) {
                 notified[0] = true;
                 sendChat(Text.empty());
