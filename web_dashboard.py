@@ -97,11 +97,25 @@ def api_ask():
         if line:
             chat_lines.append(line)
 
-    return jsonify({
+    # Check if the response contains HOTM tree data — send structured data for pixel art rendering
+    hotm_data = None
+    if "HotM Tree" in response or "hotm" in question.lower():
+        try:
+            loop2 = asyncio.new_event_loop()
+            hotm_data = loop2.run_until_complete(_extract_hotm_data(_live_ai_handler, mc_username, linked_ign))
+            loop2.close()
+        except Exception:
+            pass
+
+    result = {
         "response": clean,
         "chat_lines": chat_lines[:30],
         "username": mc_username,
-    })
+    }
+    if hotm_data:
+        result["hotm"] = hotm_data
+
+    return jsonify(result)
 
 
 @app.route("/api/link", methods=["POST"])
