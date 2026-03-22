@@ -204,6 +204,35 @@ def api_unlink():
         return jsonify({"error": str(e)}), 500
 
 
+@app.route("/api/feedback", methods=["POST"])
+def api_feedback():
+    """Log feedback (correct/wrong) from in-game mod."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Missing JSON body"}), 400
+
+    if INGAME_API_KEY:
+        if data.get("api_key", "") != INGAME_API_KEY:
+            return jsonify({"error": "Invalid API key"}), 401
+
+    vote = data.get("vote", "").strip()
+    if vote not in ("up", "down"):
+        return jsonify({"error": "vote must be 'up' or 'down'"}), 400
+
+    mc_username = data.get("username", "unknown")
+    question = data.get("question", "")
+    response_text = data.get("response", "")
+
+    try:
+        from feedback import log_vote
+        fid = log_vote(0, f"ingame:{mc_username}", question, response_text, vote)
+        print(f"[ingame] {mc_username} voted {vote} (id={fid})")
+        return jsonify({"ok": True, "id": fid})
+    except Exception as e:
+        print(f"[api/feedback] Error: {e}")
+        return jsonify({"error": str(e)}), 500
+
+
 @app.route("/api/health")
 def api_health():
     """Health check endpoint."""
