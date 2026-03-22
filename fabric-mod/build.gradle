@@ -16,11 +16,6 @@ dependencies {
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
-    // NanoVG for smooth vector UI rendering (LWJGL 3.3.3 to match MC's bundled version)
-    implementation "org.lwjgl:lwjgl-nanovg:3.3.3"
-    implementation "org.lwjgl:lwjgl-nanovg:3.3.3:natives-windows"
-    implementation "org.lwjgl:lwjgl-nanovg:3.3.3:natives-linux"
-    implementation "org.lwjgl:lwjgl-nanovg:3.3.3:natives-macos"
 }
 
 processResources {
@@ -43,9 +38,4 @@ jar {
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName.get()}" }
     }
-    // Bundle NanoVG classes and natives into the mod jar
-    from {
-        configurations.runtimeClasspath.filter { it.name.contains("nanovg") }.collect { zipTree(it) }
-    }
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
