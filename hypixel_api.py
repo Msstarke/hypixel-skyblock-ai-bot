@@ -121,6 +121,8 @@ class HypixelAPI:
                     data = await resp.json(content_type=None)
                     self._cache[cache_key] = {"data": data, "ts": time.time()}
                     return data
+                else:
+                    print(f"[hypixel_api] {url} returned {resp.status}: {await resp.text()[:200]}")
         return None
 
     async def get_bazaar(self) -> Optional[dict]:
