@@ -7,32 +7,29 @@ import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.text.OrderedText;
 import net.minecraft.text.Text;
+import org.lwjgl.nanovg.NVGColor;
+import org.lwjgl.nanovg.NVGPaint;
+import org.lwjgl.nanovg.NanoVG;
+import org.lwjgl.nanovg.NanoVGGL3;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
 
 import java.util.ArrayList;
 import java.util.List;
 
+import static org.lwjgl.nanovg.NanoVG.*;
+
 /**
- * Clean floating HUD overlay for AI responses.
- * macOS terminal-style dark panel with traffic light dots.
+ * Smooth vector HUD overlay using NanoVG for backgrounds/shapes
+ * and Minecraft's TextRenderer for text.
  */
 public class SkyAIOverlay implements HudRenderCallback {
 
-    // Colors (ARGB)
-    private static final int BG_MAIN      = 0xF01E1E2E; // dark purple-ish bg
-    private static final int BG_HEADER    = 0xFF282840; // slightly lighter header
-    private static final int ACCENT_LINE  = 0xFF00BBEE; // blue accent
-    private static final int TEXT_TITLE   = 0xFF00DDFF; // cyan title
-    private static final int TEXT_BODY    = 0xFFCCCCCC; // light gray body
-    private static final int TEXT_MUTED   = 0xFF777788; // muted text
-    private static final int BULLET_COL   = 0xFFFFAA00; // orange bullets
-    private static final int NUM_COL      = 0xFF00BBEE; // blue numbers
-    private static final int DOT_RED      = 0xFFFF5F57;
-    private static final int DOT_YELLOW   = 0xFFFFBD2E;
-    private static final int DOT_GREEN    = 0xFF28C840;
-    private static final int SHADOW_COL   = 0x40000000; // subtle shadow
-    private static final int BORDER_COL   = 0xFF333355; // subtle border
+    // NanoVG context
+    private static long vg = 0;
+    private static boolean nvgInitFailed = false;
 
-    // Layout
+    // Layout constants (in GUI-scaled pixels)
     private static final int MARGIN_RIGHT = 8;
     private static final int MARGIN_TOP = 8;
     private static final int PADDING = 10;
@@ -40,6 +37,8 @@ public class SkyAIOverlay implements HudRenderCallback {
     private static final int LINE_HEIGHT = 11;
     private static final int MAX_WIDTH = 260;
     private static final int MIN_WIDTH = 160;
+    private static final int CORNER_RADIUS = 5;
+    private static final float DOT_RADIUS = 3.5f;
 
     // State (set from any thread)
     private static volatile String currentQuestion = null;
@@ -49,7 +48,7 @@ public class SkyAIOverlay implements HudRenderCallback {
     private static volatile long hideTime = 0;
     private static volatile long thinkingStart = 0;
 
-    // Processed lines (built on render thread)
+    // Processed lines (render thread only)
     private static List<OverlayLine> processedLines = null;
     private static String[] processedFrom = null;
 
@@ -136,16 +135,32 @@ public class SkyAIOverlay implements HudRenderCallback {
         processedLines = result;
     }
 
+    private static void initNanoVG() {
+        if (vg != 0 || nvgInitFailed) return;
+        try {
+            vg = NanoVGGL3.nvgCreate(NanoVGGL3.NVG_ANTIALIAS | NanoVGGL3.NVG_STENCIL_STROKES);
+            if (vg == 0) {
+                HypixelAIMod.LOGGER.error("[HypixelAI] Failed to create NanoVG context");
+                nvgInitFailed = true;
+            } else {
+                HypixelAIMod.LOGGER.info("[HypixelAI] NanoVG initialized");
+            }
+        } catch (Exception e) {
+            HypixelAIMod.LOGGER.error("[HypixelAI] NanoVG init error", e);
+            nvgInitFailed = true;
+        }
+    }
+
     @Override
     public void onHudRender(DrawContext context, RenderTickCounter tickCounter) {
         if (currentQuestion == null && !thinking) return;
 
         long now = System.currentTimeMillis();
-
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null) return;
         TextRenderer tr = client.textRenderer;
         int screenW = client.getWindow().getScaledWidth();
+        int screenH = client.getWindow().getScaledHeight();
 
         // Lazy-process raw lines on render thread
         String[] raw = rawLines;
@@ -154,12 +169,12 @@ public class SkyAIOverlay implements HudRenderCallback {
             processedFrom = raw;
         }
 
-        // Auto-hide after display time
+        // Auto-hide
         if (hideTime == 0 && processedLines != null) {
             if (now - showTime > DISPLAY_MS) hideTime = now;
         }
 
-        // Alpha for fade in/out
+        // Alpha
         float alpha;
         if (hideTime > 0) {
             float fadeOut = 1f - (float)(now - hideTime) / FADE_OUT_MS;
@@ -169,7 +184,7 @@ public class SkyAIOverlay implements HudRenderCallback {
             alpha = Math.min(1f, (float)(now - showTime) / FADE_IN_MS);
         }
 
-        // Calculate content dimensions
+        // Calculate dimensions
         int contentW, contentH;
         if (thinking) {
             contentW = MIN_WIDTH;
@@ -192,55 +207,147 @@ public class SkyAIOverlay implements HudRenderCallback {
             return;
         }
 
-        // Position: top-right corner
+        // Position: top-right
         int x = screenW - contentW - MARGIN_RIGHT;
         int y = MARGIN_TOP;
 
-        // --- Draw the panel ---
+        // --- NanoVG: draw smooth background shapes ---
+        initNanoVG();
+        if (vg != 0) {
+            drawNvgBackground(client, x, y, contentW, contentH, alpha);
+        } else {
+            // Fallback: simple fill rectangles
+            drawFillFallback(context, x, y, contentW, contentH, alpha);
+        }
 
-        // Shadow (offset down-right by 2px)
-        fillAlpha(context, x + 2, y + 2, x + contentW + 2, y + contentH + 2, SHADOW_COL, alpha);
+        // --- Minecraft TextRenderer: draw text on top ---
+        drawText(context, tr, x, y, contentW, alpha, now);
+    }
 
-        // Border (1px around the whole panel)
-        fillAlpha(context, x - 1, y - 1, x + contentW + 1, y + contentH + 1, BORDER_COL, alpha);
+    private void drawNvgBackground(MinecraftClient client, int x, int y, int w, int h, float alpha) {
+        // Get actual framebuffer dimensions for NanoVG
+        int fbW = client.getWindow().getFramebufferWidth();
+        int fbH = client.getWindow().getFramebufferHeight();
+        float scaleFactor = (float) client.getWindow().getScaleFactor();
 
-        // Main background
-        fillAlpha(context, x, y, x + contentW, y + contentH, BG_MAIN, alpha);
+        // Save GL state that NanoVG will modify
+        boolean depthTest = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean blend = GL11.glIsEnabled(GL11.GL_BLEND);
+        boolean cullFace = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        int[] prevBlendSrc = new int[1];
+        int[] prevBlendDst = new int[1];
+        GL11.glGetIntegerv(GL11.GL_BLEND_SRC, prevBlendSrc);
+        GL11.glGetIntegerv(GL11.GL_BLEND_DST, prevBlendDst);
 
-        // Header background
-        fillAlpha(context, x, y, x + contentW, y + HEADER_HEIGHT, BG_HEADER, alpha);
+        nvgBeginFrame(vg, fbW / scaleFactor, fbH / scaleFactor, scaleFactor);
+
+        // Shadow (subtle drop shadow)
+        try (NVGPaint shadowPaint = NVGPaint.calloc()) {
+            try (NVGColor shadowInner = nvgColor(0, 0, 0, 0.4f * alpha);
+                 NVGColor shadowOuter = nvgColor(0, 0, 0, 0f)) {
+                nvgBoxGradient(vg, x, y + 2, w, h, CORNER_RADIUS, 8, shadowInner, shadowOuter, shadowPaint);
+                nvgBeginPath(vg);
+                nvgRect(vg, x - 10, y - 10, w + 20, h + 20);
+                nvgFillPaint(vg, shadowPaint);
+                nvgFill(vg);
+            }
+        }
+
+        // Main background — dark with rounded corners
+        nvgBeginPath(vg);
+        nvgRoundedRect(vg, x, y, w, h, CORNER_RADIUS);
+        try (NVGColor bg = nvgColor(0x14, 0x14, 0x20, (int)(0xF0 * alpha))) {
+            nvgFillColor(vg, bg);
+        }
+        nvgFill(vg);
+
+        // Header background — slightly lighter, rounded top only
+        nvgBeginPath(vg);
+        nvgRoundedRectVarying(vg, x, y, w, HEADER_HEIGHT, CORNER_RADIUS, CORNER_RADIUS, 0, 0);
+        try (NVGColor headerBg = nvgColor(0x28, 0x28, 0x40, (int)(0xFF * alpha))) {
+            nvgFillColor(vg, headerBg);
+        }
+        nvgFill(vg);
 
         // Accent line under header
-        fillAlpha(context, x, y + HEADER_HEIGHT, x + contentW, y + HEADER_HEIGHT + 1, ACCENT_LINE, alpha);
+        nvgBeginPath(vg);
+        nvgRect(vg, x, y + HEADER_HEIGHT, w, 1);
+        try (NVGColor accent = nvgColor(0x00, 0xBB, 0xEE, (int)(0xFF * alpha))) {
+            nvgFillColor(vg, accent);
+        }
+        nvgFill(vg);
 
-        // Traffic light dots (3x3 filled squares for clean look at this scale)
-        int dotY = y + HEADER_HEIGHT / 2 - 1;
-        int dotX = x + 8;
-        int dotSize = 3;
-        int dotGap = 6;
-        fillAlpha(context, dotX, dotY, dotX + dotSize, dotY + dotSize, DOT_RED, alpha);
-        dotX += dotGap;
-        fillAlpha(context, dotX, dotY, dotX + dotSize, dotY + dotSize, DOT_YELLOW, alpha);
-        dotX += dotGap;
-        fillAlpha(context, dotX, dotY, dotX + dotSize, dotY + dotSize, DOT_GREEN, alpha);
+        // Border
+        nvgBeginPath(vg);
+        nvgRoundedRect(vg, x + 0.5f, y + 0.5f, w - 1, h - 1, CORNER_RADIUS);
+        try (NVGColor border = nvgColor(0x44, 0x44, 0x66, (int)(0x88 * alpha))) {
+            nvgStrokeColor(vg, border);
+        }
+        nvgStrokeWidth(vg, 1.0f);
+        nvgStroke(vg);
 
-        // Title text "SkyAI"
-        int titleX = x + 8 + dotGap * 3 + 4;
-        context.drawText(tr, "SkyAI", titleX, y + (HEADER_HEIGHT - 8) / 2, applyAlpha(TEXT_TITLE, alpha), false);
+        // Traffic light dots
+        float dotY = y + HEADER_HEIGHT / 2f;
+        float dotX = x + 10;
+        float dotGap = DOT_RADIUS * 2 + 4;
 
-        // Version text
+        drawDot(dotX, dotY, 0xFF, 0x5F, 0x57, alpha);                   // red
+        drawDot(dotX + dotGap, dotY, 0xFF, 0xBD, 0x2E, alpha);          // yellow
+        drawDot(dotX + dotGap * 2, dotY, 0x28, 0xC8, 0x40, alpha);      // green
+
+        nvgEndFrame(vg);
+
+        // Restore GL state
+        if (depthTest) GL11.glEnable(GL11.GL_DEPTH_TEST); else GL11.glDisable(GL11.GL_DEPTH_TEST);
+        if (blend) GL11.glEnable(GL11.GL_BLEND); else GL11.glDisable(GL11.GL_BLEND);
+        if (cullFace) GL11.glEnable(GL11.GL_CULL_FACE); else GL11.glDisable(GL11.GL_CULL_FACE);
+        GL11.glBlendFunc(prevBlendSrc[0], prevBlendDst[0]);
+    }
+
+    private void drawDot(float cx, float cy, int r, int g, int b, float alpha) {
+        nvgBeginPath(vg);
+        nvgCircle(vg, cx, cy, DOT_RADIUS);
+        try (NVGColor col = nvgColor(r, g, b, (int)(0xFF * alpha))) {
+            nvgFillColor(vg, col);
+        }
+        nvgFill(vg);
+    }
+
+    /**
+     * Fallback rendering if NanoVG fails to initialize.
+     */
+    private void drawFillFallback(DrawContext context, int x, int y, int w, int h, float alpha) {
+        int bgColor = alphaColor(0xF01E1E2E, alpha);
+        int headerColor = alphaColor(0xFF282840, alpha);
+        int accentColor = alphaColor(0xFF00BBEE, alpha);
+
+        context.fill(x, y, x + w, y + h, bgColor);
+        context.fill(x, y, x + w, y + HEADER_HEIGHT, headerColor);
+        context.fill(x, y + HEADER_HEIGHT, x + w, y + HEADER_HEIGHT + 1, accentColor);
+    }
+
+    /**
+     * Draw all text using Minecraft's TextRenderer (always crisp bitmap text).
+     */
+    private void drawText(DrawContext context, TextRenderer tr, int x, int y, int contentW, float alpha, long now) {
+        // Title
+        int titleX = x + 10 + (int)(DOT_RADIUS * 2 + 4) * 3 + 4;
+        context.drawText(tr, "SkyAI", titleX, y + (HEADER_HEIGHT - 8) / 2,
+                applyAlpha(0xFF00DDFF, alpha), false);
+
+        // Version
         String ver = "v" + HypixelAIUpdater.MOD_VERSION;
         int verW = tr.getWidth(ver);
         context.drawText(tr, ver, x + contentW - verW - PADDING, y + (HEADER_HEIGHT - 8) / 2,
-                applyAlpha(TEXT_MUTED, alpha), false);
+                applyAlpha(0xFF777788, alpha), false);
 
-        // Content area
+        // Content
         int cy = y + HEADER_HEIGHT + 1 + PADDING;
 
         if (thinking) {
             long dots = ((now - thinkingStart) / 400) % 4;
-            String thinkText = "Thinking" + ".".repeat((int)dots);
-            context.drawText(tr, thinkText, x + PADDING, cy, applyAlpha(TEXT_MUTED, alpha), false);
+            String thinkText = "Thinking" + ".".repeat((int) dots);
+            context.drawText(tr, thinkText, x + PADDING, cy, applyAlpha(0xFF777788, alpha), false);
         } else if (processedLines != null) {
             int tx = x + PADDING;
             for (OverlayLine line : processedLines) {
@@ -250,26 +357,26 @@ public class SkyAIOverlay implements HudRenderCallback {
 
                 switch (line.type) {
                     case BULLET:
-                        context.drawText(tr, "\u2022", tx, cy, applyAlpha(BULLET_COL, alpha), false);
-                        context.drawText(tr, line.text, lx + 8, cy, applyAlpha(TEXT_BODY, alpha), false);
+                        context.drawText(tr, "\u2022", tx, cy, applyAlpha(0xFFFFAA00, alpha), false);
+                        context.drawText(tr, line.text, lx + 8, cy, applyAlpha(0xFFCCCCCC, alpha), false);
                         break;
                     case BULLET_CONT:
-                        context.drawText(tr, line.text, lx + 8, cy, applyAlpha(TEXT_BODY, alpha), false);
+                        context.drawText(tr, line.text, lx + 8, cy, applyAlpha(0xFFCCCCCC, alpha), false);
                         break;
                     case NUMBERED:
                         int dotIdx = line.text.indexOf('.');
                         if (dotIdx > 0 && dotIdx < 4) {
                             String num = line.text.substring(0, dotIdx + 1);
                             String rest = line.text.substring(dotIdx + 1).trim();
-                            context.drawText(tr, num, lx, cy, applyAlpha(NUM_COL, alpha), false);
+                            context.drawText(tr, num, lx, cy, applyAlpha(0xFF00BBEE, alpha), false);
                             context.drawText(tr, rest, lx + tr.getWidth(num + " "), cy,
-                                    applyAlpha(TEXT_BODY, alpha), false);
+                                    applyAlpha(0xFFCCCCCC, alpha), false);
                         } else {
-                            context.drawText(tr, line.text, lx, cy, applyAlpha(TEXT_BODY, alpha), false);
+                            context.drawText(tr, line.text, lx, cy, applyAlpha(0xFFCCCCCC, alpha), false);
                         }
                         break;
                     default:
-                        context.drawText(tr, line.text, lx, cy, applyAlpha(TEXT_BODY, alpha), false);
+                        context.drawText(tr, line.text, lx, cy, applyAlpha(0xFFCCCCCC, alpha), false);
                         break;
                 }
                 cy += LINE_HEIGHT;
@@ -277,18 +384,29 @@ public class SkyAIOverlay implements HudRenderCallback {
         }
     }
 
-    /**
-     * Fill a rectangle with alpha applied to the color.
-     */
-    private static void fillAlpha(DrawContext context, int x1, int y1, int x2, int y2, int argb, float alpha) {
-        int a = (int)(((argb >> 24) & 0xFF) * alpha);
-        if (a <= 0) return;
-        context.fill(x1, y1, x2, y2, (a << 24) | (argb & 0x00FFFFFF));
+    // --- Utility ---
+
+    private static NVGColor nvgColor(int r, int g, int b, float a) {
+        NVGColor color = NVGColor.calloc();
+        color.r(r / 255f);
+        color.g(g / 255f);
+        color.b(b / 255f);
+        color.a(a);
+        return color;
+    }
+
+    private static NVGColor nvgColor(int r, int g, int b, int a) {
+        return nvgColor(r, g, b, a / 255f);
     }
 
     private static int applyAlpha(int argb, float alpha) {
         int a = (argb >> 24) & 0xFF;
         a = (int)(a * alpha);
+        return (a << 24) | (argb & 0x00FFFFFF);
+    }
+
+    private static int alphaColor(int argb, float alpha) {
+        int a = (int)(((argb >> 24) & 0xFF) * alpha);
         return (a << 24) | (argb & 0x00FFFFFF);
     }
 
