@@ -245,6 +245,42 @@ These special events rotate on a 12-year SkyBlock cycle (each SkyBlock year is ~
 
 ---
 
+## Shen's Auction
+
+Shen's Auction is a special NPC-run auction on Barrier Street in the Hub. It occurs once per SkyBlock Year (~5 real-life days and 4 hours).
+
+### Shen's Auction (requires Museum Milestone 10)
+Three items available each SkyBlock Year with limited quantities:
+- **Artifact of Control** — 10 per year. Doubles your Mayor Election vote. Accessory.
+- **Pandora's Box** — 20 per year. Accessory that cannot be recombobulated. Gives random stats each day.
+- **Shen's Regalia** — up to 40 per year. LEGENDARY accessory granting access to the Regalia Room shop.
+
+### Shen's Special (requires Museum Milestone 20)
+Offers 2 randomly-selected items from a pool each SkyBlock Year. Items are per-profile (each profile sees different items). You can reroll displayed items up to 2 times per year using a lever.
+
+**Item pool includes:**
+- Clover Helmet, Racing Helmet, Jacob's Helmet
+- Giant Fishing Rod (50% chance to fish a sea creature twice)
+- Divine Gift, The Art of Peace
+- Wizard Wand, Rat Jetpack
+- Priceless the Fish, Dirt Rod
+- Puzzle Cube
+- Shimmersparkle Chestplate
+- Rock Skins (Surprised, Blinking, Sus, Sweating)
+- Dead Cat Food (pet item, Montezuma only)
+
+### Diaz Mayor Interaction
+If Diaz is elected with the "Volume Trading" perk:
+- Winners per item are doubled for Shen's Auction and Shen's Special
+- 2 additional exclusive items become available in Shen's Special
+
+### Tips
+- Shen's items are often very expensive (tens to hundreds of millions)
+- Artifact of Control is valuable during contested mayor elections
+- Shen's Regalia gives access to a special shop with unique items
+- Giant Fishing Rod is one of the best fishing rods for sea creature grinding
+- Check the SkyBlock calendar or community timers for the next Shen's Auction
+
 ## General Event Tips
 
 1. **Check the SkyBlock Calendar** in-game or use community timer websites to track event schedules.
