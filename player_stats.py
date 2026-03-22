@@ -496,17 +496,10 @@ def format_for_ai(username: str, profile_name: str, stats: dict) -> str:
         if avail or spent or total:
             lines.append(f"  {ptype.title()} Powder: {_format_number(avail)} available, {_format_number(spent)} spent (total earned: {_format_number(total)})")
 
-    # HotM Perks
+    # HotM Tree (visual layout)
     hotm_perks = stats.get('hotm_perks', {})
-    if hotm_perks:
-        perk_parts = [f"{k.replace('_', ' ').title()}: lvl {v}" for k, v in sorted(hotm_perks.items())]
-        lines.append("HotM Perks: " + " | ".join(perk_parts))
-    else:
-        lines.append("HotM Perks: None unlocked")
-
     selected_ability = stats.get('hotm_selected_ability', '')
-    if selected_ability:
-        lines.append(f"Selected HotM Ability: {selected_ability.replace('_', ' ').title()}")
+    lines.append(_format_hotm_tree(hotm_lvl, hotm_perks, selected_ability))
 
     # Accessories / Magic Power
     mp = stats.get('magical_power', 0)
