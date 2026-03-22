@@ -26,6 +26,30 @@ _live_ai_handler = None
 INGAME_API_KEY = os.getenv("INGAME_API_KEY", "")
 
 
+async def _extract_hotm_data(ai_handler, mc_username, linked_ign):
+    """Extract HOTM perk data for pixel art rendering if player is linked."""
+    ign = linked_ign or mc_username
+    if not ign or not ai_handler:
+        return None
+    pdata = await ai_handler.hypixel.get_player_data(ign)
+    if not pdata or 'stats' not in pdata:
+        return None
+    stats = pdata['stats']
+    from hypixel_api import HOTM_XP
+    hotm_xp = stats.get('hotm_xp', 0)
+    hotm_lvl = sum(1 for req in HOTM_XP[1:] if hotm_xp >= req)
+    return {
+        "level": hotm_lvl,
+        "perks": stats.get('hotm_perks', {}),
+        "selected_ability": stats.get('hotm_selected_ability', ''),
+        "powder": {
+            "mithril": stats.get('mithril_powder', 0),
+            "gemstone": stats.get('gemstone_powder', 0),
+            "glacite": stats.get('glacite_powder', 0),
+        }
+    }
+
+
 # --- In-game API endpoint ---
 
 @app.route("/api/ask", methods=["POST"])
