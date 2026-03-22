@@ -370,6 +370,107 @@ def parse_member(member: dict) -> dict:
     return stats
 
 
+def _format_hotm_tree(hotm_lvl: int, perks: dict, selected_ability: str) -> str:
+    """Format the HOTM tree as a readable grid showing unlocked perks and levels."""
+    # Tree layout: each tier has perks at specific columns (0-6)
+    # API ID -> (display name, max level, is_ability)
+    PERK_INFO = {
+        'mining_speed': ('Mining Speed', 50, False),
+        'mining_speed_boost': ('Speed Boost', 1, True),
+        'precision_mining': ('Precision', 1, False),
+        'mining_fortune': ('Mining Fort', 50, False),
+        'titanium_insanium': ('Titanium', 50, False),
+        'pickaxe_toss': ('Pickobulus', 1, True),
+        'random_event': ('Luck/Cave', 45, False),
+        'efficient_miner': ('Efficient', 100, False),
+        'forge_time': ('Quick Forge', 20, False),
+        'daily_effect': ('Sky Mall', 1, False),
+        'old_school': ('Old School', 20, False),
+        'professional': ('Profess.', 140, False),
+        'mole': ('Mole', 200, False),
+        'fortunate': ('Gem Lover', 20, False),
+        'mining_experience': ('Seasoned', 100, False),
+        'front_loaded': ('Front Load', 1, False),
+        'daily_grind': ('Daily Grind', 1, False),
+        'special_0': ('COTM', 10, False),
+        'daily_powder': ('Daily Pwdr', 1, False),
+        'anomalous_desire': ('Anomalous', 1, True),
+        'blockhead': ('Blockhead', 20, False),
+        'subterranean_fisher': ('Sub Fisher', 40, False),
+        'keep_it_cool': ('Keep Cool', 50, False),
+        'lonesome_miner': ('Lonesome', 45, False),
+        'great_explorer': ('Explorer', 20, False),
+        'maniac_miner': ('Maniac', 1, True),
+        'mining_speed_2': ('Speed II', 50, False),
+        'powder_buff': ('Pwdr Buff', 50, False),
+        'mining_fortune_2': ('Fort II', 50, False),
+        'miners_blessing': ('Blessing', 1, False),
+        'no_stone_unturned': ('No Stone', 50, False),
+        'strong_arm': ('Strong Arm', 100, False),
+        'steady_hand': ('Steady Hnd', 100, False),
+        'warm_hearted': ('Warm Heart', 50, False),
+        'surveyor': ('Surveyor', 20, False),
+        'mineshaft_mayhem': ('Mayhem', 1, False),
+        'metal_head': ('Metal Head', 20, False),
+        'rags_to_riches': ('Rags2Rich', 50, False),
+        'eager_adventurer': ('Eager Adv', 100, False),
+        'gemstone_infusion': ('Gem Infuse', 1, True),
+        'crystalline': ('Crystaline', 50, False),
+        'gifts_from_the_departed': ('Gifts', 100, False),
+        'mining_master': ('Master', 10, False),
+        'hungry_for_more': ('Dead Man', 50, False),
+        'vanguard_seeker': ('Vanguard', 50, False),
+        'sheer_force': ('Sheer Frc', 1, True),
+    }
+
+    # Tree rows: tier 1 (bottom) to tier 10 (top)
+    # Each row is list of (col, api_id)
+    TREE = [
+        [(3, 'mining_speed')],  # Tier 1
+        [(1, 'mining_speed_boost'), (2, 'precision_mining'), (3, 'mining_fortune'), (4, 'titanium_insanium'), (5, 'pickaxe_toss')],  # Tier 2
+        [(1, 'random_event'), (3, 'efficient_miner'), (5, 'forge_time')],  # Tier 3
+        [(0, 'daily_effect'), (1, 'old_school'), (2, 'professional'), (3, 'mole'), (4, 'fortunate'), (5, 'mining_experience'), (6, 'front_loaded')],  # Tier 4
+        [(1, 'daily_grind'), (3, 'special_0'), (5, 'daily_powder')],  # Tier 5
+        [(0, 'anomalous_desire'), (1, 'blockhead'), (2, 'subterranean_fisher'), (3, 'keep_it_cool'), (4, 'lonesome_miner'), (5, 'great_explorer'), (6, 'maniac_miner')],  # Tier 6
+        [(1, 'mining_speed_2'), (3, 'powder_buff'), (5, 'mining_fortune_2')],  # Tier 7
+        [(0, 'miners_blessing'), (1, 'no_stone_unturned'), (2, 'strong_arm'), (3, 'steady_hand'), (4, 'warm_hearted'), (5, 'surveyor'), (6, 'mineshaft_mayhem')],  # Tier 8
+        [(1, 'metal_head'), (3, 'rags_to_riches'), (5, 'eager_adventurer')],  # Tier 9
+        [(0, 'gemstone_infusion'), (1, 'crystalline'), (2, 'gifts_from_the_departed'), (3, 'mining_master'), (4, 'hungry_for_more'), (5, 'vanguard_seeker'), (6, 'sheer_force')],  # Tier 10
+    ]
+
+    lines = [f"HotM Tree (Level {hotm_lvl}/10):"]
+
+    # Display top to bottom (tier 10 at top)
+    for tier_idx in range(len(TREE) - 1, -1, -1):
+        tier = tier_idx + 1
+        row = TREE[tier_idx]
+        locked = tier > hotm_lvl
+
+        parts = []
+        for col, api_id in row:
+            info = PERK_INFO.get(api_id, (api_id, 1, False))
+            name, max_lvl, is_ability = info
+            lvl = perks.get(api_id, 0)
+
+            if locked:
+                parts.append(f"[{name}: -]")
+            elif lvl > 0:
+                sel = "*" if is_ability and api_id == selected_ability else ""
+                if max_lvl == 1:
+                    parts.append(f"[{name}: ON{sel}]")
+                else:
+                    parts.append(f"[{name}: {lvl}/{max_lvl}{sel}]")
+            else:
+                parts.append(f"[{name}: 0]")
+        lines.append(f"  T{tier}: {' '.join(parts)}")
+
+    if selected_ability:
+        ab_name = PERK_INFO.get(selected_ability, (selected_ability, 1, True))[0]
+        lines.append(f"  Active Ability: {ab_name}")
+
+    return "\n".join(lines)
+
+
 def _format_number(n: float) -> str:
     """Format large numbers compactly: 1.5M, 23.4K, etc."""
     if n >= 1_000_000_000:
