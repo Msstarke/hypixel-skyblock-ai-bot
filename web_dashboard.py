@@ -99,7 +99,7 @@ def api_ask():
 
     return jsonify({
         "response": clean,
-        "chat_lines": chat_lines[:20],
+        "chat_lines": chat_lines[:30],
         "username": mc_username,
     })
 
