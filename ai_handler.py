@@ -1397,7 +1397,7 @@ class AIHandler:
                         {"role": "system", "content": system},
                         {"role": "user", "content": question},
                     ],
-                    max_tokens=500 if ingame else 2000,
+                    max_tokens=1000 if ingame else 2000,
                     temperature=0.1,
                 )
                 text = resp.choices[0].message.content.strip()
