@@ -72,13 +72,14 @@ def api_ask():
     _elapsed = round(time.time() - _start, 1)
     print(f"[ingame] Replied to {mc_username or 'unknown'} in {_elapsed}s ({len(response)} chars)")
 
-    # Strip markdown formatting for in-game chat
+    # Convert markdown to color codes for in-game overlay
+    # §e = gold (headers/bold), §b = aqua (code/values), §7 = gray (normal)
     clean = response
-    clean = re.sub(r'\*\*(.+?)\*\*', r'\1', clean)  # bold
-    clean = re.sub(r'\*(.+?)\*', r'\1', clean)       # italic
-    clean = re.sub(r'`(.+?)`', r'\1', clean)          # inline code
-    clean = re.sub(r'#{1,3}\s+', '', clean)            # headers
-    clean = re.sub(r'\[(.+?)\]\(.+?\)', r'\1', clean)  # links
+    clean = re.sub(r'#{1,3}\s+(.+)', r'§e\1', clean)            # headers → gold
+    clean = re.sub(r'\*\*(.+?)\*\*', r'§e\1§r', clean)          # bold → gold
+    clean = re.sub(r'\*(.+?)\*', r'\1', clean)                   # italic → plain
+    clean = re.sub(r'`(.+?)`', r'§b\1§r', clean)                # code → aqua
+    clean = re.sub(r'\[(.+?)\]\(.+?\)', r'\1', clean)            # links → plain
 
     # Split into chat-friendly chunks (Minecraft chat limit ~256 chars per line)
     lines = clean.split("\n")
