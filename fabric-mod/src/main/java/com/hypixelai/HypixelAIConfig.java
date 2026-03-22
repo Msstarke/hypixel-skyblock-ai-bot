@@ -17,7 +17,7 @@ import java.nio.file.Path;
  */
 public class HypixelAIConfig {
 
-    private static final String DEFAULT_URL = "https://literate-totally-civet.ngrok-free.app/api/ask";
+    private static final String DEFAULT_URL = "https://hypixel-skyblock-ai-bot-production.up.railway.app/api/ask";
     private static final String REMOTE_CONFIG_URL =
             "https://raw.githubusercontent.com/Msstarke/hypixel-skyblock-ai-bot/master/fabric-mod/remote-config.txt";
 
@@ -57,9 +57,9 @@ public class HypixelAIConfig {
                 HypixelAIMod.LOGGER.info("[HypixelAI] Default config created at {}", configPath);
             }
 
-            // Migrate old localhost configs
-            if (apiUrl.contains("localhost") || apiUrl.contains("127.0.0.1")) {
-                HypixelAIMod.LOGGER.info("[HypixelAI] Migrating old localhost URL to public server");
+            // Migrate old ngrok/localhost configs
+            if (apiUrl.contains("localhost") || apiUrl.contains("127.0.0.1") || apiUrl.contains("ngrok")) {
+                HypixelAIMod.LOGGER.info("[HypixelAI] Migrating old URL to current server");
                 apiUrl = DEFAULT_URL;
                 save();
             }
@@ -75,7 +75,7 @@ public class HypixelAIConfig {
     /**
      * Fetch the API URL from a raw GitHub file.
      * Format: just the URL on the first line, e.g.
-     *   https://literate-totally-civet.ngrok-free.app/api/ask
+     *   https://your-server.up.railway.app/api/ask
      */
     private static void fetchRemoteConfig() {
         try {

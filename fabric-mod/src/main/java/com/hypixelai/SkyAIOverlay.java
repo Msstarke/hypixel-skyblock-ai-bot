@@ -13,8 +13,7 @@ import java.util.List;
 
 /**
  * Polished floating HUD overlay for AI responses.
- * Terminal-style dark panel with simulated rounded corners,
- * gradient header, soft shadow, and traffic light dots.
+ * Supports § color codes, pixel art elements, and formatted text.
  */
 public class SkyAIOverlay implements HudRenderCallback {
 
@@ -26,9 +25,28 @@ public class SkyAIOverlay implements HudRenderCallback {
     private static final int HEADER_HEIGHT = 14;
     private static final int QUESTION_HEIGHT = 12;
     private static final int LINE_HEIGHT = 11;
-    private static final int MAX_WIDTH = 260;
+    private static final int MAX_WIDTH = 280;
     private static final int MIN_WIDTH = 180;
-    private static final int R = 3; // corner "radius" in pixels
+    private static final int R = 3;
+
+    // Color map for § codes
+    private static final int COLOR_BLACK      = 0xFF000000;
+    private static final int COLOR_DARK_BLUE   = 0xFF0000AA;
+    private static final int COLOR_DARK_GREEN  = 0xFF00AA00;
+    private static final int COLOR_DARK_AQUA   = 0xFF00AAAA;
+    private static final int COLOR_DARK_RED    = 0xFFAA0000;
+    private static final int COLOR_DARK_PURPLE = 0xFFAA00AA;
+    private static final int COLOR_GOLD        = 0xFFFFAA00;
+    private static final int COLOR_GRAY        = 0xFFAAAAAA;
+    private static final int COLOR_DARK_GRAY   = 0xFF555555;
+    private static final int COLOR_BLUE        = 0xFF5555FF;
+    private static final int COLOR_GREEN       = 0xFF55FF55;
+    private static final int COLOR_AQUA        = 0xFF55FFFF;
+    private static final int COLOR_RED         = 0xFFFF5555;
+    private static final int COLOR_LIGHT_PURPLE= 0xFFFF55FF;
+    private static final int COLOR_YELLOW      = 0xFFFFFF55;
+    private static final int COLOR_WHITE       = 0xFFFFFFFF;
+    private static final int COLOR_BODY        = 0xFFCCCCCC;
 
     // State (set from any thread)
     private static volatile String currentQuestion = null;
@@ -93,7 +111,7 @@ public class SkyAIOverlay implements HudRenderCallback {
 
         for (String line : lines) {
             if (line.isEmpty()) {
-                result.add(new OverlayLine("", LineType.SPACER, 0));
+                result.add(new OverlayLine("", LineType.SPACER, 0, null));
                 continue;
             }
 
@@ -110,19 +128,96 @@ public class SkyAIOverlay implements HudRenderCallback {
                 indent = 4;
             }
 
-            List<OrderedText> wrapped = tr.wrapLines(Text.literal(content), wrapWidth - indent);
-            for (int i = 0; i < wrapped.size(); i++) {
-                LineType t = (i == 0) ? type : (type == LineType.BULLET ? LineType.BULLET_CONT : LineType.NORMAL);
-                StringBuilder sb = new StringBuilder();
-                wrapped.get(i).accept((index, style, codePoint) -> {
-                    sb.appendCodePoint(codePoint);
-                    return true;
-                });
-                result.add(new OverlayLine(sb.toString(), t, indent));
+            // Strip color codes for width calculation
+            String stripped = content.replaceAll("§.", "");
+            int availWidth = wrapWidth - indent;
+
+            // Simple word wrapping with color code awareness
+            if (tr.getWidth(stripped) <= availWidth) {
+                result.add(new OverlayLine(content, type, indent, parseColorSegments(content)));
+            } else {
+                // Wrap by words
+                String[] words = content.split(" ");
+                StringBuilder current = new StringBuilder();
+                boolean first = true;
+                for (String word : words) {
+                    String testStripped = (current + (current.length() > 0 ? " " : "") + word).replaceAll("§.", "");
+                    if (tr.getWidth(testStripped) > availWidth && current.length() > 0) {
+                        LineType t = first ? type : (type == LineType.BULLET ? LineType.BULLET_CONT : LineType.NORMAL);
+                        String lineStr = current.toString();
+                        result.add(new OverlayLine(lineStr, t, indent, parseColorSegments(lineStr)));
+                        current = new StringBuilder(word);
+                        first = false;
+                    } else {
+                        if (current.length() > 0) current.append(" ");
+                        current.append(word);
+                    }
+                }
+                if (current.length() > 0) {
+                    LineType t = first ? type : (type == LineType.BULLET ? LineType.BULLET_CONT : LineType.NORMAL);
+                    String lineStr = current.toString();
+                    result.add(new OverlayLine(lineStr, t, indent, parseColorSegments(lineStr)));
+                }
             }
         }
 
         processedLines = result;
+    }
+
+    /**
+     * Parse a string with § color codes into colored segments.
+     */
+    private static List<ColorSegment> parseColorSegments(String text) {
+        List<ColorSegment> segments = new ArrayList<>();
+        int currentColor = COLOR_BODY; // default
+        StringBuilder current = new StringBuilder();
+
+        for (int i = 0; i < text.length(); i++) {
+            char c = text.charAt(i);
+            if (c == '§' && i + 1 < text.length()) {
+                // Flush current segment
+                if (current.length() > 0) {
+                    segments.add(new ColorSegment(current.toString(), currentColor));
+                    current = new StringBuilder();
+                }
+                char code = text.charAt(i + 1);
+                int newColor = colorForCode(code);
+                if (newColor != -1) {
+                    currentColor = newColor;
+                } else if (code == 'r') {
+                    currentColor = COLOR_BODY; // reset
+                }
+                i++; // skip the code char
+            } else {
+                current.append(c);
+            }
+        }
+        if (current.length() > 0) {
+            segments.add(new ColorSegment(current.toString(), currentColor));
+        }
+        return segments;
+    }
+
+    private static int colorForCode(char code) {
+        return switch (code) {
+            case '0' -> COLOR_BLACK;
+            case '1' -> COLOR_DARK_BLUE;
+            case '2' -> COLOR_DARK_GREEN;
+            case '3' -> COLOR_DARK_AQUA;
+            case '4' -> COLOR_DARK_RED;
+            case '5' -> COLOR_DARK_PURPLE;
+            case '6' -> COLOR_GOLD;
+            case '7' -> COLOR_GRAY;
+            case '8' -> COLOR_DARK_GRAY;
+            case '9' -> COLOR_BLUE;
+            case 'a' -> COLOR_GREEN;
+            case 'b' -> COLOR_AQUA;
+            case 'c' -> COLOR_RED;
+            case 'd' -> COLOR_LIGHT_PURPLE;
+            case 'e' -> COLOR_YELLOW;
+            case 'f' -> COLOR_WHITE;
+            default -> -1;
+        };
     }
 
     @Override
@@ -135,19 +230,16 @@ public class SkyAIOverlay implements HudRenderCallback {
         TextRenderer tr = client.textRenderer;
         int screenW = client.getWindow().getScaledWidth();
 
-        // Lazy-process raw lines on render thread
         String[] raw = rawLines;
         if (raw != null && (processedLines == null || processedFrom != raw)) {
             processLines(tr, raw);
             processedFrom = raw;
         }
 
-        // Auto-hide
         if (hideTime == 0 && processedLines != null) {
             if (now - showTime > DISPLAY_MS) hideTime = now;
         }
 
-        // Alpha
         float alpha;
         if (hideTime > 0) {
             float fadeOut = 1f - (float)(now - hideTime) / FADE_OUT_MS;
@@ -157,11 +249,9 @@ public class SkyAIOverlay implements HudRenderCallback {
             alpha = Math.min(1f, (float)(now - showTime) / FADE_IN_MS);
         }
 
-        // Has question bar?
         boolean hasQuestion = currentQuestion != null && !currentQuestion.isEmpty() && !thinking;
         int questionBarH = hasQuestion ? QUESTION_HEIGHT + 4 : 0;
 
-        // Calculate dimensions
         int contentW, bodyH;
         if (thinking) {
             contentW = MIN_WIDTH;
@@ -170,7 +260,8 @@ public class SkyAIOverlay implements HudRenderCallback {
             int maxLineW = 0;
             for (OverlayLine line : processedLines) {
                 if (line.type != LineType.SPACER) {
-                    int w = tr.getWidth(line.text) + line.indent + 10;
+                    String stripped = line.text.replaceAll("§.", "");
+                    int w = tr.getWidth(stripped) + line.indent + 10;
                     if (w > maxLineW) maxLineW = w;
                 }
             }
@@ -189,12 +280,10 @@ public class SkyAIOverlay implements HudRenderCallback {
         }
 
         int totalH = HEADER_HEIGHT + 1 + questionBarH + bodyH;
-
-        // Position: top-right
         int x = screenW - contentW - MARGIN_RIGHT;
         int y = MARGIN_TOP;
 
-        // === SOFT SHADOW (multi-layer) ===
+        // === SHADOW ===
         for (int i = 4; i >= 1; i--) {
             int sa = (int)(((5 - i) * 12) * alpha);
             if (sa > 0) {
@@ -203,26 +292,24 @@ public class SkyAIOverlay implements HudRenderCallback {
             }
         }
 
-        // === MAIN PANEL (rounded) ===
+        // === PANEL ===
         fillRounded(context, x, y, contentW, totalH, R, col(0xF0, 0x1A, 0x1A, 0x2E, alpha));
 
-        // === HEADER (gradient effect — 3 bands) ===
-        int hY = y;
+        // === HEADER ===
         int bandH = HEADER_HEIGHT / 3;
-        fillRoundedTop(context, x, hY, contentW, bandH, R, col(0xFF, 0x30, 0x30, 0x4A, alpha));
-        fill(context, x, hY + bandH, x + contentW, hY + bandH * 2, col(0xFF, 0x2C, 0x2C, 0x44, alpha));
-        fill(context, x, hY + bandH * 2, x + contentW, hY + HEADER_HEIGHT, col(0xFF, 0x28, 0x28, 0x40, alpha));
+        fillRoundedTop(context, x, y, contentW, bandH, R, col(0xFF, 0x30, 0x30, 0x4A, alpha));
+        fill(context, x, y + bandH, x + contentW, y + bandH * 2, col(0xFF, 0x2C, 0x2C, 0x44, alpha));
+        fill(context, x, y + bandH * 2, x + contentW, y + HEADER_HEIGHT, col(0xFF, 0x28, 0x28, 0x40, alpha));
 
-        // Top edge highlight
+        // Top highlight
         fill(context, x + R, y, x + contentW - R, y + 1, col(0x44, 0x88, 0x88, 0xCC, alpha));
 
-        // Accent line under header
+        // Accent line
         fill(context, x, y + HEADER_HEIGHT, x + contentW, y + HEADER_HEIGHT + 1, col(0xFF, 0x00, 0xBB, 0xEE, alpha));
 
-        // === TRAFFIC LIGHT DOTS ===
+        // === DOTS ===
         int dotCY = y + HEADER_HEIGHT / 2;
         int dotCX = x + 9;
-        // Each dot: 3x3 center + 4 extra pixels for cross shape (simulates circle)
         drawDot(context, dotCX, dotCY, 0xFF5F57, alpha);
         drawDot(context, dotCX + 8, dotCY, 0xFFBD2E, alpha);
         drawDot(context, dotCX + 16, dotCY, 0x28C840, alpha);
@@ -232,7 +319,6 @@ public class SkyAIOverlay implements HudRenderCallback {
         context.drawText(tr, "SkyAI", titleX, y + (HEADER_HEIGHT - 8) / 2,
                 withAlpha(0xFF00DDFF, alpha), false);
 
-        // Version
         String ver = "v" + HypixelAIUpdater.MOD_VERSION;
         int verW = tr.getWidth(ver);
         context.drawText(tr, ver, x + contentW - verW - PADDING_X, y + (HEADER_HEIGHT - 8) / 2,
@@ -243,7 +329,6 @@ public class SkyAIOverlay implements HudRenderCallback {
         if (hasQuestion) {
             fill(context, x, contentY, x + contentW, contentY + questionBarH,
                     col(0xFF, 0x1E, 0x1E, 0x30, alpha));
-            // Subtle separator
             fill(context, x + PADDING_X, contentY + questionBarH - 1,
                     x + contentW - PADDING_X, contentY + questionBarH,
                     col(0x33, 0x55, 0x55, 0x77, alpha));
@@ -257,7 +342,7 @@ public class SkyAIOverlay implements HudRenderCallback {
             contentY += questionBarH;
         }
 
-        // === BODY TEXT ===
+        // === BODY ===
         int cy = contentY + PADDING_Y;
 
         if (thinking) {
@@ -273,124 +358,104 @@ public class SkyAIOverlay implements HudRenderCallback {
 
                 switch (line.type) {
                     case BULLET:
-                        context.drawText(tr, "\u2022", tx + 2, cy, withAlpha(0xFFFFAA00, alpha), false);
-                        context.drawText(tr, line.text, lx + 8, cy, withAlpha(0xFFCCCCCC, alpha), false);
+                        context.drawText(tr, "\u2022", tx + 2, cy, withAlpha(COLOR_GOLD, alpha), false);
+                        drawColoredText(context, tr, line.segments, lx + 8, cy, alpha);
                         break;
                     case BULLET_CONT:
-                        context.drawText(tr, line.text, lx + 8, cy, withAlpha(0xFFCCCCCC, alpha), false);
+                        drawColoredText(context, tr, line.segments, lx + 8, cy, alpha);
                         break;
                     case NUMBERED:
-                        int dotIdx = line.text.indexOf('.');
+                        // Find the "N." prefix
+                        String stripped = line.text.replaceAll("§.", "");
+                        int dotIdx = stripped.indexOf('.');
                         if (dotIdx > 0 && dotIdx < 4) {
-                            String num = line.text.substring(0, dotIdx + 1);
-                            String rest = line.text.substring(dotIdx + 1).trim();
-                            context.drawText(tr, num, lx, cy, withAlpha(0xFF00BBEE, alpha), false);
-                            context.drawText(tr, rest, lx + tr.getWidth(num + " "), cy,
-                                    withAlpha(0xFFCCCCCC, alpha), false);
+                            String num = stripped.substring(0, dotIdx + 1);
+                            context.drawText(tr, num, lx, cy, withAlpha(COLOR_AQUA, alpha), false);
+                            // Draw the rest with color segments, offset past the number
+                            int numW = tr.getWidth(num + " ");
+                            // Re-parse segments without the number prefix
+                            String rest = line.text;
+                            int realDot = rest.replaceAll("§.", "").indexOf('.');
+                            if (realDot >= 0) {
+                                // Find actual position in original string accounting for color codes
+                                int pos = 0, stripped_pos = 0;
+                                while (pos < rest.length() && stripped_pos <= realDot) {
+                                    if (rest.charAt(pos) == '§' && pos + 1 < rest.length()) {
+                                        pos += 2;
+                                    } else {
+                                        stripped_pos++;
+                                        pos++;
+                                    }
+                                }
+                                // Skip whitespace after the dot
+                                while (pos < rest.length() && rest.charAt(pos) == ' ') pos++;
+                                String afterNum = rest.substring(pos);
+                                drawColoredText(context, tr, parseColorSegments(afterNum), lx + numW, cy, alpha);
+                            }
                         } else {
-                            context.drawText(tr, line.text, lx, cy, withAlpha(0xFFCCCCCC, alpha), false);
+                            drawColoredText(context, tr, line.segments, lx, cy, alpha);
                         }
                         break;
                     default:
-                        context.drawText(tr, line.text, lx, cy, withAlpha(0xFFCCCCCC, alpha), false);
+                        drawColoredText(context, tr, line.segments, lx, cy, alpha);
                         break;
                 }
                 cy += LINE_HEIGHT;
             }
         }
 
-        // === BOTTOM EDGE (subtle) ===
-        // Dark line at very bottom for depth
+        // Bottom edge
         fill(context, x + R, y + totalH - 1, x + contentW - R, y + totalH,
                 col(0x22, 0x00, 0x00, 0x00, alpha));
     }
 
+    /**
+     * Draw text with color segments.
+     */
+    private static void drawColoredText(DrawContext ctx, TextRenderer tr,
+                                         List<ColorSegment> segments, int x, int y, float alpha) {
+        if (segments == null) return;
+        int cx = x;
+        for (ColorSegment seg : segments) {
+            ctx.drawText(tr, seg.text, cx, y, withAlpha(seg.color, alpha), false);
+            cx += tr.getWidth(seg.text);
+        }
+    }
+
     // --- Drawing helpers ---
 
-    /**
-     * Draw a dot as a cross/diamond shape to simulate a circle at small scale.
-     * At 5x5 this looks like:
-     *   .###.
-     *   #####
-     *   #####
-     *   #####
-     *   .###.
-     */
     private static void drawDot(DrawContext ctx, int cx, int cy, int rgb, float alpha) {
         int c = col(0xFF, (rgb >> 16) & 0xFF, (rgb >> 8) & 0xFF, rgb & 0xFF, alpha);
-        // 3x5 vertical strip
         fill(ctx, cx - 1, cy - 2, cx + 2, cy + 3, c);
-        // 5x3 horizontal strip
         fill(ctx, cx - 2, cy - 1, cx + 3, cy + 2, c);
     }
 
-    /**
-     * Fill a "rounded" rectangle by clipping corners.
-     * For R=3:
-     *    ...######...    (row 0: indent 3)
-     *    .##########.    (row 1: indent 1)
-     *    ############    (row 2+: full width)
-     *    ...
-     *    ############    (row h-3: full width)
-     *    .##########.    (row h-2: indent 1)
-     *    ...######...    (row h-1: indent 3)
-     */
     private static void fillRounded(DrawContext ctx, int x, int y, int w, int h, int r, int color) {
         if (h <= 0 || w <= 0) return;
+        int[] insets = r >= 3 ? new int[]{3, 1, 1} : r >= 2 ? new int[]{2, 1} : new int[]{1};
 
-        // Corner insets for each row from the edge (approximate circle)
-        int[] insets;
-        if (r >= 3) {
-            insets = new int[]{3, 1, 1};
-        } else if (r >= 2) {
-            insets = new int[]{2, 1};
-        } else {
-            insets = new int[]{1};
-        }
-
-        // Top rounded rows
-        for (int i = 0; i < insets.length && i < h; i++) {
+        for (int i = 0; i < insets.length && i < h; i++)
             fill(ctx, x + insets[i], y + i, x + w - insets[i], y + i + 1, color);
-        }
 
-        // Middle full rows
         int midStart = Math.min(insets.length, h);
         int midEnd = Math.max(midStart, h - insets.length);
-        if (midEnd > midStart) {
+        if (midEnd > midStart)
             fill(ctx, x, y + midStart, x + w, y + midEnd, color);
-        }
 
-        // Bottom rounded rows
-        for (int i = 0; i < insets.length && (h - 1 - i) >= midEnd; i++) {
+        for (int i = 0; i < insets.length && (h - 1 - i) >= midEnd; i++)
             fill(ctx, x + insets[i], y + h - 1 - i, x + w - insets[i], y + h - i, color);
-        }
     }
 
-    /**
-     * Fill a rectangle with only the top corners rounded.
-     */
     private static void fillRoundedTop(DrawContext ctx, int x, int y, int w, int h, int r, int color) {
         if (h <= 0 || w <= 0) return;
+        int[] insets = r >= 3 ? new int[]{3, 1, 1} : r >= 2 ? new int[]{2, 1} : new int[]{1};
 
-        int[] insets;
-        if (r >= 3) {
-            insets = new int[]{3, 1, 1};
-        } else if (r >= 2) {
-            insets = new int[]{2, 1};
-        } else {
-            insets = new int[]{1};
-        }
-
-        // Top rounded rows
-        for (int i = 0; i < insets.length && i < h; i++) {
+        for (int i = 0; i < insets.length && i < h; i++)
             fill(ctx, x + insets[i], y + i, x + w - insets[i], y + i + 1, color);
-        }
 
-        // Rest is full width
         int midStart = Math.min(insets.length, h);
-        if (h > midStart) {
+        if (h > midStart)
             fill(ctx, x, y + midStart, x + w, y + h, color);
-        }
     }
 
     private static void fill(DrawContext ctx, int x1, int y1, int x2, int y2, int argb) {
@@ -399,8 +464,7 @@ public class SkyAIOverlay implements HudRenderCallback {
     }
 
     private static int col(int a, int r, int g, int b, float alpha) {
-        int fa = (int)(a * alpha);
-        return (fa << 24) | (r << 16) | (g << 8) | b;
+        return ((int)(a * alpha) << 24) | (r << 16) | (g << 8) | b;
     }
 
     private static int withAlpha(int argb, float alpha) {
@@ -410,14 +474,25 @@ public class SkyAIOverlay implements HudRenderCallback {
 
     private enum LineType { NORMAL, BULLET, BULLET_CONT, NUMBERED, SPACER }
 
+    private static class ColorSegment {
+        final String text;
+        final int color;
+        ColorSegment(String text, int color) {
+            this.text = text;
+            this.color = color;
+        }
+    }
+
     private static class OverlayLine {
         final String text;
         final LineType type;
         final int indent;
-        OverlayLine(String text, LineType type, int indent) {
+        final List<ColorSegment> segments;
+        OverlayLine(String text, LineType type, int indent, List<ColorSegment> segments) {
             this.text = text;
             this.type = type;
             this.indent = indent;
+            this.segments = segments;
         }
     }
 }

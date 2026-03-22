@@ -120,7 +120,6 @@ public class HypixelAIClient implements ClientModInitializer {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                conn.setRequestProperty("ngrok-skip-browser-warning", "true");
                 conn.setDoOutput(true);
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(10000);
@@ -161,7 +160,6 @@ public class HypixelAIClient implements ClientModInitializer {
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-                conn.setRequestProperty("ngrok-skip-browser-warning", "true");
                 conn.setDoOutput(true);
                 conn.setConnectTimeout(5000);
                 conn.setReadTimeout(10000);
