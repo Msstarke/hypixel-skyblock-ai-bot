@@ -1378,11 +1378,12 @@ class AIHandler:
 
             if ingame:
                 system += (
-                    "\n\nIN-GAME MODE: This is Minecraft chat. Be super blunt. "
-                    "1-2 sentences MAX. No fluff, no 'you could try', no 'I recommend'. "
-                    "Just state the answer like a wiki lookup. No lists, no bullets, no headers. "
-                    "Example: 'Jungle Axe. 40k on AH. Chop wood to get Foraging XP.' "
-                    "If they ask what to do, tell them exactly what to do in as few words as possible."
+                    "\n\nIN-GAME MODE: Keep it short and direct — max 5-8 lines. "
+                    "Use **bold** for item names, numbers, and key terms. "
+                    "Use bullet points (- ) for lists. Use numbered steps for guides. "
+                    "No filler words, no 'I recommend', no 'you could try'. "
+                    "Just state facts directly. Example: '**Jungle Axe** — 40k on AH. Best early Foraging tool.' "
+                    "If they ask what to do, give clear steps."
                 )
 
             try:
