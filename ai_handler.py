@@ -994,6 +994,187 @@ class AIHandler:
                 return stat
         return None
 
+    # ── Fast path: best reforge question ──────────────────────────────────────
+    async def _handle_reforge_question(self, question: str) -> str | None:
+        """Detect 'best reforge for X' and return directly without AI."""
+        q = question.lower()
+        # Must contain "reforge" and either "best" or "what" or item name
+        if "reforge" not in q:
+            return None
+        # Must be asking for a recommendation, not a general question about reforging
+        if not any(w in q for w in ["best", "what", "which", "recommend", "should", "for"]):
+            return None
+
+        # Find the item they're asking about
+        matched_id = None
+        matched_name = None
+        for iname, iid in sorted(self.ITEM_UPGRADE_MAP.items(), key=lambda x: -len(x[0])):
+            iname_words = iname.split()
+            q_words = re.sub(r"[^a-z0-9\s]", "", q).split()
+            q_norm = {w.rstrip("s") if len(w) > 4 else w for w in q_words}
+            if all(any(qt.startswith(nw) for qt in q_norm) for nw in iname_words):
+                matched_id = iid
+                matched_name = iname.title()
+                break
+
+        if not matched_id:
+            return None
+
+        try:
+            lbin = await self.hypixel.get_lowest_bin()
+            item_price = lbin.get(matched_id, 0)
+            reforge, stone_prices = await self._resolve_reforge(question, matched_id, item_price)
+            if not reforge:
+                return f"No suitable reforge found for **{matched_name}**."
+
+            stat_str = ", ".join(f"+{v} {k.replace('_', ' ').title()}" for k, v in reforge["stats"].items())
+            stone_note = ""
+            if reforge.get("stone"):
+                sp = reforge.get("stone_price", 0)
+                stone_name = reforge["stone"].replace("_", " ").title()
+                stone_note = f"\n- Reforge stone: **{stone_name}** (~{sp:,.0f} coins)" if sp else f"\n- Reforge stone: **{stone_name}**"
+            afford = "" if reforge["affordable"] else "\n- ⚠️ Stone is expensive relative to item value"
+
+            return (
+                f"**Best reforge for {matched_name}: {reforge['name'].title()}**\n"
+                f"- Stats: {stat_str}"
+                f"{stone_note}{afford}\n"
+                f"- {reforge.get('note', '')}"
+            )
+        except Exception as e:
+            print(f"[reforge fast path error] {e}")
+            return None
+
+    # ── Fast path: recipe/craft cost ──────────────────────────────────────────
+    async def _handle_recipe_question(self, question: str) -> str | None:
+        """Detect recipe/craft questions and return cost breakdown without AI."""
+        q = question.lower()
+        if not any(w in q for w in ["recipe", "craft", "how to make", "ingredients", "cost to craft"]):
+            return None
+        # Don't match if it's a vague question like "what should I craft"
+        if any(w in q for w in ["should", "best", "what to", "recommend"]):
+            return None
+
+        # Find item
+        item = None
+        stopwords = {"what", "is", "the", "a", "an", "recipe", "for", "craft", "how", "to",
+                     "make", "ingredients", "of", "get", "whats", "me", "tell", "about", "cost"}
+        words = re.sub(r"[^\w\s']", "", q).split()
+        candidates = set()
+        for i in range(len(words)):
+            for j in range(i + 1, min(i + 5, len(words) + 1)):
+                phrase = " ".join(words[i:j])
+                if not all(w in stopwords for w in phrase.split()) and len(phrase) > 3:
+                    candidates.add(phrase)
+
+        for phrase in sorted(candidates, key=len, reverse=True):
+            found = await self.hypixel.find_item(phrase)
+            if found:
+                item = found
+                break
+
+        if not item:
+            return None
+
+        recipe = self.hypixel.get_recipe(item["id"])
+        if not recipe:
+            return None
+
+        try:
+            item_name = item.get("name", item["id"].replace("_", " ").title())
+            lines = [f"**{item_name}** — Craft Cost"]
+
+            total_craft = 0
+            for mat_id, count in recipe["i"].items():
+                baz = await self.hypixel.search_bazaar(mat_id.replace("_", " "))
+                if baz:
+                    price = baz[0]["buy"]
+                    subtotal = price * count
+                    total_craft += subtotal
+                    mat_name = mat_id.replace("_", " ").title()
+                    lines.append(f"- {count}x **{mat_name}**: {subtotal:,.0f} coins ({price:,.0f} each)")
+                else:
+                    p, src = await self.hypixel.get_item_price(mat_id, allow_auction=True)
+                    if p:
+                        subtotal = p * count
+                        total_craft += subtotal
+                        mat_name = mat_id.replace("_", " ").title()
+                        lines.append(f"- {count}x **{mat_name}**: {subtotal:,.0f} coins ({src})")
+                    else:
+                        mat_name = mat_id.replace("_", " ").title()
+                        lines.append(f"- {count}x **{mat_name}**: price unavailable")
+
+            if total_craft > 0:
+                lines.append(f"\n**Total craft cost: {total_craft:,.0f} coins**")
+
+                # Compare to buy price
+                buy_p, buy_src = await self.hypixel.get_item_price(item["id"], allow_auction=True)
+                if buy_p:
+                    diff = buy_p - total_craft
+                    if diff > 0:
+                        lines.append(f"Buy price: {buy_p:,.0f} ({buy_src}) — crafting saves **{diff:,.0f}** coins")
+                    else:
+                        lines.append(f"Buy price: {buy_p:,.0f} ({buy_src}) — buying is **{abs(diff):,.0f}** cheaper")
+
+            return "\n".join(lines)
+        except Exception as e:
+            print(f"[recipe fast path error] {e}")
+            return None
+
+    # ── Fast path: simple player stat lookup ──────────────────────────────────
+    def _handle_simple_stat_question(self, question: str, summary: str) -> str | None:
+        """Answer simple stat questions from linked player data without AI."""
+        q = question.lower().strip()
+
+        # Patterns: "what's my X", "what is my X", "my X level", "whats my X"
+        stat_match = re.search(
+            r"(?:what(?:'?s| is) my |my |show (?:me )?my )([a-z\s]+?)(?:\s*level|\s*lvl|\s*xp|\?|$)",
+            q
+        )
+        if not stat_match:
+            return None
+
+        stat_name = stat_match.group(1).strip()
+
+        # Map user terms to what appears in the summary
+        STAT_MAP = {
+            "cata": "Catacombs", "catacombs": "Catacombs", "dungeon": "Catacombs",
+            "mining": "Mining", "farming": "Farming", "combat": "Combat",
+            "foraging": "Foraging", "fishing": "Fishing", "enchanting": "Enchanting",
+            "alchemy": "Alchemy", "taming": "Taming", "carpentry": "Carpentry",
+            "social": "Social", "runecrafting": "Runecrafting",
+            "hotm": "HotM", "heart of the mountain": "HotM",
+            "skill average": "Skill avg", "sa": "Skill avg",
+            "skyblock": "Skyblock Level", "sb": "Skyblock Level",
+            "slayer": "Slayer",
+            "magic power": "Magic Power", "mp": "Magic Power",
+            "networth": "Networth", "nw": "Networth",
+        }
+
+        search_key = STAT_MAP.get(stat_name)
+        if not search_key:
+            return None
+
+        # Search through the summary for the matching line
+        for line in summary.split("\n"):
+            if search_key.lower() in line.lower():
+                # For skills line, extract just the relevant skill
+                if search_key in ("Mining", "Farming", "Combat", "Foraging", "Fishing",
+                                   "Enchanting", "Alchemy", "Taming", "Carpentry",
+                                   "Social", "Runecrafting") and "Skills:" in line:
+                    # Extract "Mining 45" from "Skills: Mining 45 | Combat 38 | ..."
+                    skill_match = re.search(rf'{search_key}\s+(\d+)', line)
+                    if skill_match:
+                        return f"Your **{search_key}** level is **{skill_match.group(1)}**"
+                    return None
+
+                # For other stats, return the whole line cleaned up
+                clean_line = line.strip()
+                if clean_line.startswith("==="): continue  # skip header
+                return f"**{clean_line}**"
+
+        return None
+
     # Known armor set ID prefixes
     ARMOR_SETS = {
         "armor of divan": "ARMOR_OF_DIVAN",
