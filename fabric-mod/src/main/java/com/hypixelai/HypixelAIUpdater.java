@@ -129,8 +129,9 @@ public class HypixelAIUpdater {
                 }
             }
 
-            // Delete swap script
+            // Delete swap scripts
             Files.deleteIfExists(modsDir.resolve("hypixelai-swap.bat"));
+            Files.deleteIfExists(modsDir.resolve("hypixelai-swap.vbs"));
 
             // If .jar.update exists, the swap script didn't run — try direct swap
             Path updateFile = modsDir.resolve("hypixelai-mod.jar.update");
@@ -155,7 +156,8 @@ public class HypixelAIUpdater {
     private static void registerSwapOnShutdown(Path modsDir, Path currentJar, Path updateFile) {
         String modsPath = modsDir.toAbsolutePath().toString().replace("/", "\\");
 
-        String script = "@echo off\r\n"
+        // Batch script to swap jars after Minecraft closes
+        String batScript = "@echo off\r\n"
                 + "timeout /t 3 /nobreak >nul\r\n"
                 + "cd /d \"" + modsPath + "\"\r\n"
                 + "for %%f in (hypixelai-mod*.jar) do (\r\n"
@@ -164,19 +166,28 @@ public class HypixelAIUpdater {
                 + "if exist \"hypixelai-mod.jar.update\" (\r\n"
                 + "  ren \"hypixelai-mod.jar.update\" \"hypixelai-mod.jar\"\r\n"
                 + ")\r\n"
+                + "del /f /q \"" + modsPath + "\\hypixelai-swap.vbs\" 2>nul\r\n"
                 + "del /f /q \"%~f0\" 2>nul\r\n";
 
-        Path scriptPath = modsDir.resolve("hypixelai-swap.bat");
+        Path batPath = modsDir.resolve("hypixelai-swap.bat");
+
+        // VBS wrapper to run the bat file completely hidden (no console window)
+        String vbsScript = "CreateObject(\"WScript.Shell\").Run \"cmd.exe /c \"\""
+                + batPath.toAbsolutePath().toString().replace("\\", "\\\\")
+                + "\"\"\", 0, False\r\n";
+
+        Path vbsPath = modsDir.resolve("hypixelai-swap.vbs");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             try {
-                Files.writeString(scriptPath, script, StandardCharsets.UTF_8);
-                new ProcessBuilder("cmd.exe", "/c", "start", "/min", "",
-                        scriptPath.toAbsolutePath().toString())
+                Files.writeString(batPath, batScript, StandardCharsets.UTF_8);
+                Files.writeString(vbsPath, vbsScript, StandardCharsets.UTF_8);
+                new ProcessBuilder("wscript.exe", "//B", "//Nologo",
+                        vbsPath.toAbsolutePath().toString())
                         .directory(modsDir.toFile())
                         .redirectErrorStream(true)
                         .start();
-                HypixelAIMod.LOGGER.info("[HypixelAI] Swap script launched");
+                HypixelAIMod.LOGGER.info("[HypixelAI] Swap script launched (hidden)");
             } catch (Exception e) {
                 HypixelAIMod.LOGGER.error("[HypixelAI] Failed to launch swap script", e);
             }
