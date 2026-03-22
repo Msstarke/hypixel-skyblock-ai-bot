@@ -32,6 +32,9 @@ public class HypixelAIClient implements ClientModInitializer {
     public void onInitializeClient() {
         HypixelAIConfig.load();
 
+        // Register HUD overlay
+        SkyAIOverlay.register();
+
         // Check for updates in background
         new Thread(() -> HypixelAIUpdater.checkForUpdate(), "HypixelAI-Updater").start();
 
@@ -197,7 +200,7 @@ public class HypixelAIClient implements ClientModInitializer {
         }
         lastRequest = now;
 
-        sendChat(prefix().append(Text.literal("\u231B Thinking...").formatted(MUTED)));
+        SkyAIOverlay.showThinking(question);
 
         String username = getUsername();
         new Thread(() -> {
@@ -205,9 +208,12 @@ public class HypixelAIClient implements ClientModInitializer {
                 String response = callAPI(question, username);
                 if (response != null) {
                     displayResponse(question, response);
+                } else {
+                    SkyAIOverlay.clear();
                 }
             } catch (Exception e) {
                 HypixelAIMod.LOGGER.error("[HypixelAI] API call failed", e);
+                SkyAIOverlay.clear();
                 sendChat(prefix().append(Text.literal("\u2716 ").formatted(ERROR))
                         .append(Text.literal(e.getMessage()).formatted(MUTED)));
             }
@@ -254,13 +260,13 @@ public class HypixelAIClient implements ClientModInitializer {
     private void displayResponse(String question, String jsonBody) {
         String[] lines = parseChatLines(jsonBody);
         if (lines.length == 0) {
+            SkyAIOverlay.clear();
             sendChat(prefix().append(Text.literal("No response.").formatted(MUTED)));
             return;
         }
 
-        // Open the overlay screen on the main thread
-        MinecraftClient client = MinecraftClient.getInstance();
-        client.execute(() -> client.setScreen(new SkyAIScreen(question, lines)));
+        // Show in the HUD overlay
+        SkyAIOverlay.show(question, lines);
     }
 
     private void showHelp() {
@@ -268,9 +274,9 @@ public class HypixelAIClient implements ClientModInitializer {
                 "Commands:",
                 "",
                 "- !ai <question>  \u2014  Ask anything about Skyblock",
-                "- !link <ign>  \u2014  Link your account for personalized answers",
-                "- !unlink  \u2014  Remove your linked account",
-                "- !aiconfig  \u2014  View current mod config",
+                "- !link <ign>  \u2014  Link your account",
+                "- !unlink  \u2014  Remove linked account",
+                "- !aiconfig  \u2014  View mod config",
                 "",
                 "Examples:",
                 "",
@@ -278,8 +284,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 "2. !ai what pet for mining",
                 "3. !ai what should i upgrade next",
         };
-        MinecraftClient client = MinecraftClient.getInstance();
-        client.execute(() -> client.setScreen(new SkyAIScreen("SkyAI Help", helpLines)));
+        SkyAIOverlay.show("Help", helpLines);
     }
 
     private void showConfig() {
@@ -290,8 +295,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 "Version: v" + HypixelAIUpdater.MOD_VERSION,
                 "Config: " + HypixelAIConfig.getConfigPath(),
         };
-        MinecraftClient client = MinecraftClient.getInstance();
-        client.execute(() -> client.setScreen(new SkyAIScreen("SkyAI Config", configLines)));
+        SkyAIOverlay.show("Config", configLines);
     }
 
     // --- Utilities ---
