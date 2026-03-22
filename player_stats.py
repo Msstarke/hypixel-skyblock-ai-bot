@@ -464,12 +464,13 @@ def _format_hotm_tree(hotm_lvl: int, perks: dict, selected_ability: str) -> str:
                 else:
                     parts.append(f"§e[{name} §6{lvl}§e/{max_lvl}]§r{sel}")
             else:
-                parts.append(f"[{name}: 0]")
-        lines.append(f"  T{tier}: {' '.join(parts)}")
+                parts.append(f"§7[{name}]§r")
+        tier_color = "§c" if locked else "§b"
+        lines.append(f"  {tier_color}T{tier}§r: {' '.join(parts)}")
 
     if selected_ability:
         ab_name = PERK_INFO.get(selected_ability, (selected_ability, 1, True))[0]
-        lines.append(f"  Active Ability: {ab_name}")
+        lines.append(f"  §dActive Ability: §b{ab_name}§r")
 
     return "\n".join(lines)
 
