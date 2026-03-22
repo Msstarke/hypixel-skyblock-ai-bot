@@ -5,7 +5,10 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.MutableText;
+import net.minecraft.text.Style;
 import net.minecraft.text.Text;
+import net.minecraft.text.HoverEvent;
+import net.minecraft.text.ClickEvent;
 import net.minecraft.util.Formatting;
 
 import java.io.*;
@@ -19,9 +22,17 @@ public class HypixelAIClient implements ClientModInitializer {
     private static long lastRequest = 0;
     private static final long COOLDOWN_MS = 3000;
 
+    // Color scheme
+    private static final Formatting ACCENT = Formatting.GOLD;
+    private static final Formatting BRAND = Formatting.AQUA;
+    private static final Formatting BODY = Formatting.GRAY;
+    private static final Formatting HIGHLIGHT = Formatting.WHITE;
+    private static final Formatting SUCCESS = Formatting.GREEN;
+    private static final Formatting ERROR = Formatting.RED;
+    private static final Formatting MUTED = Formatting.DARK_GRAY;
+
     @Override
     public void onInitializeClient() {
-        // Load config
         HypixelAIConfig.load();
 
         // Check for updates in background
@@ -32,62 +43,71 @@ public class HypixelAIClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!notified[0] && client.player != null && HypixelAIUpdater.isUpdatePending()) {
                 notified[0] = true;
-                sendChat(Text.literal("").formatted(Formatting.GOLD));
-                sendChat(Text.literal("=========================================").formatted(Formatting.GOLD));
-                sendChat(prefix().append(Text.literal("New update available!").formatted(Formatting.GREEN, Formatting.BOLD)));
-                sendChat(Text.literal("  v" + HypixelAIUpdater.MOD_VERSION + " -> v"
-                        + HypixelAIUpdater.getPendingVersion()).formatted(Formatting.YELLOW));
+                sendChat(Text.empty());
+                sendChat(prefix()
+                        .append(Text.literal("Update available! ").styled(s -> s.withColor(Formatting.GREEN)))
+                        .append(Text.literal("v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED))
+                        .append(Text.literal(" \u2192 ").formatted(MUTED))
+                        .append(Text.literal("v" + HypixelAIUpdater.getPendingVersion()).formatted(SUCCESS, Formatting.BOLD)));
                 String msg = HypixelAIUpdater.getUpdateMessage();
                 if (msg != null && !msg.isEmpty()) {
-                    sendChat(Text.literal("  " + msg).formatted(Formatting.AQUA));
+                    sendChat(Text.literal("   " + msg).formatted(BODY));
                 }
-                sendChat(Text.literal("  Close & relaunch to auto-apply.").formatted(Formatting.GRAY));
-                sendChat(Text.literal("=========================================").formatted(Formatting.GOLD));
+                sendChat(Text.literal("   Restart your game to apply.").formatted(MUTED));
+                sendChat(Text.empty());
             }
         });
 
         // Intercept outgoing chat messages
         ClientSendMessageEvents.ALLOW_CHAT.register((message) -> {
-            if (message.toLowerCase().startsWith("!ai ")) {
-                String question = message.substring(4).trim();
-                handleQuestion(question);
-                return false; // cancel the chat message
+            String lower = message.toLowerCase();
+
+            if (lower.startsWith("!ai ")) {
+                handleQuestion(message.substring(4).trim());
+                return false;
             }
-            if (message.toLowerCase().equals("!aihelp")) {
+            if (lower.equals("!ai")) {
                 showHelp();
                 return false;
             }
-            if (message.toLowerCase().equals("!aiconfig")) {
+            if (lower.equals("!aihelp")) {
+                showHelp();
+                return false;
+            }
+            if (lower.equals("!aiconfig")) {
                 showConfig();
                 return false;
             }
-            if (message.toLowerCase().startsWith("!link ")) {
-                String ign = message.substring(6).trim();
-                handleLink(ign);
+            if (lower.startsWith("!link ")) {
+                handleLink(message.substring(6).trim());
                 return false;
             }
-            if (message.toLowerCase().equals("!link")) {
-                sendChat(prefix().append(Text.literal("Usage: !link <ign>").formatted(Formatting.GRAY)));
+            if (lower.equals("!link")) {
+                sendChat(prefix().append(Text.literal("Usage: ").formatted(BODY))
+                        .append(Text.literal("!link <ign>").formatted(HIGHLIGHT)));
                 return false;
             }
-            if (message.toLowerCase().equals("!unlink")) {
+            if (lower.equals("!unlink")) {
                 handleUnlink();
                 return false;
             }
-            return true; // allow normal messages
+            return true;
         });
 
-        HypixelAIMod.LOGGER.info("[HypixelAI] Client mod loaded. Type !ai <question> in chat.");
+        HypixelAIMod.LOGGER.info("[HypixelAI] Client mod loaded v{}", HypixelAIUpdater.MOD_VERSION);
     }
 
     private void handleLink(String ign) {
         if (ign.isEmpty()) {
-            sendChat(prefix().append(Text.literal("Usage: !link <ign>").formatted(Formatting.GRAY)));
+            sendChat(prefix().append(Text.literal("Usage: ").formatted(BODY))
+                    .append(Text.literal("!link <ign>").formatted(HIGHLIGHT)));
             return;
         }
 
         String username = getUsername();
-        sendChat(prefix().append(Text.literal("Linking to " + ign + "...").formatted(Formatting.GRAY)));
+        sendChat(prefix().append(Text.literal("Linking to ").formatted(BODY))
+                .append(Text.literal(ign).formatted(BRAND))
+                .append(Text.literal("...").formatted(BODY)));
 
         new Thread(() -> {
             try {
@@ -96,7 +116,7 @@ public class HypixelAIClient implements ClientModInitializer {
                         + ",\"ign\":" + jsonEscape(ign)
                         + ",\"api_key\":" + jsonEscape(HypixelAIConfig.getApiKey()) + "}";
 
-                java.net.URL url = URI.create(baseUrl + "/api/link").toURL();
+                URL url = URI.create(baseUrl + "/api/link").toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -106,19 +126,24 @@ public class HypixelAIClient implements ClientModInitializer {
                 conn.setReadTimeout(10000);
 
                 try (OutputStream os = conn.getOutputStream()) {
-                    os.write(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    os.write(payload.getBytes(StandardCharsets.UTF_8));
                 }
 
                 int code = conn.getResponseCode();
                 conn.disconnect();
 
                 if (code == 200) {
-                    sendChat(prefix().append(Text.literal("Linked to " + ign + "! Your stats will now be used for personalized answers.").formatted(Formatting.GREEN)));
+                    sendChat(prefix().append(Text.literal("\u2714 ").formatted(SUCCESS))
+                            .append(Text.literal("Linked to ").formatted(BODY))
+                            .append(Text.literal(ign).formatted(BRAND))
+                            .append(Text.literal(" \u2014 responses are now personalized.").formatted(BODY)));
                 } else {
-                    sendChat(errorPrefix().append(Text.literal("Failed to link (HTTP " + code + ")").formatted(Formatting.RED)));
+                    sendChat(prefix().append(Text.literal("\u2716 Failed to link ").formatted(ERROR))
+                            .append(Text.literal("(HTTP " + code + ")").formatted(MUTED)));
                 }
             } catch (Exception e) {
-                sendChat(errorPrefix().append(Text.literal("Link failed: " + e.getMessage()).formatted(Formatting.RED)));
+                sendChat(prefix().append(Text.literal("\u2716 Link failed: ").formatted(ERROR))
+                        .append(Text.literal(e.getMessage()).formatted(MUTED)));
             }
         }, "HypixelAI-Link").start();
     }
@@ -132,7 +157,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 String payload = "{\"username\":" + jsonEscape(username)
                         + ",\"api_key\":" + jsonEscape(HypixelAIConfig.getApiKey()) + "}";
 
-                java.net.URL url = URI.create(baseUrl + "/api/unlink").toURL();
+                URL url = URI.create(baseUrl + "/api/unlink").toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
                 conn.setRequestMethod("POST");
                 conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
@@ -142,40 +167,41 @@ public class HypixelAIClient implements ClientModInitializer {
                 conn.setReadTimeout(10000);
 
                 try (OutputStream os = conn.getOutputStream()) {
-                    os.write(payload.getBytes(java.nio.charset.StandardCharsets.UTF_8));
+                    os.write(payload.getBytes(StandardCharsets.UTF_8));
                 }
 
                 int code = conn.getResponseCode();
                 conn.disconnect();
 
                 if (code == 200) {
-                    sendChat(prefix().append(Text.literal("Unlinked! Responses will no longer be personalized.").formatted(Formatting.YELLOW)));
+                    sendChat(prefix().append(Text.literal("\u2714 Unlinked.").formatted(Formatting.YELLOW)));
                 } else {
-                    sendChat(errorPrefix().append(Text.literal("Failed to unlink (HTTP " + code + ")").formatted(Formatting.RED)));
+                    sendChat(prefix().append(Text.literal("\u2716 Failed to unlink ").formatted(ERROR))
+                            .append(Text.literal("(HTTP " + code + ")").formatted(MUTED)));
                 }
             } catch (Exception e) {
-                sendChat(errorPrefix().append(Text.literal("Unlink failed: " + e.getMessage()).formatted(Formatting.RED)));
+                sendChat(prefix().append(Text.literal("\u2716 Unlink failed: ").formatted(ERROR))
+                        .append(Text.literal(e.getMessage()).formatted(MUTED)));
             }
         }, "HypixelAI-Unlink").start();
     }
 
     private void handleQuestion(String question) {
         if (question.isEmpty()) {
-            sendChat(prefix().append(Text.literal("Usage: !ai <question>").formatted(Formatting.GRAY)));
+            showHelp();
             return;
         }
 
         // Cooldown
         long now = System.currentTimeMillis();
         if (now - lastRequest < COOLDOWN_MS) {
-            sendChat(errorPrefix().append(Text.literal("Wait a moment between questions.").formatted(Formatting.RED)));
+            sendChat(prefix().append(Text.literal("Slow down! Wait a moment.").formatted(Formatting.YELLOW)));
             return;
         }
         lastRequest = now;
 
-        sendChat(prefix().append(Text.literal("Thinking...").formatted(Formatting.GRAY)));
+        sendChat(prefix().append(Text.literal("\u231B Thinking...").formatted(MUTED)));
 
-        // Run API call on a separate thread to not freeze the game
         String username = getUsername();
         new Thread(() -> {
             try {
@@ -185,7 +211,8 @@ public class HypixelAIClient implements ClientModInitializer {
                 }
             } catch (Exception e) {
                 HypixelAIMod.LOGGER.error("[HypixelAI] API call failed", e);
-                sendChat(errorPrefix().append(Text.literal("Error: " + e.getMessage()).formatted(Formatting.RED)));
+                sendChat(prefix().append(Text.literal("\u2716 ").formatted(ERROR))
+                        .append(Text.literal(e.getMessage()).formatted(MUTED)));
             }
         }, "HypixelAI-API").start();
     }
@@ -203,7 +230,6 @@ public class HypixelAIClient implements ClientModInitializer {
         conn.setConnectTimeout(5000);
         conn.setReadTimeout(30000);
 
-        // Build JSON payload manually (no external JSON lib needed)
         String payload = "{\"question\":" + jsonEscape(question)
                 + ",\"api_key\":" + jsonEscape(apiKey)
                 + ",\"username\":" + jsonEscape(username) + "}";
@@ -215,15 +241,13 @@ public class HypixelAIClient implements ClientModInitializer {
         int code = conn.getResponseCode();
 
         if (code == 200) {
-            String body = readStream(conn.getInputStream());
-            // Parse chat_lines from JSON response
-            return body;
+            return readStream(conn.getInputStream());
         } else if (code == 401) {
-            sendChat(errorPrefix().append(Text.literal("Invalid API key. Check config.").formatted(Formatting.RED)));
+            sendChat(prefix().append(Text.literal("\u2716 Invalid API key.").formatted(ERROR)));
         } else if (code == 503) {
-            sendChat(errorPrefix().append(Text.literal("Bot is starting up, try again.").formatted(Formatting.RED)));
+            sendChat(prefix().append(Text.literal("\u231B Bot is starting up, try again.").formatted(Formatting.YELLOW)));
         } else {
-            sendChat(errorPrefix().append(Text.literal("HTTP error " + code).formatted(Formatting.RED)));
+            sendChat(prefix().append(Text.literal("\u2716 HTTP " + code).formatted(ERROR)));
         }
 
         conn.disconnect();
@@ -231,78 +255,110 @@ public class HypixelAIClient implements ClientModInitializer {
     }
 
     private void displayResponse(String question, String jsonBody) {
-        // Parse chat_lines array from JSON
         String[] lines = parseChatLines(jsonBody);
         if (lines.length == 0) {
-            sendChat(errorPrefix().append(Text.literal("Empty response.").formatted(Formatting.RED)));
+            sendChat(prefix().append(Text.literal("No response.").formatted(MUTED)));
             return;
         }
 
-        // Header
-        sendChat(Text.literal("----------------------------------------").formatted(Formatting.GOLD, Formatting.STRIKETHROUGH));
-        sendChat(prefix().append(Text.literal(question).formatted(Formatting.YELLOW)));
-        sendChat(Text.empty());
+        // Top bar
+        sendChat(divider());
+
+        // Question echo
+        sendChat(prefix()
+                .append(Text.literal(question).formatted(HIGHLIGHT, Formatting.BOLD)));
 
         // Response lines
         for (String line : lines) {
             MutableText text;
             if (line.startsWith("- ") || line.startsWith("* ")) {
-                text = Text.literal("  " + line).formatted(Formatting.AQUA);
-            } else if (line.matches("^\\d+\\..*")) {
-                text = Text.literal("  " + line).formatted(Formatting.GREEN);
+                // Bullet point: replace dash with a dot symbol
+                String content = line.substring(2);
+                text = Text.literal("  \u2022 ").formatted(ACCENT)
+                        .append(Text.literal(content).formatted(BODY));
+            } else if (line.matches("^\\d+\\.\\s.*")) {
+                // Numbered list: highlight the number
+                int dotIdx = line.indexOf('.');
+                String num = line.substring(0, dotIdx + 1);
+                String content = line.substring(dotIdx + 1).trim();
+                text = Text.literal("  " + num + " ").formatted(ACCENT)
+                        .append(Text.literal(content).formatted(BODY));
             } else {
-                text = Text.literal("  " + line).formatted(Formatting.WHITE);
+                text = Text.literal("  " + line).formatted(BODY);
             }
             sendChat(text);
         }
 
-        // Footer
-        sendChat(Text.literal("----------------------------------------").formatted(Formatting.GOLD, Formatting.STRIKETHROUGH));
+        // Bottom bar
+        sendChat(divider());
     }
 
     private void showHelp() {
-        sendChat(Text.literal("----------------------------------------").formatted(Formatting.GOLD, Formatting.STRIKETHROUGH));
-        sendChat(prefix().append(Text.literal("In-Game Commands:").formatted(Formatting.YELLOW)));
-        sendChat(Text.literal("  !ai <question>").formatted(Formatting.AQUA)
-                .append(Text.literal(" - Ask anything about Skyblock").formatted(Formatting.GRAY)));
-        sendChat(Text.literal("  !aihelp").formatted(Formatting.AQUA)
-                .append(Text.literal(" - Show this help").formatted(Formatting.GRAY)));
-        sendChat(Text.literal("  !link <ign>").formatted(Formatting.AQUA)
-                .append(Text.literal(" - Link your Skyblock account").formatted(Formatting.GRAY)));
-        sendChat(Text.literal("  !unlink").formatted(Formatting.AQUA)
-                .append(Text.literal(" - Unlink your account").formatted(Formatting.GRAY)));
-        sendChat(Text.literal("  !aiconfig").formatted(Formatting.AQUA)
-                .append(Text.literal(" - Show current config").formatted(Formatting.GRAY)));
+        sendChat(divider());
+        sendChat(prefix().append(Text.literal("Commands").formatted(HIGHLIGHT, Formatting.BOLD)));
         sendChat(Text.empty());
-        sendChat(Text.literal("  Examples:").formatted(Formatting.GRAY));
-        sendChat(Text.literal("  !ai best money making method").formatted(Formatting.WHITE));
-        sendChat(Text.literal("  !ai what pet for mining").formatted(Formatting.WHITE));
-        sendChat(Text.literal("  !ai what should i upgrade next").formatted(Formatting.WHITE));
-        sendChat(Text.literal("----------------------------------------").formatted(Formatting.GOLD, Formatting.STRIKETHROUGH));
+
+        helpLine("!ai <question>", "Ask anything about Skyblock");
+        helpLine("!link <ign>", "Link your account for personalized answers");
+        helpLine("!unlink", "Remove your linked account");
+        helpLine("!aiconfig", "View current mod config");
+
+        sendChat(Text.empty());
+        sendChat(Text.literal("  Examples:").formatted(MUTED));
+        exampleLine("!ai best money making method");
+        exampleLine("!ai what pet for mining");
+        exampleLine("!ai what should i upgrade next");
+        sendChat(divider());
+    }
+
+    private void helpLine(String cmd, String desc) {
+        MutableText cmdText = Text.literal("  " + cmd).styled(s -> s
+                .withColor(Formatting.AQUA)
+                .withHoverEvent(new HoverEvent.ShowText(Text.literal("Click to type").formatted(MUTED)))
+                .withClickEvent(new ClickEvent.SuggestCommand(cmd)));
+        MutableText descText = Text.literal(" \u2014 " + desc).formatted(MUTED);
+        sendChat(cmdText.append(descText));
+    }
+
+    private void exampleLine(String example) {
+        sendChat(Text.literal("    " + example).styled(s -> s
+                .withColor(Formatting.DARK_GRAY)
+                .withItalic(true)
+                .withHoverEvent(new HoverEvent.ShowText(Text.literal("Click to type").formatted(MUTED)))
+                .withClickEvent(new ClickEvent.SuggestCommand(example))));
     }
 
     private void showConfig() {
-        sendChat(prefix().append(Text.literal("Config:").formatted(Formatting.YELLOW)));
-        sendChat(Text.literal("  API URL: ").formatted(Formatting.GRAY)
-                .append(Text.literal(HypixelAIConfig.getApiUrl()).formatted(Formatting.WHITE)));
-        sendChat(Text.literal("  API Key: ").formatted(Formatting.GRAY)
-                .append(Text.literal(HypixelAIConfig.getApiKey().isEmpty() ? "(none)" : "(set)").formatted(Formatting.WHITE)));
-        sendChat(Text.literal("  Config file: ").formatted(Formatting.GRAY)
-                .append(Text.literal(HypixelAIConfig.getConfigPath()).formatted(Formatting.WHITE)));
+        sendChat(divider());
+        sendChat(prefix().append(Text.literal("Config").formatted(HIGHLIGHT, Formatting.BOLD)));
+
+        sendChat(Text.literal("  API: ").formatted(MUTED)
+                .append(Text.literal(HypixelAIConfig.getApiUrl()).formatted(BODY)));
+        sendChat(Text.literal("  Key: ").formatted(MUTED)
+                .append(Text.literal(HypixelAIConfig.getApiKey().isEmpty() ? "not set" : "\u2714 set").formatted(
+                        HypixelAIConfig.getApiKey().isEmpty() ? Formatting.YELLOW : SUCCESS)));
+        sendChat(Text.literal("  Version: ").formatted(MUTED)
+                .append(Text.literal("v" + HypixelAIUpdater.MOD_VERSION).formatted(BODY)));
+
+        sendChat(divider());
     }
 
     // --- Utilities ---
 
     private static MutableText prefix() {
-        return Text.literal("[").formatted(Formatting.GOLD)
-                .append(Text.literal("SkyAI").formatted(Formatting.AQUA))
-                .append(Text.literal("] ").formatted(Formatting.GOLD));
+        return Text.literal("\u2B25 ").formatted(ACCENT)
+                .append(Text.literal("SkyAI").styled(s -> s
+                        .withColor(Formatting.AQUA)
+                        .withBold(true)
+                        .withHoverEvent(new HoverEvent.ShowText(
+                                Text.literal("HypixelAI v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED)))))
+                .append(Text.literal(" \u00BB ").formatted(MUTED));
     }
 
-    private static MutableText errorPrefix() {
-        return Text.literal("[").formatted(Formatting.GOLD)
-                .append(Text.literal("SkyAI").formatted(Formatting.AQUA))
-                .append(Text.literal("] ").formatted(Formatting.GOLD));
+    private static MutableText divider() {
+        return Text.literal("                                        ").styled(s -> s
+                .withColor(Formatting.DARK_GRAY)
+                .withStrikethrough(true));
     }
 
     private static void sendChat(Text text) {
@@ -350,10 +406,8 @@ public class HypixelAIClient implements ClientModInitializer {
 
     /**
      * Parse the "chat_lines" array from the JSON response.
-     * Minimal JSON parsing — no external library needed.
      */
     private static String[] parseChatLines(String json) {
-        // Find "chat_lines": [...]
         int idx = json.indexOf("\"chat_lines\"");
         if (idx == -1) return new String[0];
 
@@ -366,7 +420,6 @@ public class HypixelAIClient implements ClientModInitializer {
         String arrContent = json.substring(arrStart + 1, arrEnd);
         if (arrContent.trim().isEmpty()) return new String[0];
 
-        // Split by ","  but respect escaped quotes
         java.util.List<String> lines = new java.util.ArrayList<>();
         StringBuilder current = new StringBuilder();
         boolean inString = false;
@@ -379,11 +432,10 @@ public class HypixelAIClient implements ClientModInitializer {
                 if (c == 'n') current.append('\n');
                 else if (c == 't') current.append('\t');
                 else if (c == 'u' && i + 4 < arrContent.length()) {
-                    // Parse unicode escape sequence
                     String hex = arrContent.substring(i + 1, i + 5);
                     try {
                         current.append((char) Integer.parseInt(hex, 16));
-                        i += 4; // skip the 4 hex digits
+                        i += 4;
                     } catch (NumberFormatException e) {
                         current.append(c);
                     }
