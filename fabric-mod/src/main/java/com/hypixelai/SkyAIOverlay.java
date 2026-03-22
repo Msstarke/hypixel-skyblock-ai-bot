@@ -62,6 +62,9 @@ public class SkyAIOverlay implements HudRenderCallback {
     private static final int HOTM_PANEL_W = GRID_W + HOTM_PANEL_PAD * 2;
     private static final int HOTM_PANEL_H = HOTM_TITLE_H + 2 + GRID_H + 4 + HOTM_LEGEND_H + HOTM_PANEL_PAD * 2;
 
+    // Feedback bar
+    private static final int FEEDBACK_BAR_H = 14;
+
     // State (set from any thread)
     private static volatile String currentQuestion = null;
     private static volatile String[] rawLines = null;
@@ -70,6 +73,11 @@ public class SkyAIOverlay implements HudRenderCallback {
     private static volatile long showTime = 0;
     private static volatile long hideTime = 0;
     private static volatile long thinkingStart = 0;
+
+    // Feedback state
+    private static volatile String feedbackVote = null; // "up", "down", or null
+    private static volatile String lastQuestion = null;
+    private static volatile String lastResponse = null;
 
     // Processed lines for narrow zone (beside grid) and full zone (below grid)
     private static List<OverlayLine> narrowLines = null;
@@ -97,6 +105,9 @@ public class SkyAIOverlay implements HudRenderCallback {
         showTime = System.currentTimeMillis();
         hideTime = 0;
         thinking = false;
+        feedbackVote = null;
+        lastQuestion = question;
+        lastResponse = responseLines != null ? String.join("\n", responseLines) : "";
     }
 
     public static void showThinking(String question) {
@@ -130,6 +141,17 @@ public class SkyAIOverlay implements HudRenderCallback {
         showTime = 0;
         hideTime = 0;
     }
+
+    public static void setFeedback(String vote) {
+        feedbackVote = vote;
+        // Reset display timer so it doesn't fade while showing feedback
+        showTime = System.currentTimeMillis();
+        hideTime = 0;
+    }
+
+    public static String getLastQuestion() { return lastQuestion; }
+    public static String getLastResponse() { return lastResponse; }
+    public static boolean hasPendingFeedback() { return feedbackVote == null && lastResponse != null && rawLines != null; }
 
     public static void register() {
         HudRenderCallback.EVENT.register(new SkyAIOverlay());
@@ -414,7 +436,11 @@ public class SkyAIOverlay implements HudRenderCallback {
             return;
         }
 
-        int totalH = HEADER_HEIGHT + 1 + questionBarH + bodyH;
+        // Feedback bar (only when response is shown and not thinking)
+        boolean showFeedback = !thinking && rawLines != null;
+        int feedbackH = showFeedback ? FEEDBACK_BAR_H : 0;
+
+        int totalH = HEADER_HEIGHT + 1 + questionBarH + bodyH + feedbackH;
         int x = screenW - contentW - MARGIN_RIGHT;
         int y = MARGIN_TOP;
 
@@ -518,6 +544,50 @@ public class SkyAIOverlay implements HudRenderCallback {
                 if (line.type == LineType.SPACER) { cy += 6; continue; }
                 drawLine(context, tr, line, tx, cy, alpha);
                 cy += LINE_HEIGHT;
+            }
+        }
+
+        // === FEEDBACK BAR ===
+        if (showFeedback) {
+            int fbY = y + totalH - feedbackH;
+
+            // Separator line
+            fill(context, x + PADDING_X, fbY, x + contentW - PADDING_X, fbY + 1,
+                    col(0x33, 0x55, 0x55, 0x77, alpha));
+
+            if (feedbackVote != null) {
+                // Already voted — show confirmation
+                String msg = feedbackVote.equals("up") ? "\u2714 Thanks for the feedback!" : "\u2716 Noted — we'll improve!";
+                int msgColor = feedbackVote.equals("up") ? COLOR_GREEN : COLOR_GOLD;
+                int msgW = tr.getWidth(msg);
+                context.drawText(tr, msg, x + (contentW - msgW) / 2, fbY + 3,
+                        withAlpha(msgColor, alpha), false);
+            } else {
+                // Show vote prompt
+                String correctLabel = "\u2714 !correct";
+                String wrongLabel = "\u2716 !wrong";
+                int correctW = tr.getWidth(correctLabel);
+                int wrongW = tr.getWidth(wrongLabel);
+                int gap = 16;
+                int totalBtnW = correctW + gap + wrongW;
+                int btnX = x + (contentW - totalBtnW) / 2;
+
+                // Correct button
+                int correctBgX = btnX - 3;
+                int correctBgW = correctW + 6;
+                fillRounded(context, correctBgX, fbY + 1, correctBgW, FEEDBACK_BAR_H - 2, 1,
+                        col(0x44, 0x22, 0x88, 0x22, alpha));
+                context.drawText(tr, correctLabel, btnX, fbY + 3,
+                        withAlpha(COLOR_GREEN, alpha), false);
+
+                // Wrong button
+                int wrongX = btnX + correctW + gap;
+                int wrongBgX = wrongX - 3;
+                int wrongBgW = wrongW + 6;
+                fillRounded(context, wrongBgX, fbY + 1, wrongBgW, FEEDBACK_BAR_H - 2, 1,
+                        col(0x44, 0x88, 0x22, 0x22, alpha));
+                context.drawText(tr, wrongLabel, wrongX, fbY + 3,
+                        withAlpha(COLOR_RED, alpha), false);
             }
         }
 

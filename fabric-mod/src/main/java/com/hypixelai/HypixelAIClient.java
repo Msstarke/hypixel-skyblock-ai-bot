@@ -91,6 +91,14 @@ public class HypixelAIClient implements ClientModInitializer {
                 handleUnlink();
                 return false;
             }
+            if (lower.equals("!correct") || lower.equals("!right") || lower.equals("!good")) {
+                handleFeedback("up");
+                return false;
+            }
+            if (lower.equals("!wrong") || lower.equals("!bad") || lower.equals("!incorrect")) {
+                handleFeedback("down");
+                return false;
+            }
             return true;
         });
 
@@ -182,6 +190,52 @@ public class HypixelAIClient implements ClientModInitializer {
                         .append(Text.literal(e.getMessage()).formatted(MUTED)));
             }
         }, "HypixelAI-Unlink").start();
+    }
+
+    private void handleFeedback(String vote) {
+        if (!SkyAIOverlay.hasPendingFeedback()) {
+            sendChat(prefix().append(Text.literal("No response to rate right now.").formatted(MUTED)));
+            return;
+        }
+
+        String label = vote.equals("up") ? "\u2714 Correct" : "\u2716 Wrong";
+        Formatting color = vote.equals("up") ? SUCCESS : ERROR;
+        SkyAIOverlay.setFeedback(vote);
+        sendChat(prefix().append(Text.literal("Feedback: ").formatted(BODY))
+                .append(Text.literal(label).formatted(color))
+                .append(Text.literal(" — thanks!").formatted(BODY)));
+
+        String question = SkyAIOverlay.getLastQuestion();
+        String response = SkyAIOverlay.getLastResponse();
+        String username = getUsername();
+
+        new Thread(() -> {
+            try {
+                String baseUrl = HypixelAIConfig.getApiUrl().replace("/api/ask", "");
+                String payload = "{\"vote\":" + jsonEscape(vote)
+                        + ",\"username\":" + jsonEscape(username)
+                        + ",\"question\":" + jsonEscape(question != null ? question : "")
+                        + ",\"response\":" + jsonEscape(response != null ? response : "")
+                        + ",\"api_key\":" + jsonEscape(HypixelAIConfig.getApiKey()) + "}";
+
+                URL url = URI.create(baseUrl + "/api/feedback").toURL();
+                HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("POST");
+                conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+                conn.setDoOutput(true);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(10000);
+
+                try (OutputStream os = conn.getOutputStream()) {
+                    os.write(payload.getBytes(StandardCharsets.UTF_8));
+                }
+
+                conn.getResponseCode();
+                conn.disconnect();
+            } catch (Exception e) {
+                HypixelAIMod.LOGGER.warn("[HypixelAI] Feedback send failed: {}", e.getMessage());
+            }
+        }, "HypixelAI-Feedback").start();
     }
 
     private void handleQuestion(String question) {
@@ -277,6 +331,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 "- !ai <question>  \u2014  Ask anything about Skyblock",
                 "- !link <ign>  \u2014  Link your account",
                 "- !unlink  \u2014  Remove linked account",
+                "- !correct / !wrong  \u2014  Rate the AI response",
                 "- !aiconfig  \u2014  View mod config",
                 "",
                 "Examples:",
