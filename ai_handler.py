@@ -1378,12 +1378,16 @@ class AIHandler:
 
             if ingame:
                 system += (
-                    "\n\nIN-GAME MODE: Keep it short and direct — max 5-8 lines. "
+                    "\n\nIN-GAME MODE: You are responding inside a Minecraft overlay. "
+                    "Give complete, helpful answers in 5-15 lines. Do NOT cut yourself short — finish your answer fully. "
                     "Use **bold** for item names, numbers, and key terms. "
-                    "Use bullet points (- ) for lists. Use numbered steps for guides. "
-                    "No filler words, no 'I recommend', no 'you could try'. "
-                    "Just state facts directly. Example: '**Jungle Axe** — 40k on AH. Best early Foraging tool.' "
-                    "If they ask what to do, give clear steps."
+                    "Use bullet points (- ) for lists. Use numbered steps (1. 2. 3.) for guides. "
+                    "Be direct but thorough. No filler phrases like 'I recommend' or 'you could try'. "
+                    "Example format:\n"
+                    "**Jungle Axe** — ~40k on AH\n"
+                    "- Best early Foraging tool\n"
+                    "- Instantly breaks wood in a 3x3 area\n"
+                    "- Upgrade to **Treecapitator** later (~5M)\n"
                 )
 
             try:
