@@ -160,8 +160,25 @@ class AIHandler:
         "abiphone flip", "wither bow",
         "sniper helmet", "sniper bow",
         "fortune iii",  # should be Fortune IV in skyblock
-        "sharpness v",  # not a mining enchant
+        "sharpness v",  # not a mining enchant on pickaxes
         "smite v",  # not a mining enchant
+        "mining madness",  # removed perk
+        "star powder",  # removed perk
+        "vein seeker",  # removed perk
+        "goblin killer",  # removed perk
+        "crystallized",  # removed perk
+        "orbiter",  # removed perk
+        "miner's blessing",
+        "gemstone infusion",
+        "crystal hollows pass",
+        "mining xp boost enchant",
+        "fortune v",
+    ]
+
+    # Patterns that indicate the AI is fabricating specific numbers
+    _HALLUCINATION_PATTERNS = [
+        # Fake specific coin amounts with no live data context
+        (re.compile(r"costs?\s+(?:around\s+|about\s+|~)?(\d{1,3}(?:,\d{3})*)\s+coins", re.IGNORECASE), None),
     ]
 
     def _filter_hallucinations(self, text: str) -> str:
