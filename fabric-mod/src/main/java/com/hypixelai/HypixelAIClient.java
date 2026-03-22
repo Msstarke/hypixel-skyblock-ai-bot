@@ -263,8 +263,11 @@ public class HypixelAIClient implements ClientModInitializer {
             return;
         }
 
+        // Parse HOTM data if present
+        int[] hotmPerks = parseHotmData(jsonBody);
+
         // Show in the HUD overlay
-        SkyAIOverlay.show(question, lines);
+        SkyAIOverlay.show(question, lines, hotmPerks);
     }
 
     private void showHelp() {
@@ -345,6 +348,135 @@ public class HypixelAIClient implements ClientModInitializer {
         }
         sb.append("\"");
         return sb.toString();
+    }
+
+    /**
+     * Parse HOTM data from JSON response for pixel art rendering.
+     * Returns int[70] (10 tiers x 7 cols) where each value is:
+     *   0 = empty (no perk at this position)
+     *  -1 = locked (tier above player level)
+     *   1 = unlocked but level 0
+     *   2 = partially leveled
+     *   3 = maxed
+     *   4 = ability (unlocked)
+     *   5 = ability (selected/active)
+     * Returns null if no HOTM data in response.
+     */
+    private static int[] parseHotmData(String json) {
+        int hotmIdx = json.indexOf("\"hotm\"");
+        if (hotmIdx == -1) return null;
+
+        // Parse level
+        int levelVal = parseIntField(json, "\"level\"", hotmIdx);
+        if (levelVal < 0) return null;
+
+        // Parse selected ability
+        String selectedAbility = parseStringField(json, "\"selected_ability\"", hotmIdx);
+
+        // Parse perks object
+        int perksIdx = json.indexOf("\"perks\"", hotmIdx);
+        if (perksIdx == -1) return null;
+
+        // Tree layout: [tier][col] -> api_id
+        // Tier 0=tier1(bottom), tier 9=tier10(top)
+        String[][] TREE = {
+            {null, null, null, "mining_speed", null, null, null},           // T1
+            {null, "mining_speed_boost", "precision_mining", "mining_fortune", "titanium_insanium", "pickaxe_toss", null}, // T2
+            {null, "random_event", null, "efficient_miner", null, "forge_time", null},  // T3
+            {"daily_effect", "old_school", "professional", "mole", "fortunate", "mining_experience", "front_loaded"}, // T4
+            {null, "daily_grind", null, "special_0", null, "daily_powder", null},        // T5
+            {"anomalous_desire", "blockhead", "subterranean_fisher", "keep_it_cool", "lonesome_miner", "great_explorer", "maniac_miner"}, // T6
+            {null, "mining_speed_2", null, "powder_buff", null, "mining_fortune_2", null}, // T7
+            {"miners_blessing", "no_stone_unturned", "strong_arm", "steady_hand", "warm_hearted", "surveyor", "mineshaft_mayhem"}, // T8
+            {null, "metal_head", null, "rags_to_riches", null, "eager_adventurer", null}, // T9
+            {"gemstone_infusion", "crystalline", "gifts_from_the_departed", "mining_master", "hungry_for_more", "vanguard_seeker", "sheer_force"}, // T10
+        };
+
+        int[] MAX_LEVELS = {50, 1,1,50,50,1, 45,100,20, 1,20,140,200,20,100,1, 1,10,1, 1,20,40,50,45,20,1, 50,50,50, 1,50,100,100,50,20,1, 20,50,100, 1,50,100,10,50,50,1};
+
+        java.util.Set<String> ABILITIES = new java.util.HashSet<>(java.util.Arrays.asList(
+            "mining_speed_boost", "pickaxe_toss", "anomalous_desire", "maniac_miner", "gemstone_infusion", "sheer_force"
+        ));
+
+        // Build max level lookup
+        java.util.Map<String, Integer> maxLevels = new java.util.HashMap<>();
+        maxLevels.put("mining_speed", 50); maxLevels.put("mining_speed_boost", 1); maxLevels.put("precision_mining", 1);
+        maxLevels.put("mining_fortune", 50); maxLevels.put("titanium_insanium", 50); maxLevels.put("pickaxe_toss", 1);
+        maxLevels.put("random_event", 45); maxLevels.put("efficient_miner", 100); maxLevels.put("forge_time", 20);
+        maxLevels.put("daily_effect", 1); maxLevels.put("old_school", 20); maxLevels.put("professional", 140);
+        maxLevels.put("mole", 200); maxLevels.put("fortunate", 20); maxLevels.put("mining_experience", 100);
+        maxLevels.put("front_loaded", 1); maxLevels.put("daily_grind", 1); maxLevels.put("special_0", 10);
+        maxLevels.put("daily_powder", 1); maxLevels.put("anomalous_desire", 1); maxLevels.put("blockhead", 20);
+        maxLevels.put("subterranean_fisher", 40); maxLevels.put("keep_it_cool", 50); maxLevels.put("lonesome_miner", 45);
+        maxLevels.put("great_explorer", 20); maxLevels.put("maniac_miner", 1); maxLevels.put("mining_speed_2", 50);
+        maxLevels.put("powder_buff", 50); maxLevels.put("mining_fortune_2", 50); maxLevels.put("miners_blessing", 1);
+        maxLevels.put("no_stone_unturned", 50); maxLevels.put("strong_arm", 100); maxLevels.put("steady_hand", 100);
+        maxLevels.put("warm_hearted", 50); maxLevels.put("surveyor", 20); maxLevels.put("mineshaft_mayhem", 1);
+        maxLevels.put("metal_head", 20); maxLevels.put("rags_to_riches", 50); maxLevels.put("eager_adventurer", 100);
+        maxLevels.put("gemstone_infusion", 1); maxLevels.put("crystalline", 50); maxLevels.put("gifts_from_the_departed", 100);
+        maxLevels.put("mining_master", 10); maxLevels.put("hungry_for_more", 50); maxLevels.put("vanguard_seeker", 50);
+        maxLevels.put("sheer_force", 1);
+
+        int[] grid = new int[70]; // 10 tiers x 7 cols
+
+        for (int tier = 0; tier < 10; tier++) {
+            boolean locked = (tier + 1) > levelVal;
+            for (int col = 0; col < 7; col++) {
+                String perkId = TREE[tier][col];
+                int idx = tier * 7 + col;
+                if (perkId == null) {
+                    grid[idx] = 0; // empty
+                } else if (locked) {
+                    grid[idx] = -1; // locked
+                } else {
+                    int perkLevel = parseIntField(json, "\"" + perkId + "\"", perksIdx);
+                    if (perkLevel < 0) perkLevel = 0;
+                    boolean isAbility = ABILITIES.contains(perkId);
+                    int maxLvl = maxLevels.getOrDefault(perkId, 1);
+
+                    if (isAbility && perkLevel > 0) {
+                        grid[idx] = (perkId.equals(selectedAbility)) ? 5 : 4;
+                    } else if (perkLevel >= maxLvl && perkLevel > 0) {
+                        grid[idx] = 3; // maxed
+                    } else if (perkLevel > 0) {
+                        grid[idx] = 2; // partial
+                    } else {
+                        grid[idx] = 1; // unlocked, 0
+                    }
+                }
+            }
+        }
+        return grid;
+    }
+
+    private static int parseIntField(String json, String key, int searchFrom) {
+        int idx = json.indexOf(key, searchFrom);
+        if (idx == -1) return -1;
+        int colon = json.indexOf(':', idx + key.length());
+        if (colon == -1) return -1;
+        // Find the number
+        int start = colon + 1;
+        while (start < json.length() && (json.charAt(start) == ' ' || json.charAt(start) == '"')) start++;
+        int end = start;
+        while (end < json.length() && (Character.isDigit(json.charAt(end)) || json.charAt(end) == '.')) end++;
+        if (end == start) return -1;
+        try {
+            return (int) Double.parseDouble(json.substring(start, end));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private static String parseStringField(String json, String key, int searchFrom) {
+        int idx = json.indexOf(key, searchFrom);
+        if (idx == -1) return "";
+        int colon = json.indexOf(':', idx + key.length());
+        if (colon == -1) return "";
+        int qStart = json.indexOf('"', colon + 1);
+        if (qStart == -1) return "";
+        int qEnd = json.indexOf('"', qStart + 1);
+        if (qEnd == -1) return "";
+        return json.substring(qStart + 1, qEnd);
     }
 
     /**

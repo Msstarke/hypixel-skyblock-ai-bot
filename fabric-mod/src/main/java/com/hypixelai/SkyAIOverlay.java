@@ -48,9 +48,14 @@ public class SkyAIOverlay implements HudRenderCallback {
     private static final int COLOR_WHITE       = 0xFFFFFFFF;
     private static final int COLOR_BODY        = 0xFFCCCCCC;
 
+    // HOTM grid cell size
+    private static final int CELL_SIZE = 7;
+    private static final int CELL_GAP = 1;
+
     // State (set from any thread)
     private static volatile String currentQuestion = null;
     private static volatile String[] rawLines = null;
+    private static volatile int[] hotmGrid = null; // 70 ints: 10 tiers x 7 cols
     private static volatile boolean thinking = false;
     private static volatile long showTime = 0;
     private static volatile long hideTime = 0;
@@ -61,12 +66,17 @@ public class SkyAIOverlay implements HudRenderCallback {
     private static String[] processedFrom = null;
 
     private static final long FADE_IN_MS = 200;
-    private static final long DISPLAY_MS = 15000;
+    private static final long DISPLAY_MS = 30000;
     private static final long FADE_OUT_MS = 500;
 
     public static void show(String question, String[] responseLines) {
+        show(question, responseLines, null);
+    }
+
+    public static void show(String question, String[] responseLines, int[] hotmData) {
         currentQuestion = question;
         rawLines = responseLines;
+        hotmGrid = hotmData;
         processedLines = null;
         processedFrom = null;
         showTime = System.currentTimeMillis();
@@ -94,6 +104,7 @@ public class SkyAIOverlay implements HudRenderCallback {
     public static void clear() {
         currentQuestion = null;
         rawLines = null;
+        hotmGrid = null;
         processedLines = null;
         processedFrom = null;
         thinking = false;
@@ -252,6 +263,12 @@ public class SkyAIOverlay implements HudRenderCallback {
         boolean hasQuestion = currentQuestion != null && !currentQuestion.isEmpty() && !thinking;
         int questionBarH = hasQuestion ? QUESTION_HEIGHT + 4 : 0;
 
+        int[] hotm = hotmGrid;
+        int hotmH = 0;
+        if (hotm != null) {
+            hotmH = 10 * (CELL_SIZE + CELL_GAP) + CELL_GAP + PADDING_Y + 10; // grid + label
+        }
+
         int contentW, bodyH;
         if (thinking) {
             contentW = MIN_WIDTH;
@@ -269,12 +286,14 @@ public class SkyAIOverlay implements HudRenderCallback {
                 int qw = tr.getWidth("> " + currentQuestion) + 10;
                 if (qw > maxLineW) maxLineW = qw;
             }
-            contentW = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, maxLineW + PADDING_X * 2));
+            // HOTM grid needs at least 7*(CELL_SIZE+CELL_GAP)+CELL_GAP + PADDING*2
+            int hotmMinW = hotm != null ? 7 * (CELL_SIZE + CELL_GAP) + CELL_GAP + PADDING_X * 2 : 0;
+            contentW = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, Math.max(maxLineW + PADDING_X * 2, hotmMinW)));
             int linesH = 0;
             for (OverlayLine line : processedLines) {
                 linesH += (line.type == LineType.SPACER) ? 6 : LINE_HEIGHT;
             }
-            bodyH = PADDING_Y + linesH + PADDING_Y;
+            bodyH = PADDING_Y + linesH + PADDING_Y + hotmH;
         } else {
             return;
         }
@@ -404,6 +423,11 @@ public class SkyAIOverlay implements HudRenderCallback {
             }
         }
 
+        // === HOTM PIXEL ART GRID ===
+        if (hotm != null && !thinking) {
+            drawHotmGrid(context, tr, hotm, x, cy + 4, contentW, alpha);
+        }
+
         // Bottom edge
         fill(context, x + R, y + totalH - 1, x + contentW - R, y + totalH,
                 col(0x22, 0x00, 0x00, 0x00, alpha));
@@ -420,6 +444,76 @@ public class SkyAIOverlay implements HudRenderCallback {
             ctx.drawText(tr, seg.text, cx, y, withAlpha(seg.color, alpha), false);
             cx += tr.getWidth(seg.text);
         }
+    }
+
+    /**
+     * Draw the HOTM tree as a pixel art grid.
+     * Each cell is a colored square representing a perk's state.
+     * Grid is 7 cols x 10 rows, displayed top (T10) to bottom (T1).
+     */
+    private static void drawHotmGrid(DrawContext ctx, TextRenderer tr,
+                                      int[] grid, int panelX, int startY, int panelW, float alpha) {
+        int gridW = 7 * (CELL_SIZE + CELL_GAP) + CELL_GAP;
+        int gridX = panelX + (panelW - gridW) / 2; // center the grid
+
+        // Label
+        ctx.drawText(tr, "HotM Tree", gridX, startY, withAlpha(COLOR_GOLD, alpha), false);
+        int gy = startY + 10;
+
+        // Separator
+        fill(ctx, panelX + PADDING_X, gy - 2, panelX + panelW - PADDING_X, gy - 1,
+                col(0x33, 0x55, 0x55, 0x77, alpha));
+
+        // Draw grid background
+        fill(ctx, gridX - 1, gy - 1, gridX + gridW + 1, gy + 10 * (CELL_SIZE + CELL_GAP) + CELL_GAP + 1,
+                col(0xFF, 0x12, 0x12, 0x1C, alpha));
+
+        // Draw cells — tier 10 at top, tier 1 at bottom
+        for (int row = 0; row < 10; row++) {
+            int tier = 9 - row; // tier 9 = T10 at top, tier 0 = T1 at bottom
+            for (int c = 0; c < 7; c++) {
+                int state = grid[tier * 7 + c];
+                if (state == 0) continue; // empty slot
+
+                int cx = gridX + CELL_GAP + c * (CELL_SIZE + CELL_GAP);
+                int cy = gy + CELL_GAP + row * (CELL_SIZE + CELL_GAP);
+
+                int cellColor;
+                switch (state) {
+                    case -1: cellColor = col(0xFF, 0x33, 0x33, 0x33, alpha); break; // locked — dark
+                    case 1:  cellColor = col(0xFF, 0x55, 0x55, 0x55, alpha); break; // unlocked, 0 — gray
+                    case 2:  cellColor = col(0xFF, 0xFF, 0xAA, 0x00, alpha); break; // partial — gold
+                    case 3:  cellColor = col(0xFF, 0x55, 0xFF, 0x55, alpha); break; // maxed — green
+                    case 4:  cellColor = col(0xFF, 0x55, 0xFF, 0xFF, alpha); break; // ability — aqua
+                    case 5:  cellColor = col(0xFF, 0xFF, 0x55, 0xFF, alpha); break; // active ability — pink
+                    default: cellColor = col(0xFF, 0x44, 0x44, 0x44, alpha); break;
+                }
+
+                fill(ctx, cx, cy, cx + CELL_SIZE, cy + CELL_SIZE, cellColor);
+
+                // Inner highlight (top-left 1px lighter)
+                if (state > 0) {
+                    int highlight = col(0x33, 0xFF, 0xFF, 0xFF, alpha);
+                    fill(ctx, cx, cy, cx + CELL_SIZE, cy + 1, highlight);
+                    fill(ctx, cx, cy, cx + 1, cy + CELL_SIZE, highlight);
+                }
+            }
+        }
+
+        // Legend below grid
+        int legendY = gy + 10 * (CELL_SIZE + CELL_GAP) + CELL_GAP + 3;
+        int lx = gridX;
+        lx = drawLegendItem(ctx, tr, lx, legendY, col(0xFF, 0x55, 0xFF, 0x55, alpha), "Max", alpha);
+        lx = drawLegendItem(ctx, tr, lx + 4, legendY, col(0xFF, 0xFF, 0xAA, 0x00, alpha), "Lvl'd", alpha);
+        lx = drawLegendItem(ctx, tr, lx + 4, legendY, col(0xFF, 0x55, 0x55, 0x55, alpha), "0", alpha);
+        drawLegendItem(ctx, tr, lx + 4, legendY, col(0xFF, 0x33, 0x33, 0x33, alpha), "Lock", alpha);
+    }
+
+    private static int drawLegendItem(DrawContext ctx, TextRenderer tr,
+                                       int x, int y, int color, String label, float alpha) {
+        fill(ctx, x, y + 1, x + 4, y + 5, color);
+        ctx.drawText(tr, label, x + 6, y, withAlpha(COLOR_GRAY, alpha), false);
+        return x + 6 + tr.getWidth(label);
     }
 
     // --- Drawing helpers ---
