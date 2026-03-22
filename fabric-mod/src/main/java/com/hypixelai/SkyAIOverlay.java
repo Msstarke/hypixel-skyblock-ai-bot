@@ -18,16 +18,14 @@ import java.util.List;
 public class SkyAIOverlay implements HudRenderCallback {
 
     // Colors (ARGB)
-    private static final int BG_OUTER    = 0xCC101018; // outer shadow layer
-    private static final int BG_MAIN     = 0xEE14141E; // main background
-    private static final int BG_HEADER   = 0xFF1A1A28; // header strip
-    private static final int BORDER      = 0xFF2A2A3A; // subtle border
-    private static final int ACCENT      = 0xFF00BBEE; // cyan accent
-    private static final int TEXT_BODY   = 0xFFBBBBBB; // body text
-    private static final int TEXT_WHITE  = 0xFFEEEEEE; // bright text
-    private static final int TEXT_MUTED  = 0xFF666677; // muted
-    private static final int BULLET_COL  = 0xFFFFAA00; // gold
-    private static final int NUM_COL     = 0xFF00BBEE; // cyan
+    private static final int BG_MAIN     = 0xEE14141E;
+    private static final int BG_HEADER   = 0xFF1A1A28;
+    private static final int BORDER      = 0xFF2A2A3A;
+    private static final int ACCENT      = 0xFF00BBEE;
+    private static final int TEXT_BODY   = 0xFFBBBBBB;
+    private static final int TEXT_MUTED  = 0xFF666677;
+    private static final int BULLET_COL  = 0xFFFFAA00;
+    private static final int NUM_COL     = 0xFF00BBEE;
 
     // Layout
     private static final int MARGIN_RIGHT = 10;
@@ -38,30 +36,73 @@ public class SkyAIOverlay implements HudRenderCallback {
     private static final int MAX_WIDTH = 260;
     private static final int MIN_WIDTH = 160;
 
-    // State
-    private static String currentQuestion = null;
-    private static List<OverlayLine> currentLines = null;
-    private static long showTime = 0;
-    private static long hideTime = 0;
+    // State — raw data (set from any thread)
+    private static volatile String currentQuestion = null;
+    private static volatile String[] rawLines = null;
+    private static volatile boolean thinking = false;
+    private static volatile long showTime = 0;
+    private static volatile long hideTime = 0;
+    private static volatile long thinkingStart = 0;
+
+    // Processed lines (built on render thread)
+    private static List<OverlayLine> processedLines = null;
+    private static String[] processedFrom = null; // track what we processed
+
     private static final long FADE_IN_MS = 200;
-    private static final long DISPLAY_MS = 15000; // show for 15 seconds
+    private static final long DISPLAY_MS = 15000;
     private static final long FADE_OUT_MS = 500;
 
-    // Thinking state
-    private static boolean thinking = false;
-    private static long thinkingStart = 0;
-
     public static void show(String question, String[] responseLines) {
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null || client.textRenderer == null) return;
+        currentQuestion = question;
+        rawLines = responseLines;
+        processedLines = null; // force re-process on render thread
+        processedFrom = null;
+        showTime = System.currentTimeMillis();
+        hideTime = 0;
+        thinking = false;
+    }
 
-        TextRenderer tr = client.textRenderer;
+    public static void showThinking(String question) {
+        currentQuestion = question;
+        rawLines = null;
+        processedLines = null;
+        processedFrom = null;
+        thinking = true;
+        thinkingStart = System.currentTimeMillis();
+        showTime = System.currentTimeMillis();
+        hideTime = 0;
+    }
+
+    public static void hide() {
+        if (hideTime == 0 && (rawLines != null || thinking)) {
+            hideTime = System.currentTimeMillis();
+        }
+    }
+
+    public static void clear() {
+        currentQuestion = null;
+        rawLines = null;
+        processedLines = null;
+        processedFrom = null;
+        thinking = false;
+        showTime = 0;
+        hideTime = 0;
+    }
+
+    public static void register() {
+        HudRenderCallback.EVENT.register(new SkyAIOverlay());
+    }
+
+    /**
+     * Process raw lines into wrapped OverlayLines. Called on render thread only.
+     */
+    private static void processLines(TextRenderer tr, String[] lines) {
         int wrapWidth = MAX_WIDTH - PADDING * 2;
+        List<OverlayLine> result = new ArrayList<>();
 
-        List<OverlayLine> lines = new ArrayList<>();
-        for (String line : responseLines) {
+        for (String line : lines) {
             if (line.isEmpty()) {
-                lines.add(new OverlayLine("", LineType.SPACER, 0));
+                result.add(new OverlayLine("", LineType.SPACER, 0));
                 continue;
             }
 
@@ -78,52 +119,20 @@ public class SkyAIOverlay implements HudRenderCallback {
                 indent = 4;
             }
 
-            // Word wrap
+            // Word wrap using TextRenderer (safe on render thread)
             List<OrderedText> wrapped = tr.wrapLines(Text.literal(content), wrapWidth - indent);
             for (int i = 0; i < wrapped.size(); i++) {
                 LineType t = (i == 0) ? type : (type == LineType.BULLET ? LineType.BULLET_CONT : LineType.NORMAL);
-                // Convert OrderedText back to string for storage
                 StringBuilder sb = new StringBuilder();
                 wrapped.get(i).accept((index, style, codePoint) -> {
                     sb.appendCodePoint(codePoint);
                     return true;
                 });
-                lines.add(new OverlayLine(sb.toString(), t, indent));
+                result.add(new OverlayLine(sb.toString(), t, indent));
             }
         }
 
-        currentQuestion = question;
-        currentLines = lines;
-        showTime = System.currentTimeMillis();
-        hideTime = 0;
-        thinking = false;
-    }
-
-    public static void showThinking(String question) {
-        currentQuestion = question;
-        currentLines = null;
-        thinking = true;
-        thinkingStart = System.currentTimeMillis();
-        showTime = System.currentTimeMillis();
-        hideTime = 0;
-    }
-
-    public static void hide() {
-        if (hideTime == 0 && (currentLines != null || thinking)) {
-            hideTime = System.currentTimeMillis();
-        }
-    }
-
-    public static void clear() {
-        currentQuestion = null;
-        currentLines = null;
-        thinking = false;
-        showTime = 0;
-        hideTime = 0;
-    }
-
-    public static void register() {
-        HudRenderCallback.EVENT.register(new SkyAIOverlay());
+        processedLines = result;
     }
 
     @Override
@@ -132,8 +141,20 @@ public class SkyAIOverlay implements HudRenderCallback {
 
         long now = System.currentTimeMillis();
 
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client == null) return;
+        TextRenderer tr = client.textRenderer;
+        int screenW = client.getWindow().getScaledWidth();
+
+        // Lazy-process raw lines on render thread
+        String[] raw = rawLines;
+        if (raw != null && (processedLines == null || processedFrom != raw)) {
+            processLines(tr, raw);
+            processedFrom = raw;
+        }
+
         // Auto-hide after display time
-        if (hideTime == 0 && currentLines != null) {
+        if (hideTime == 0 && processedLines != null) {
             long elapsed = now - showTime;
             if (elapsed > DISPLAY_MS) {
                 hideTime = now;
@@ -153,11 +174,6 @@ public class SkyAIOverlay implements HudRenderCallback {
             alpha = Math.min(1f, (float)(now - showTime) / FADE_IN_MS);
         }
 
-        MinecraftClient client = MinecraftClient.getInstance();
-        if (client == null) return;
-        TextRenderer tr = client.textRenderer;
-        int screenW = client.getWindow().getScaledWidth();
-
         // Calculate content dimensions
         int contentW;
         int contentH;
@@ -165,10 +181,9 @@ public class SkyAIOverlay implements HudRenderCallback {
         if (thinking) {
             contentW = MIN_WIDTH;
             contentH = HEADER_HEIGHT + PADDING + LINE_HEIGHT + PADDING;
-        } else if (currentLines != null) {
-            // Find widest line
-            int maxLineW = tr.getWidth(currentQuestion);
-            for (OverlayLine line : currentLines) {
+        } else if (processedLines != null) {
+            int maxLineW = tr.getWidth(currentQuestion != null ? currentQuestion : "");
+            for (OverlayLine line : processedLines) {
                 if (line.type != LineType.SPACER) {
                     int w = tr.getWidth(line.text) + line.indent + 8;
                     if (w > maxLineW) maxLineW = w;
@@ -176,7 +191,7 @@ public class SkyAIOverlay implements HudRenderCallback {
             }
             contentW = Math.min(MAX_WIDTH, Math.max(MIN_WIDTH, maxLineW + PADDING * 2 + 8));
             int linesHeight = 0;
-            for (OverlayLine line : currentLines) {
+            for (OverlayLine line : processedLines) {
                 linesHeight += (line.type == LineType.SPACER) ? 6 : LINE_HEIGHT;
             }
             contentH = HEADER_HEIGHT + PADDING + linesHeight + PADDING;
@@ -188,7 +203,7 @@ public class SkyAIOverlay implements HudRenderCallback {
         int x = screenW - contentW - MARGIN_RIGHT;
         int y = MARGIN_TOP;
 
-        // Shadow layers (soft shadow effect)
+        // Shadow layers
         drawRect(context, x + 2, y + 2, contentW, contentH, applyAlpha(0x40000000, alpha));
         drawRect(context, x + 1, y + 1, contentW, contentH, applyAlpha(0x60000000, alpha));
 
@@ -218,12 +233,11 @@ public class SkyAIOverlay implements HudRenderCallback {
         int cy = y + HEADER_HEIGHT + PADDING;
 
         if (thinking) {
-            // Thinking animation (dots)
             long dots = ((now - thinkingStart) / 400) % 4;
             String thinkText = "Thinking" + ".".repeat((int)dots);
             context.drawText(tr, thinkText, x + PADDING, cy, applyAlpha(TEXT_MUTED, alpha), false);
-        } else if (currentLines != null) {
-            for (OverlayLine line : currentLines) {
+        } else if (processedLines != null) {
+            for (OverlayLine line : processedLines) {
                 if (line.type == LineType.SPACER) {
                     cy += 6;
                     continue;
@@ -277,10 +291,10 @@ public class SkyAIOverlay implements HudRenderCallback {
     }
 
     private static void drawRectOutline(DrawContext ctx, int x, int y, int w, int h, int color) {
-        ctx.fill(x, y, x + w, y + 1, color);         // top
-        ctx.fill(x, y + h - 1, x + w, y + h, color); // bottom
-        ctx.fill(x, y, x + 1, y + h, color);          // left
-        ctx.fill(x + w - 1, y, x + w, y + h, color);  // right
+        ctx.fill(x, y, x + w, y + 1, color);
+        ctx.fill(x, y + h - 1, x + w, y + h, color);
+        ctx.fill(x, y, x + 1, y + h, color);
+        ctx.fill(x + w - 1, y, x + w, y + h, color);
     }
 
     private static int applyAlpha(int argb, float alpha) {
