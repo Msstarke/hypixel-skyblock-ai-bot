@@ -5,10 +5,7 @@ import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.message.v1.ClientSendMessageEvents;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.text.MutableText;
-import net.minecraft.text.Style;
 import net.minecraft.text.Text;
-import net.minecraft.text.HoverEvent;
-import net.minecraft.text.ClickEvent;
 import net.minecraft.util.Formatting;
 
 import java.io.*;
@@ -261,104 +258,48 @@ public class HypixelAIClient implements ClientModInitializer {
             return;
         }
 
-        // Top bar
-        sendChat(divider());
-
-        // Question echo
-        sendChat(prefix()
-                .append(Text.literal(question).formatted(HIGHLIGHT, Formatting.BOLD)));
-
-        // Response lines
-        for (String line : lines) {
-            MutableText text;
-            if (line.startsWith("- ") || line.startsWith("* ")) {
-                // Bullet point: replace dash with a dot symbol
-                String content = line.substring(2);
-                text = Text.literal("  \u2022 ").formatted(ACCENT)
-                        .append(Text.literal(content).formatted(BODY));
-            } else if (line.matches("^\\d+\\.\\s.*")) {
-                // Numbered list: highlight the number
-                int dotIdx = line.indexOf('.');
-                String num = line.substring(0, dotIdx + 1);
-                String content = line.substring(dotIdx + 1).trim();
-                text = Text.literal("  " + num + " ").formatted(ACCENT)
-                        .append(Text.literal(content).formatted(BODY));
-            } else {
-                text = Text.literal("  " + line).formatted(BODY);
-            }
-            sendChat(text);
-        }
-
-        // Bottom bar
-        sendChat(divider());
+        // Open the overlay screen on the main thread
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.execute(() -> client.setScreen(new SkyAIScreen(question, lines)));
     }
 
     private void showHelp() {
-        sendChat(divider());
-        sendChat(prefix().append(Text.literal("Commands").formatted(HIGHLIGHT, Formatting.BOLD)));
-        sendChat(Text.empty());
-
-        helpLine("!ai <question>", "Ask anything about Skyblock");
-        helpLine("!link <ign>", "Link your account for personalized answers");
-        helpLine("!unlink", "Remove your linked account");
-        helpLine("!aiconfig", "View current mod config");
-
-        sendChat(Text.empty());
-        sendChat(Text.literal("  Examples:").formatted(MUTED));
-        exampleLine("!ai best money making method");
-        exampleLine("!ai what pet for mining");
-        exampleLine("!ai what should i upgrade next");
-        sendChat(divider());
-    }
-
-    private void helpLine(String cmd, String desc) {
-        MutableText cmdText = Text.literal("  " + cmd).styled(s -> s
-                .withColor(Formatting.AQUA)
-                .withHoverEvent(new HoverEvent.ShowText(Text.literal("Click to type").formatted(MUTED)))
-                .withClickEvent(new ClickEvent.SuggestCommand(cmd)));
-        MutableText descText = Text.literal(" \u2014 " + desc).formatted(MUTED);
-        sendChat(cmdText.append(descText));
-    }
-
-    private void exampleLine(String example) {
-        sendChat(Text.literal("    " + example).styled(s -> s
-                .withColor(Formatting.DARK_GRAY)
-                .withItalic(true)
-                .withHoverEvent(new HoverEvent.ShowText(Text.literal("Click to type").formatted(MUTED)))
-                .withClickEvent(new ClickEvent.SuggestCommand(example))));
+        String[] helpLines = {
+                "Commands:",
+                "",
+                "- !ai <question>  \u2014  Ask anything about Skyblock",
+                "- !link <ign>  \u2014  Link your account for personalized answers",
+                "- !unlink  \u2014  Remove your linked account",
+                "- !aiconfig  \u2014  View current mod config",
+                "",
+                "Examples:",
+                "",
+                "1. !ai best money making method",
+                "2. !ai what pet for mining",
+                "3. !ai what should i upgrade next",
+        };
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.execute(() -> client.setScreen(new SkyAIScreen("SkyAI Help", helpLines)));
     }
 
     private void showConfig() {
-        sendChat(divider());
-        sendChat(prefix().append(Text.literal("Config").formatted(HIGHLIGHT, Formatting.BOLD)));
-
-        sendChat(Text.literal("  API: ").formatted(MUTED)
-                .append(Text.literal(HypixelAIConfig.getApiUrl()).formatted(BODY)));
-        sendChat(Text.literal("  Key: ").formatted(MUTED)
-                .append(Text.literal(HypixelAIConfig.getApiKey().isEmpty() ? "not set" : "\u2714 set").formatted(
-                        HypixelAIConfig.getApiKey().isEmpty() ? Formatting.YELLOW : SUCCESS)));
-        sendChat(Text.literal("  Version: ").formatted(MUTED)
-                .append(Text.literal("v" + HypixelAIUpdater.MOD_VERSION).formatted(BODY)));
-
-        sendChat(divider());
+        String keyStatus = HypixelAIConfig.getApiKey().isEmpty() ? "not set" : "set";
+        String[] configLines = {
+                "API: " + HypixelAIConfig.getApiUrl(),
+                "Key: " + keyStatus,
+                "Version: v" + HypixelAIUpdater.MOD_VERSION,
+                "Config: " + HypixelAIConfig.getConfigPath(),
+        };
+        MinecraftClient client = MinecraftClient.getInstance();
+        client.execute(() -> client.setScreen(new SkyAIScreen("SkyAI Config", configLines)));
     }
 
     // --- Utilities ---
 
     private static MutableText prefix() {
         return Text.literal("\u2B25 ").formatted(ACCENT)
-                .append(Text.literal("SkyAI").styled(s -> s
-                        .withColor(Formatting.AQUA)
-                        .withBold(true)
-                        .withHoverEvent(new HoverEvent.ShowText(
-                                Text.literal("HypixelAI v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED)))))
+                .append(Text.literal("SkyAI").formatted(BRAND, Formatting.BOLD))
                 .append(Text.literal(" \u00BB ").formatted(MUTED));
-    }
-
-    private static MutableText divider() {
-        return Text.literal("                                        ").styled(s -> s
-                .withColor(Formatting.DARK_GRAY)
-                .withStrikethrough(true));
     }
 
     private static void sendChat(Text text) {
