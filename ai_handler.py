@@ -1242,6 +1242,24 @@ class AIHandler:
                     except Exception:
                         pass  # fall through to AI
 
+            # --- Fast path: "best reforge for X" — direct code, no AI ---
+            if os.getenv("HYPIXEL_API_KEY"):
+                reforge_result = await self._handle_reforge_question(question)
+                if reforge_result:
+                    return reforge_result
+
+            # --- Fast path: recipe/craft cost — direct code, no AI ---
+            if os.getenv("HYPIXEL_API_KEY"):
+                recipe_result = await self._handle_recipe_question(question)
+                if recipe_result:
+                    return recipe_result
+
+            # --- Fast path: simple player stat lookup for linked users ---
+            if linked_summary:
+                stat_result = self._handle_simple_stat_question(question, linked_summary)
+                if stat_result:
+                    return stat_result
+
             # --- Normal AI path ---
             live_ctx = ""
             ah_ctx = ""
