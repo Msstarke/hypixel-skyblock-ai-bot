@@ -144,7 +144,10 @@ FILE_KEYWORDS = {
                        "chocolate egg", "jacob contest", "farming contest", "mayor event",
                        "spooky festival", "mythological ritual", "mining event",
                        "sphinx", "inquisitor", "minotaur", "chimera", "manticore",
-                       "daedalus", "minos"],
+                       "daedalus", "minos", "skeleton horse", "megalodon",
+                       "great white shark", "refined mineral", "glossy gemstone",
+                       "shen auction", "artifact of control", "baker", "new year",
+                       "traveling zoo", "gaia construct", "brain food"],
 }
 
 
