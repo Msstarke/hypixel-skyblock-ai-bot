@@ -103,10 +103,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 showHelp();
                 return false;
             }
-            if (lower.equals("!aiconfig")) {
-                showConfig();
-                return false;
-            }
+
             if (lower.startsWith("!link ")) {
                 handleLink(message.substring(6).trim());
                 return false;
@@ -361,7 +358,6 @@ public class HypixelAIClient implements ClientModInitializer {
                 "- !link <ign>  \u2014  Link your account",
                 "- !unlink  \u2014  Remove linked account",
                 "- !correct / !wrong  \u2014  Rate the AI response",
-                "- !aiconfig  \u2014  View mod config",
                 "",
                 "Examples:",
                 "",
@@ -372,16 +368,6 @@ public class HypixelAIClient implements ClientModInitializer {
         SkyAIOverlay.show("Help", helpLines);
     }
 
-    private void showConfig() {
-        String keyStatus = HypixelAIConfig.getApiKey().isEmpty() ? "not set" : "set";
-        String[] configLines = {
-                "API: " + HypixelAIConfig.getApiUrl(),
-                "Key: " + keyStatus,
-                "Version: v" + HypixelAIUpdater.MOD_VERSION,
-                "Config: " + HypixelAIConfig.getConfigPath(),
-        };
-        SkyAIOverlay.show("Config", configLines);
-    }
 
     // --- Utilities ---
 

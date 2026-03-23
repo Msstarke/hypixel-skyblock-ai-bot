@@ -141,25 +141,64 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
 - **Best Strategy:** Mine in Crystal Hollows or Dwarven Mines for maximum ore density. Focus gemstone mining for Glossy Gemstones. The double drops and +75 Mining Wisdom make this the best time to level Mining skill.
 
 ### Mythological Ritual (Diana / Jerry with Diana perks)
-- **Activation:** When Diana is elected Mayor with the Mythological Ritual perk, or when Mayor Jerry rotates to Diana's perks.
-- **Core Mechanic:** Equip a Griffin Pet and use a spade (Ancestral, Archaic, or Deific) to find and dig Griffin Burrows around the Hub Island. The spade's Echo ability reveals nearby burrows.
-- **Burrow Chains:** Default chain length is 4. Extended by:
-  - Erudite reforge: +2 length
-  - Archaic Spade: +2 length
-  - Deific Spade: +4 length
-- **Burrow Outcomes:** 75% chance to spawn a Mythological Creature, 25% chance for treasure.
-- **Treasure Drops by Spade Tier:**
-  - Ancestral Spade: Griffin Feathers (66.67%), coins up to 25,000
-  - Archaic Spade: Mythos Fragments (1.78%), coins up to 250,000
-  - Deific Spade: Braided Griffin Feathers (0.03%), Mythos Fragments (3.31%), coins up to 1,000,000
-- **Mythological Creatures & Rare Drops:**
-  - Minotaur: Daedalus Stick (0.04-0.08% drop rate)
-  - Minos Inquisitor: Chimera I enchantment (1-1.25% drop rate) — extremely valuable
-  - Manticore: Fateful Stinger, Manti-core
-  - King Minos: Crown of Greed (2%), Shimmering Wool (0.2%)
-- **Craftable Gear:** Sword of Revelations, Daedalus Blade, Challenger's Armor, Mythos Armor — all crafted from mob drops.
-- **Tracking Stat:** Increases chance to spawn elusive mobs (Minos Inquisitor, Sphinx, Manticore, King Minos). Boosted by Brain Food and Golden Fleece items.
-- **Best Strategy:** Use highest-tier Griffin Pet possible (Legendary for best mob spawns). Upgrade to Deific Spade for longest chains and best drops. Stack Tracking stat for Minos Inquisitor spawns (Chimera I is worth hundreds of millions). Use fast mobility (AOTE/AOTV, Young Dragon Armor) to chain burrows quickly.
+- **Activation:** When Diana is elected Mayor with the Mythological Ritual perk, or when Mayor Jerry rotates to Diana's perks via Perkpocalypse.
+- **Duration:** 5 days and 4 hours (one full SkyBlock year — Diana's entire mayoral term).
+- **Diana's Perks:** Mythological Ritual (enables burrow hunting), Pet XP Buff (+35%), Huntress' Intuition (+10 Tracking).
+- **Core Mechanic:** Equip a Griffin Pet and use a spade to find and dig Griffin Burrows around the Hub Island.
+- **Getting Started:** Buy Griffin Pet from Diana for 25,000 coins. Buy Ancestral Spade for 5,000 coins + 32 Gold Ingots. Must be on Hub Island.
+- **How to Use Spade:** Hold spade → burrows appear as particles. Right-click (Echo ability, no mana cost) → arrow points to nearest burrow. Left-click burrow to dig it.
+- **Particle Distance Indicators:** Orange = 0-100 blocks, Yellow = 100-250 blocks, Red = 250+ blocks.
+- **Burrow Chain Colors:** Blue = 1st burrow (always direction arrow), White = 2nd/3rd (mob spawn), Orange = 4th+ (treasure).
+
+**Spade Tiers:**
+- Ancestral Spade (RARE): Base 4 burrow chain. Griffin Feathers (66.67%), coins up to 25,000.
+- Archaic Spade (EPIC): +2 chain length. Mythos Fragments (1.78%), coins up to 250,000.
+- Deific Spade (LEGENDARY): +4 chain length. Braided Griffin Feathers (0.03%), Mythos Fragments (3.31%), coins up to 1,000,000.
+- Erudite Reforge (from Daedalus' Notes): +2 chain length on any spade.
+- Maximum chain: 10 burrows (Deific + Erudite).
+
+**Griffin Pet (Combat):**
+- Stats at max: +40 Strength, +40 Intelligence, +10 Attack Speed, +10 Magic Find.
+- Odyssey perk: Creatures/rewards scale with Griffin rarity.
+- King of Kings (LEGENDARY): +20 Magic Find on Mythological mobs.
+- Can upgrade to MYTHIC using Mythic Griffin Upgrade Stone (unlocks Manticore + King Minos).
+- Best pet item: Four-Eyed Fish (+10 Magic Find, +55 Defense, +2,000 coins per burrow).
+
+**Mythological Creatures by Griffin Rarity:**
+- No pet: Minos Hunter only.
+- COMMON: + Siamese Lynxes.
+- UNCOMMON: + Cretan Bull, Stranded Nymph.
+- RARE: + Gaia Construct (Dwarf Turtle Shelmet 0.35-0.6%), Harpy (Antique Remedies 0.35-0.5%).
+- EPIC: + Minos Champion (Minos Relic 0.02-0.04%), Minotaur (Daedalus Stick 0.04-0.08%).
+- LEGENDARY: + Minos Inquisitor (Chimera I 1-1.25%, Antique Remedies 0.1%, very valuable), Sphinx (Crown of Greed 0.5%, Daedalus Stick 0.1%, rare combat XP). These are elusive mobs — boosted by Tracking stat.
+- MYTHIC: + Manticore (Fateful Stinger), King Minos (Crown of Greed 2%, Shimmering Wool 0.2%). Also elusive.
+
+**Key Items:**
+- **Chimera** (Ultimate Enchantment, levels 1-5): Copies 20/40/60/80/100% of pet's base stats onto weapon. Drops from Minos Inquisitor (~1%). Worth hundreds of millions. Requires Enchanting 31 to apply.
+- **Daedalus Blade** (LEGENDARY sword): Crafted from 48 Enchanted Gold Blocks + 2 Daedalus Sticks + 1 Sword of Revelations. +4 Damage per Taming level, copies pet combat stats. +1% Damage and +0.2 Magic Find per Bestiary tier on mythological mobs.
+- **Daedalus Stick**: Drops from Minotaur (0.04-0.08%). Needs EPIC+ Griffin. Used to craft Daedalus Blade.
+- **Sword of Revelations** (EPIC): Crafted from 192 Griffin Feathers + other materials. +150% damage and +5 Magic Find vs mythological mobs.
+- **Minos Relic** (Pet Item): Increases ALL pet stats by 33.3%. Drops from Minos Champion. Can upgrade to Hephaestus Relic.
+- **Antique Remedies** (Pet Item): Increases pet Strength by 80%. Drops from Harpy and Minos Inquisitor.
+- **Golden Fleece**: +5 Magic Find to mythological mobs, +15 Tracking on Griffin Burrows. Crafted with Shimmering Wool from King Minos.
+
+**Best Setup (Late-game):**
+- Pet: Legendary or Mythic Griffin with Four-Eyed Fish.
+- Weapon: Daedalus Blade (best Magic Find on mythological mobs).
+- Armor: Sorrow Armor with Magic Find focus, or Storm's/Necron's for combat.
+- Spade: Deific with Erudite reforge (max 10 chain).
+- Stack Tracking stat for Minos Inquisitor spawns (Chimera I is the main money maker).
+- Use fast mobility (AOTE/AOTV) to chain burrows quickly.
+- SkyHanni mod features help: Guess Next Burrow, Nearest Warp, Line to Next.
+- Potential profit: 75-100M+ coins/hour with optimal setup.
+
+**Progression Path:**
+1. Start with Common Griffin + Ancestral Spade (very cheap entry, ~30k total).
+2. Skip directly to Legendary Griffin when affordable (middle tiers are inefficient).
+3. Upgrade spade: Ancestral → Archaic → Deific.
+4. Apply Erudite reforge via Daedalus' Notes.
+5. Upgrade Griffin to Mythic for King Minos/Manticore access.
+- **Tracking Stat:** Increases chance to spawn elusive mobs. Boosted by Huntress' Intuition (+10), Golden Fleece (+15), Mythic Griffin (up to +10 on final burrow).
 
 ---
 
