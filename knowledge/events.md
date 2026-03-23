@@ -191,9 +191,18 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
 - Crochet Tiger Plushie: ~1/400 chance (1/100 from Inquisitor). Pet item.
 - Dwarf Turtle Shelmet: ~1/400 chance (1/100 from Inquisitor). Pet item.
 
+**Mob Spawn Weights (Legendary Griffin):** Minos Hunter 12.35%, Siamese Lynx 18.52%, Minotaur 24.69%, Gaia Construct 24.69%, Minos Champion 18.52%, **Minos Inquisitor 1.23% (1/81)**. With Ender Slayer 9: Inquisitor weight +15%, making chance ~1/70.5.
+
+**Additional Notes:**
+- Burrow quality depends on Griffin rarity when burrows are GENERATED (not when dug).
+- Reset burrows by talking to Diana and selecting "Reset Burrows".
+- 2nd and 3rd burrows: 90% mob spawn, 10% treasure. Later burrows: 75% mob, 25% treasure.
+- With Combat Level 10+, 1/250 chance to spawn a Mythological Creature when killing any mob.
+- Sphinx won't drop loot if captured with Pocket Black Hole — DON'T use it.
+
 **Detailed Mob Info:**
 
-**Minos Hunter (COMMON):** Easiest mob, basic melee. Drops: Ancient Claw (guaranteed), Hilt of Revelations (0.25-2%).
+**Minos Hunter (COMMON):** Lv15-Lv125 depending on Griffin rarity. Easiest mob, basic melee. Drops: Ancient Claw (guaranteed), Hilt of Revelations (0.25-2%).
 
 **Siamese Lynxes (COMMON, requires COMMON+ Griffin):** Spawn as a PAIR (Bagheera & Azrael). Only one can be attacked at a time (indicated by particles above it). After hitting one, particles transfer to partner — must alternate hits. Hitting wrong one heals BOTH for 5% max HP. Both must be killed.
 
@@ -317,6 +326,8 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
   - Rank 51-250: Vampirism VI Book, Spooky Disk, Spooky Pie, 100,000 coins
   - Rank 251-2,000: Spooky Disk, Spooky Pie, 50,000 coins
 - **Fear Mongerer Shop:** Trick or Treat Bag (1 Green), Magic Find I Potion (10 Green), Candy Talisman (16 Green), Intimidation Ring (100 Green), Candy Ring (64 Green), Horseman's Candle (32 Purple), Candy Artifact (32 Purple + Candy Ring), Candy Relic (1,024 Purple + Candy Artifact), Sugar Rush I Book (250K coins + 64 Green).
+- **Candy Drop Chance Modifiers (additive):** Base 10% from any mob. Bat Person Armor +20% (full set), Spooky Armor +20%, Bat Pet Lv100 +20%, Candy Relic +20%, Candy Artifact +15%, Candy Ring +10%, Candy Talisman +5%, Candied Armor Reforge +1%/piece, Candy Scavenger +2-10%, Foxy Sweet Benevolence +30%. Max: 84% (114% with Foxy).
+- **Spooky Mobs** take exactly 1 HP per hit regardless of damage (3 HP with Ghoul Buster + Bat Pet).
 - **Best Strategy:** Bat Person Armor + Epic Bat Pet, kill Hub night-respawning skeletons & wolves. Foxy mayor adds Party Chests + Carnival Tickets.
 
 ### Fishing Festival (Marina/Foxy Mayor Only)
