@@ -147,58 +147,129 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
 - **Core Mechanic:** Equip a Griffin Pet and use a spade to find and dig Griffin Burrows around the Hub Island.
 - **Getting Started:** Buy Griffin Pet from Diana for 25,000 coins. Buy Ancestral Spade for 5,000 coins + 32 Gold Ingots. Must be on Hub Island.
 - **How to Use Spade:** Hold spade → burrows appear as particles. Right-click (Echo ability, no mana cost) → arrow points to nearest burrow. Left-click burrow to dig it.
-- **Particle Distance Indicators:** Orange = 0-100 blocks, Yellow = 100-250 blocks, Red = 250+ blocks.
-- **Burrow Chain Colors:** Blue = 1st burrow (always direction arrow), White = 2nd/3rd (mob spawn), Orange = 4th+ (treasure).
+- **All mythological mobs have 50% Magic Resistance.**
+- **Mythological Creatures despawn after 5 minutes if not killed, or if the spawning player dies.**
+- **Ancient Claw is a guaranteed (100%) drop from ALL mythological creatures.**
+
+**Burrow Chain Mechanics:**
+- Chains of 4, 6, 8, or 10 burrows depending on spade tier.
+- 1st burrow: Arrow marker only (no mob/treasure).
+- 2nd+ burrows: 75% chance mob spawn, 25% chance treasure.
+- Treasure burrows: Griffin Feather, Crown of Greed, Washed-Up Souvenir, or coins.
+- Particle colors: Blue = 1st (start), White = 2nd/3rd (mob), Orange = 4th+ (treasure).
+- Arrow colors: Yellow = nearby, Red = medium distance, Black = far away.
 
 **Spade Tiers:**
-- Ancestral Spade (RARE): Base 4 burrow chain. Griffin Feathers (66.67%), coins up to 25,000.
-- Archaic Spade (EPIC): +2 chain length. Mythos Fragments (1.78%), coins up to 250,000.
-- Deific Spade (LEGENDARY): +4 chain length. Braided Griffin Feathers (0.03%), Mythos Fragments (3.31%), coins up to 1,000,000.
+- Ancestral Spade (RARE): Base 4 burrow chain. Griffin Feathers (66.67%), coins up to 25,000. Buy from Diana for 5,000 coins + 32 Gold Ingots.
+- Archaic Spade (EPIC): +2 chain length. Crafted from: 1x Ancestral Spade + 3x Enchanted Ancient Claw + 2x Enchanted Gold Block + 32x Griffin Feather + 1x Hilt of Revelations. Mythos Fragments (1.78%), coins up to 250,000.
+- Deific Spade (LEGENDARY): +4 chain length. Crafted from: 1x Archaic Spade + 1x Hilt of Revelations + 1x Braided Griffin Feather + 128x Enchanted Ancient Claw + 128x Enchanted Gold Block + 16x Mythos Fragment. Braided Griffin Feathers (0.03%), coins up to 1,000,000.
 - Erudite Reforge (from Daedalus' Notes): +2 chain length on any spade.
 - Maximum chain: 10 burrows (Deific + Erudite).
 
 **Griffin Pet (Combat):**
-- Stats at max: +40 Strength, +40 Intelligence, +10 Attack Speed, +10 Magic Find.
-- Odyssey perk: Creatures/rewards scale with Griffin rarity.
-- King of Kings (LEGENDARY): +20 Magic Find on Mythological mobs.
-- Can upgrade to MYTHIC using Mythic Griffin Upgrade Stone (unlocks Manticore + King Minos).
+- Buy from Diana for 25,000 coins. Cannot be upgraded by Kat — must use Griffin Feathers.
+- Upgrade costs: Common→Uncommon 8 feathers, Uncommon→Rare 16, Rare→Epic 32, Epic→Legendary 64 (total 120).
+- Mythic upgrade: Uses Mythic Griffin Upgrade Stone.
+- Abilities:
+  - COMMON — Odyssey: Creatures/rewards scale with Griffin rarity.
+  - UNCOMMON — Legendary Constitution: Permanent Regeneration VII and Strength VIII.
+  - EPIC — Perpetual Empathy: Heal nearby players for 0.2% per level of damage received (20% at Lv100).
+  - LEGENDARY — King of Kings: +0.14% Strength per level when above 85% HP (~15% at Lv100).
 - Best pet item: Four-Eyed Fish (+10 Magic Find, +55 Defense, +2,000 coins per burrow).
 
 **Mythological Creatures by Griffin Rarity:**
 - No pet: Minos Hunter only.
 - COMMON: + Siamese Lynxes.
 - UNCOMMON: + Cretan Bull, Stranded Nymph.
-- RARE: + Gaia Construct (Dwarf Turtle Shelmet 0.35-0.6%), Harpy (Antique Remedies 0.35-0.5%).
-- EPIC: + Minos Champion (Minos Relic 0.02-0.04%), Minotaur (Daedalus Stick 0.04-0.08%).
-- LEGENDARY: + Minos Inquisitor (Chimera I 1-1.25%, Antique Remedies 0.1%, very valuable), Sphinx (Brain Food 0.25-0.5%, Crown of Greed 0.5%, Daedalus Stick 0.1%). These are elusive mobs — boosted by Tracking stat.
-- MYTHIC: + Manticore (Fateful Stinger), King Minos (Crown of Greed 2%, Shimmering Wool 0.2%). Also elusive.
+- RARE: + Gaia Construct, Harpy.
+- EPIC: + Minotaur, Minos Champion.
+- LEGENDARY: + Minos Inquisitor, Sphinx (elusive — boosted by Tracking stat).
+- MYTHIC: + Manticore, King Minos (elusive — boosted by Tracking stat).
+
+**Universal Rare Drops (from any mob except Minos Hunter):**
+- Antique Remedies: ~1/400 chance (1/100 from Inquisitor). Pet item, +80% pet Strength.
+- Crochet Tiger Plushie: ~1/400 chance (1/100 from Inquisitor). Pet item.
+- Dwarf Turtle Shelmet: ~1/400 chance (1/100 from Inquisitor). Pet item.
+
+**Detailed Mob Info:**
+
+**Minos Hunter (COMMON):** Easiest mob, basic melee. Drops: Ancient Claw (guaranteed), Hilt of Revelations (0.25-2%).
+
+**Siamese Lynxes (COMMON, requires COMMON+ Griffin):** Spawn as a PAIR (Bagheera & Azrael). Only one can be attacked at a time (indicated by particles above it). After hitting one, particles transfer to partner — must alternate hits. Hitting wrong one heals BOTH for 5% max HP. Both must be killed.
+
+**Cretan Bull (UNCOMMON, requires UNCOMMON+ Griffin):** Rams toward player at high speed. Deals True Damage and True Knockback. After a hit, stops moving for 5 seconds — attack window. True Damage ignores armor.
+
+**Stranded Nymph (UNCOMMON, requires UNCOMMON+ Griffin):** Added in Mythological Ritual v2 update.
+
+**Gaia Construct (RARE, requires RARE+ Griffin):** ~7.5M HP. THREE PHASES based on HP thresholds:
+- Stage 1 (100-66% HP): Shield blocks first 5 hits, 6th deals damage. Less lightning.
+- Stage 2 (66-33% HP): Shield blocks first 6 hits, 7th deals damage. More lightning.
+- Stage 3 (33-0% HP): Shield blocks first 7 hits, 8th deals damage. Most lightning.
+- LIGHTNING: Telegraphed by "+" pattern of Iron Blocks on ground. Deals 1,500 + 40% of player's Max HP as True Damage.
+- Tip: Use magic weapon to break shield fast, then switch to high-damage weapon. Move away from iron block patterns.
+- Drops: Ancient Claw, Enchanted Gold Ingot, Enchanted Iron Ingot (unique to Gaia Construct).
+
+**Harpy (RARE, requires RARE+ Griffin):** Added in Mythological Ritual v2. Has 50% Magic Resistance.
+
+**Minotaur (EPIC, requires EPIC+ Griffin):** ~10M HP. Mechanics:
+- Melee attack: +1 Bleed stack.
+- Axe Throw: Slow-moving axe every ~1.5 seconds, +3 Bleed stacks, no knockback.
+- BLEED: Every 2 seconds, strikes player with 75x Bleed count as damage. Also reduces Healing.
+- Tip: Dodge axes (they add 3 Bleed vs 1 from melee). Kill quickly before Bleed stacks become lethal.
+- Drops: Ancient Claw, Enchanted Gold Ingot, **Daedalus Stick (0.08% / 1 in 1,250, affected by Magic Find)**.
+
+**Minos Champion (EPIC, requires EPIC+ Griffin):** Uses sword and bow attacks.
+- Damaging Aura: 7.5 block radius, 200-400 damage per tick.
+- ENRAGE: Gains 5% Damage buff every second alive, caps at 600%. **Despawns at cap with NO DROPS.** Kill time limit: ~2 minutes.
+- Lightning Punishment: If player stands still for 8-15 seconds, summons lightning dealing 20% of Max HP as True Damage.
+- Drops: Ancient Claw (48x), Enchanted Gold Ingot, Enchanted Ancient Claw, **Minos Relic (0.02% / 1 in 5,000)**.
+
+**Minos Inquisitor (LEGENDARY, requires LEGENDARY+ Griffin, elusive):** ~4M HP (up to 160M for Runic variant). Can also spawn rarely (0.4% chance) when any mob is killed with LEGENDARY Griffin.
+- Damaging Aura: 7.5 block radius, 250 damage per tick.
+- STAT DEBUFF: Aura reduces player's Health, Intelligence, Speed, Vitality by 33%.
+- ENRAGE: 8% Damage buff per second, caps at 600%. **Despawns at cap with NO DROPS.** Kill time limit: 75 seconds.
+- Drops: 48x Ancient Claw, 8x Enchanted Gold Ingot, Enchanted Ancient Claw (1/4), **Chimera Book (~1% / 1 in 100, affected by Magic Find)**, Dwarf Turtle Shelmet (1/100), Antique Remedies (1/100), Crochet Tiger Plushie (1/100).
+- Tip: Most dangerous mob. 75-second kill timer is extremely tight. Many players call for party help. Bring maximum DPS.
+
+**Sphinx (LEGENDARY, requires LEGENDARY+ Griffin, elusive):** ~40M HP. Added in Mythological Ritual v2.
+- Drops: 16x Ancient Claw, 0-16x Enchanted Gold Ingot, Enchanted Ancient Claw, **Brain Food (0.25-0.5%, EPIC item, grants +1 Tracking stat, stackable up to +5)**, Mythological Dye.
+- Brain Food is the signature drop — very valuable for increasing Tracking.
+
+**Manticore (MYTHIC, requires MYTHIC Griffin, elusive):** ~125M HP. Base spawn chance 0.26-0.33% with 0 Tracking.
+- Drops: 48x Ancient Claw, Enchanted Gold Ingot, Enchanted Ancient Claw, **Fateful Stinger (~0.2%, upgrades Venomous VI → VII on swords)**, Manti-core (crafts into Manticore Claw), Mythological Dye.
+
+**King Minos (MYTHIC, requires MYTHIC Griffin, elusive):** ~100M HP. Has a golden sheep companion. Base spawn chance 0.26-0.33% with 0 Tracking.
+- Drops: 48x Ancient Claw, 48x Enchanted Gold Ingot, Enchanted Ancient Claw, **Crown of Greed (~2% / 1 in 50, gives 2x coins from burrows, +10 MF vs myth mobs, 1.25x damage taken)**, Shimmering Wool (from golden sheep), Mythological Dye.
 
 **Key Items:**
-- **Chimera** (Ultimate Enchantment, levels 1-5): Copies 20/40/60/80/100% of pet's base stats onto weapon. Drops from Minos Inquisitor (~1%). Worth hundreds of millions. Requires Enchanting 31 to apply.
-- **Daedalus Blade** (LEGENDARY sword): Crafted from 48 Enchanted Gold Blocks + 2 Daedalus Sticks + 1 Sword of Revelations. +4 Damage per Taming level, copies pet combat stats. +1% Damage and +0.2 Magic Find per Bestiary tier on mythological mobs.
-- **Daedalus Stick**: Drops from Minotaur (0.04-0.08%). Needs EPIC+ Griffin. Used to craft Daedalus Blade.
+- **Chimera** (Ultimate Enchantment, levels 1-5): Copies 20/40/60/80/100% of pet's base stats onto weapon. Does NOT copy pet ability stats, but DOES copy pet item stats. Drops from Minos Inquisitor (~1%). Worth hundreds of millions. Requires Enchanting 31.
+- **Daedalus Blade** (LEGENDARY sword): Crafted from 48 Enchanted Gold Blocks + 2 Daedalus Sticks + 1 Sword of Revelations. +4 Damage per Taming level (up to 240 at Taming 60), copies pet combat stats. +200% damage vs Mythological Creatures. +1% Damage and +0.2 Magic Find per Bestiary tier on mythological mobs. Chimera on this weapon grants up to 200% of pet stats (double normal).
+- **Daedalus Stick**: Drops from Minotaur (0.08% / 1 in 1,250). Needs EPIC+ Griffin. Used to craft Daedalus Blade.
 - **Sword of Revelations** (EPIC): Crafted from 192 Griffin Feathers + other materials. +150% damage and +5 Magic Find vs mythological mobs.
-- **Minos Relic** (Pet Item): Increases ALL pet stats by 33.3%. Drops from Minos Champion. Can upgrade to Hephaestus Relic.
-- **Antique Remedies** (Pet Item): Increases pet Strength by 80%. Drops from Harpy and Minos Inquisitor.
+- **Minos Relic** (EPIC Pet Item): Increases ALL pet stats by 33.3%. Drops from Minos Champion (0.02%). Can upgrade to Hephaestus Relic.
+- **Antique Remedies** (Pet Item): Increases pet Strength by 80%. Drops from any mythological mob (1/400, 1/100 from Inquisitor).
+- **Brain Food** (EPIC): +1 Tracking stat (stackable up to +5). Drops from Sphinx.
+- **Fateful Stinger**: Upgrades Venomous VI → VII on swords. Drops from Manticore (~0.2%).
+- **Crown of Greed**: 2x coins from burrows, +10 Magic Find vs mythological mobs, but 1.25x damage taken. Drops from King Minos (~2%).
 - **Golden Fleece**: +5 Magic Find to mythological mobs, +15 Tracking on Griffin Burrows. Crafted with Shimmering Wool from King Minos.
 
 **Best Setup (Late-game):**
 - Pet: Legendary or Mythic Griffin with Four-Eyed Fish.
-- Weapon: Daedalus Blade (best Magic Find on mythological mobs).
+- Weapon: Daedalus Blade with Chimera V (best Magic Find on mythological mobs, 200% pet stat copy).
 - Armor: Sorrow Armor with Magic Find focus, or Storm's/Necron's for combat.
 - Spade: Deific with Erudite reforge (max 10 chain).
-- Stack Tracking stat for Minos Inquisitor spawns (Chimera I is the main money maker).
+- Stack Tracking stat for elusive mob spawns (Brain Food +5, Huntress' Intuition +10, Golden Fleece +15).
 - Use fast mobility (AOTE/AOTV) to chain burrows quickly.
 - SkyHanni mod features help: Guess Next Burrow, Nearest Warp, Line to Next.
 - Potential profit: 75-100M+ coins/hour with optimal setup.
 
 **Progression Path:**
 1. Start with Common Griffin + Ancestral Spade (very cheap entry, ~30k total).
-2. Skip directly to Legendary Griffin when affordable (middle tiers are inefficient).
+2. Skip directly to Legendary Griffin when affordable (middle tiers are inefficient). Costs 120 Griffin Feathers total.
 3. Upgrade spade: Ancestral → Archaic → Deific.
 4. Apply Erudite reforge via Daedalus' Notes.
 5. Upgrade Griffin to Mythic for King Minos/Manticore access.
-- **Tracking Stat:** Increases chance to spawn elusive mobs. Boosted by Huntress' Intuition (+10), Golden Fleece (+15), Mythic Griffin (up to +10 on final burrow).
+- **Tracking Stat:** Increases chance to spawn elusive mobs. Boosted by Brain Food (+1 each, max +5), Huntress' Intuition (+10), Golden Fleece (+15), Mythic Griffin (up to +10 on final burrow).
 
 ---
 
