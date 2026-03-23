@@ -99,7 +99,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 showHelp();
                 return false;
             }
-            if (lower.equals("!aihelp")) {
+            if (lower.equals("!aihelp") || lower.equals("!commands") || lower.equals("!help")) {
                 showHelp();
                 return false;
             }

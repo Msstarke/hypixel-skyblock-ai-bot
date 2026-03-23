@@ -142,7 +142,9 @@ FILE_KEYWORDS = {
                        "burrow", "candy", "festival", "new year cake", "season of jerry",
                        "jerry box", "fear mongerer", "shark", "oringo", "hoppity",
                        "chocolate egg", "jacob contest", "farming contest", "mayor event",
-                       "spooky festival", "mythological ritual", "mining event"],
+                       "spooky festival", "mythological ritual", "mining event",
+                       "sphinx", "inquisitor", "minotaur", "chimera", "manticore",
+                       "daedalus", "minos"],
 }
 
 
