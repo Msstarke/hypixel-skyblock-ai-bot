@@ -1,4 +1,4 @@
 # HypixelAI Mod - Remote API URL
 # The mod fetches this file on startup to get the current API URL.
 # Change this URL and push to GitHub to update all mods instantly.
-https://literate-totally-civet.ngrok-free.app/api/ask
+https://worker-production-f916.up.railway.app/api/ask

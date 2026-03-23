@@ -17,7 +17,7 @@ import java.nio.file.Path;
  */
 public class HypixelAIConfig {
 
-    private static final String DEFAULT_URL = "https://hypixel-skyblock-ai-bot-production.up.railway.app/api/ask";
+    private static final String DEFAULT_URL = "https://worker-production-f916.up.railway.app/api/ask";
     private static final String REMOTE_CONFIG_URL =
             "https://raw.githubusercontent.com/Msstarke/hypixel-skyblock-ai-bot/master/fabric-mod/remote-config.txt";
 
