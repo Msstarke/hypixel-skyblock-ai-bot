@@ -1498,6 +1498,18 @@ class AIHandler:
                 question, is_price_question=price_question
             )
 
+            # --- Inject cached learned facts ---
+            learned_ctx = ""
+            try:
+                facts = find_fact(question)
+                if facts:
+                    parts = []
+                    for f in facts:
+                        parts.append(f"Q: {f['question']}\nA: {f['answer']}")
+                    learned_ctx = "\n\n".join(parts)
+            except Exception:
+                pass
+
             if self._needs_ah_data(question):
                 try:
                     # Only extract IDs from curated "Item IDs for price lookups:" lines
