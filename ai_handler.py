@@ -8,6 +8,7 @@ from reforges import pick_reforge, normalize_stat, STAT_ALIASES
 from user_links import get_linked_username, get_linked_uuid
 from wiki_lookup import wiki_context
 from feedback import log_unanswered
+from learned_facts import find_fact, save_fact
 
 PRICE_KEYWORDS = [
     "cost", "price", "worth", "buy", "sell", "bazaar", "coins",
