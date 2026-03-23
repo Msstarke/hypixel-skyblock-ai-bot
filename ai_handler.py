@@ -1608,6 +1608,8 @@ class AIHandler:
                 system += f"\n\n{market_ctx}\nUse this real market data to make investment recommendations. Only recommend BAZAAR items. Reference specific items, their trends, and volumes from this data."
             if wiki_ctx:
                 system += f"\n\nWIKI DATA (live from Hypixel Skyblock wiki):\n{wiki_ctx}"
+            if mayor_ctx:
+                system += f"\n\nLIVE MAYOR/ELECTION DATA (real-time from Hypixel API):\n{mayor_ctx}\nIMPORTANT: Use this live data for mayor questions. This is the CURRENT mayor and election state."
             if price_question and not live_ctx and not ah_ctx:
                 system += "\n\nNo live price data found. Do NOT guess prices."
             if linked_summary:
