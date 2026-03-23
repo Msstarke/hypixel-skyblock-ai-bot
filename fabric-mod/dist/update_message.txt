@@ -1,1 +1,1 @@
-Added !link and !unlink commands
+Added feedback buttons (Y/N keys), removed !aiconfig, bug fixes
