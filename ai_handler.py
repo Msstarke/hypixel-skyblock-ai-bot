@@ -1551,16 +1551,11 @@ class AIHandler:
                             break
                 except Exception:
                     pass
-            # Live wiki fetch — use alongside KB for better coverage, not just fallback
+            # Live wiki fetch — always search for non-price questions to supplement KB
             wiki_ctx = ""
-            kb_thin = len(static_ctx.strip()) < 500
-            # Fetch wiki for non-price questions when KB is thin, or always for specific game mechanic questions
-            wiki_triggers = ["how does", "what does", "how to", "where", "wiki", "explain",
-                             "mechanic", "how do i", "what is the", "when does"]
-            wants_wiki = kb_thin or any(t in question.lower() for t in wiki_triggers)
-            if wants_wiki and not price_question:
+            if not price_question:
                 try:
-                    wiki_ctx = await wiki_context(question, max_chars=3000)
+                    wiki_ctx = await wiki_context(question, max_chars=4000)
                 except Exception as e:
                     print(f"[wiki error] {e}")
             cata_level = self._extract_cata_level(question)
