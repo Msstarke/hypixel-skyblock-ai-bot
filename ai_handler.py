@@ -1676,14 +1676,53 @@ class AIHandler:
                 # Post-processing: catch known hallucinated items/terms
                 text = self._filter_hallucinations(text)
 
-                # Log unanswered questions
-                _NO_INFO = ["don't have that info", "don't have enough info", "unavailable",
-                            "i'm not sure", "not in my knowledge", "don't have info"]
+                # Auto-search retry: if AI doesn't know, search web and try again
+                _NO_INFO = ["don't have that info", "don't have enough info",
+                            "i'm not sure", "not in my knowledge", "don't have info",
+                            "check the wiki"]
                 if any(phrase in text.lower() for phrase in _NO_INFO):
+                    try:
+                        # Search wiki + web for the answer
+                        search_ctx = await wiki_context(question, max_chars=5000)
+                        if search_ctx and len(search_ctx.strip()) > 100:
+                            retry_system = system + f"\n\nADDITIONAL WEB SEARCH RESULTS:\n{search_ctx}\nYou now have web search data. Use it to answer the question. Do NOT say you don't have the info."
+                            retry_resp = await self.client.chat.completions.create(
+                                model=self.model,
+                                messages=[
+                                    {"role": "system", "content": retry_system},
+                                    {"role": "user", "content": question},
+                                ],
+                                max_tokens=1000 if ingame else 2000,
+                                temperature=0.0,
+                            )
+                            retry_text = retry_resp.choices[0].message.content.strip()
+                            retry_text = re.sub(r"<think>[\s\S]*?</think>", "", retry_text, flags=re.IGNORECASE).strip()
+                            retry_text = self._filter_hallucinations(retry_text)
+
+                            # If the retry actually answered it, cache the fact
+                            if not any(p in retry_text.lower() for p in _NO_INFO):
+                                keywords = re.sub(r"[^\w\s]", "", question.lower())
+                                try:
+                                    save_fact(question, keywords, retry_text, source="wiki_search")
+                                except Exception:
+                                    pass
+                                return retry_text
+                    except Exception as e:
+                        print(f"[ai] Auto-search retry error: {e}")
+
+                    # Still couldn't answer — log it
                     try:
                         log_unanswered(question, discord_user_id)
                     except Exception:
                         pass
+                else:
+                    # Good answer — cache it for questions with thin KB coverage
+                    if len(static_ctx.strip()) < 500 and len(text) > 50:
+                        keywords = re.sub(r"[^\w\s]", "", question.lower())
+                        try:
+                            save_fact(question, keywords, text, source="ai_response")
+                        except Exception:
+                            pass
 
                 return text
             except Exception as e:
