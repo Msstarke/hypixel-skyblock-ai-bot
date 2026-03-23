@@ -1441,6 +1441,39 @@ class AIHandler:
                 if stat_result:
                     return stat_result
 
+            # --- Fast path: live mayor/election data ---
+            mayor_ctx = ""
+            mayor_keywords = ["mayor", "current mayor", "election", "mayor perk",
+                              "who is mayor", "whos mayor", "which mayor"]
+            if any(kw in question.lower() for kw in mayor_keywords):
+                try:
+                    mayor_data = await self.hypixel.get_current_mayor()
+                    if mayor_data:
+                        lines = []
+                        m = mayor_data.get("mayor")
+                        if m:
+                            lines.append(f"CURRENT MAYOR: {m['name']}")
+                            for p in m.get("perks", []):
+                                lines.append(f"  Perk: {p['name']} — {p['description']}")
+                            minister = m.get("minister")
+                            if minister:
+                                mname = minister.get("name", "Unknown")
+                                mperk = minister.get("perk", {})
+                                mperk_name = mperk.get("name", "") if isinstance(mperk, dict) else ""
+                                mperk_desc = mperk.get("description", "") if isinstance(mperk, dict) else ""
+                                lines.append(f"  Minister: {mname} — {mperk_name}: {mperk_desc}")
+                        candidates = mayor_data.get("candidates", [])
+                        if candidates:
+                            lines.append("\nCURRENT ELECTION CANDIDATES:")
+                            for c in sorted(candidates, key=lambda x: x.get("votes", 0), reverse=True):
+                                votes = c.get("votes", 0)
+                                lines.append(f"  {c['name']}: {votes:,} votes")
+                                for p in c.get("perks", []):
+                                    lines.append(f"    - {p['name']}: {p['description']}")
+                        mayor_ctx = "\n".join(lines)
+                except Exception as e:
+                    print(f"[mayor_ctx error] {e}")
+
             # --- Normal AI path ---
             live_ctx = ""
             ah_ctx = ""
