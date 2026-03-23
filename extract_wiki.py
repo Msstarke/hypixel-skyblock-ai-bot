@@ -44,7 +44,7 @@ pages = [
 
 output = []
 for fn, title in pages:
-    fp = os.path.join('/tmp/wiki_scrape', fn)
+    fp = os.path.join(os.environ.get('TEMP', '/tmp'), 'wiki_scrape', fn)
     if os.path.exists(fp):
         try:
             r = extract_wiki_content(fp, title)
