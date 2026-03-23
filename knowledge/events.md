@@ -170,7 +170,7 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
 - UNCOMMON: + Cretan Bull, Stranded Nymph.
 - RARE: + Gaia Construct (Dwarf Turtle Shelmet 0.35-0.6%), Harpy (Antique Remedies 0.35-0.5%).
 - EPIC: + Minos Champion (Minos Relic 0.02-0.04%), Minotaur (Daedalus Stick 0.04-0.08%).
-- LEGENDARY: + Minos Inquisitor (Chimera I 1-1.25%, Antique Remedies 0.1%, very valuable), Sphinx (Crown of Greed 0.5%, Daedalus Stick 0.1%, rare combat XP). These are elusive mobs — boosted by Tracking stat.
+- LEGENDARY: + Minos Inquisitor (Chimera I 1-1.25%, Antique Remedies 0.1%, very valuable), Sphinx (Brain Food 0.25-0.5%, Crown of Greed 0.5%, Daedalus Stick 0.1%). These are elusive mobs — boosted by Tracking stat.
 - MYTHIC: + Manticore (Fateful Stinger), King Minos (Crown of Greed 2%, Shimmering Wool 0.2%). Also elusive.
 
 **Key Items:**
