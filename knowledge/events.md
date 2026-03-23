@@ -305,6 +305,52 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
 - **Rules:** Sirius won't sell two pets of the same rarity (but can sell different rarities). If winner disconnects, coins are taken and item goes to Jerry. Bingo players cannot access Dark Auction.
 - **Best Strategy:** Bring enough coins to actually win bids. Check if Flower Minion price is worth it (always appears). During Scorpius, prioritize Hegemony Artifact and Level 7 books. Don't overbid on common enchanted books available elsewhere.
 
+### Spooky Festival
+- **Schedule:** Autumn 29-31 (1 real hour / 3 in-game days). Once per SkyBlock year.
+- **Mechanic:** Kill mobs to earn Green Candy (1 point) and Purple Candy (5 points). Points determine bracket rewards.
+- **Point Brackets:**
+  - 2,400+ points: Skeleton Horse Pet (Legendary), Vampire Mask, 1,000,000 coins
+  - 2,000-2,399 points: Vampire Mask, 500,000 coins
+  - 2,001-10,000 points: Spooky Pie, 25,000 coins
+- **Ranking Rewards:**
+  - Rank 1-50: Golden Treat, Vampirism VI Book, Spooky Disk, Spooky Pie, 200,000 coins
+  - Rank 51-250: Vampirism VI Book, Spooky Disk, Spooky Pie, 100,000 coins
+  - Rank 251-2,000: Spooky Disk, Spooky Pie, 50,000 coins
+- **Fear Mongerer Shop:** Trick or Treat Bag (1 Green), Magic Find I Potion (10 Green), Candy Talisman (16 Green), Intimidation Ring (100 Green), Candy Ring (64 Green), Horseman's Candle (32 Purple), Candy Artifact (32 Purple + Candy Ring), Candy Relic (1,024 Purple + Candy Artifact), Sugar Rush I Book (250K coins + 64 Green).
+- **Best Strategy:** Bat Person Armor + Epic Bat Pet, kill Hub night-respawning skeletons & wolves. Foxy mayor adds Party Chests + Carnival Tickets.
+
+### Fishing Festival (Marina/Foxy Mayor Only)
+- **Schedule:** First 3 days of each SkyBlock month (1 real hour each). 12 festivals per Marina term.
+- **Mechanic:** Unique sea creatures spawn: Nurse Shark, Blue Shark, Tiger Shark, Great White Shark.
+- **Drops:** Shark Fins, Shark Teeth (event exclusive). Shark Fin crafts into Shark Scale Armor.
+- **Pets:** Megalodon Pet drops from Great White Shark (Legendary, Fishing 24) and Tiger Shark (Epic, Fishing 18).
+- **Synergies:** Marina's Luck of the Sea 2.0 (+15 Sea Creature Chance) and Double Trouble (+0.1 Double Hook per SCC) active during her term.
+
+### Mining Fiesta (Cole/Foxy/Jerry Mayor)
+- **Schedule:** Starts 1st of Early Summer and 1st of Early Autumn. Lasts 7 SkyBlock days (2h 20m real). 2-5 per term depending on mayor.
+- **Bonuses:** +75 Mining Wisdom, 2x drops from mining.
+- **Special Drops:** Refined Minerals (from ores/dwarven metals), Glossy Gemstones (from gemstones).
+- **Stacking:** With Cole's base +60 Mining Wisdom perk = +135 total during fiesta.
+
+### Traveling Zoo
+- **Schedule:** Early Summer 1-3 and Early Winter 1-3 (~every 2 days 14 hours real time), lasts 1 hour.
+- **NPC:** Oringo appears in Hub selling 3 pets per visit.
+- **Pets:** 1 guaranteed LEGENDARY (follows cycle: Blue Whale → Tiger → Lion → Monkey → Elephant → Giraffe), 2 random (Common-Epic).
+
+### Hoppity's Hunt (Spring Event)
+- **Schedule:** All of Spring (3 in-game months, ~38 real hours).
+- **NPC:** Hoppity in Carrot Cave (under Mountain).
+- **Mechanic:** Chocolate Eggs spawn throughout SkyBlock, claim for Chocolate Rabbits.
+- **Rabbit Prices:** Common 200K, Uncommon 500K, Rare 1M, Epic 2.5M, Legendary 5M coins.
+- **Each unique Rabbit boosts Chocolate Factory production.**
+- **Duplicate Rabbits give Chocolate based on rarity.** Foxy's Sweet Benevolence gives +30% more from duplicates.
+
+### New Year Celebration
+- **Schedule:** Late Winter 29-31 (1 real hour).
+- **Baker NPC** appears in Hub with free New Year Cake.
+- **Each cake claimable once per player per SkyBlock year.** SPECIAL rarity collectible item.
+- **Cake Bag** HP bonus adds up over time. Old cakes have collector value.
+
 ### Jacob's Farming Contest
 - **Schedule:** Every 3 SkyBlock days (1 real-life hour), lasts 20 real-life minutes. 3 random crops selected each contest.
 - **Requirements:** Farming Skill Level X minimum. Must speak with Jacob at least once.

@@ -156,9 +156,14 @@ Special mayors appear every 8 SkyBlock years (approximately 41.3 real-life days)
   - 150-300 hours: 500,000 coins
   - 300+ hours: 1,000,000 coins
   - Bribe amount is based on playtime at the time of CLAIMING, not voting.
-- **Darker Auctions** - Dark Auctions have 7 rounds instead of 4, with special items including Midas' Sword, Epic/Legendary pets (Parrot, Turtle, Jellyfish), level 7 enchantment books, Spirit Mask, and rare items like Dark Purple Dye.
+- **Darker Auctions** - Dark Auctions have 7 rounds instead of 4, with special items:
+  - Round 1 & 3: Ender Artifact, Wither Artifact, Nether Artifact, Spirit Mask, Midas' Sword, Epic/Legendary Parrot/Turtle/Jellyfish Pets, Travel Scroll to Dark Auction, Dark Purple Dye (0.03%), Eccentric Painting Bundle.
+  - Round 2 & 4: Enchanted Books (Sharpness 7, Giant Killer 7, Protection 7, Growth 7, Power 7, Counter Strike 3, Big Brain bundle, Vicious bundle) — 12.5% each.
+  - Round 5: Plasma Nucleus (50%) or Hegemony Artifact (50%).
+  - Round 6: Midas Staff (100%).
+  - Round 7: Flower Minion (100%).
 
-**Best for:** Free coins (vote for him!), Dark Auction farming for rare items. No special mayor has ever lost an election.
+**Best for:** Free coins (vote for him!), Dark Auction farming for rare items. No special mayor has ever lost an election. Scorpius has the fewest perks of any mayor (only 2).
 
 ---
 
@@ -237,14 +242,15 @@ Technoblade became mayor following The Uprising against Dante. He had 5 perks (t
 ### Aura (One-Time Mayor)
 **Focus:** Redistribution
 
-Aura appeared in Year 464, replacing Derpy's scheduled special appearance. Listed perks were "Universal Income," "Increased Loot," and "Increased Experience," but actual perks were:
+Aura appeared in Year 458-468, replacing Derpy's scheduled special appearance. Listed perks were "Universal Income," "Increased Loot," and "Increased Experience," but actual perks were:
 
-- **Fundraising** - Taxes and costs vastly increased across the world.
-- **Minion Union** - Minions work +50% slower.
-- **Universal Income** - Every hour, 100% of the coins gained from Fundraising are redistributed equally.
-- **Work Better** - Everyone is now luckier!
-- **Work Harder** - Monsters deal 10% more damage and have 10% more health.
-- **Work Smarter** - Gain +50% Skill EXP, Dungeon EXP and Slayer EXP.
+- **Fundraising** - Messages cost 7 coins each, Fast Travel costs 2,000 coins (except Hub/Private Island/Garden), Bazaar tax and Slayer spawn costs doubled, Kat upgrades cost 50% more, certain Dungeon drop costs increased (e.g. Necron's Handle from 100M to 265M).
+- **Minion Union** - Actually reduced minion speed by 33% (was disabled by a minister vote).
+- **Work Better** - Granted +50 Magic Find and +25 Tracking globally (except Rift). All RNG Meter progress doubled, base drop rates of several items increased (Necron's Handle, Divan's Alloy, Quick Claw, etc.).
+- **Work Harder** - Increased HP and damage of mobs by 10% (was toggled on/off by minister votes).
+- **Work Smarter** - Gain +50% Skill EXP, Dungeon EXP and Slayer EXP (was toggled on/off by minister votes).
+
+Featured a unique Minister Election system where community members became ministers and could enable/disable perks via votes.
 
 ---
 
