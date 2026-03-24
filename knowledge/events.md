@@ -269,8 +269,12 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
 - Spade: Deific with Erudite reforge (max 10 chain).
 - Stack Tracking stat for elusive mob spawns (Brain Food +5, Huntress' Intuition +10, Golden Fleece +15).
 - Use fast mobility (AOTE/AOTV) to chain burrows quickly.
-- SkyHanni mod features help: Guess Next Burrow, Nearest Warp, Line to Next.
-- Potential profit: 75-100M+ coins/hour with optimal setup.
+- SkyHanni mod is practically mandatory (~80% efficiency boost from burrow tracking features).
+
+**VERIFIED PROFIT RATES (community data, DO NOT underestimate):**
+- Common Griffin: ~12M coins/hour (mostly from Griffin Feathers, ~1.5 stacks/hour).
+- Legendary Griffin (max setup): 70-100M+ coins/hour. Main income from Chimera books (~100-200M each, 1/81 Inquisitor spawn, ~1% Chimera drop), Daedalus Sticks (~2M each), Ancient Claws, and coin bags.
+- These are REAL community-verified rates. Do NOT say 1-3M/hour — that is completely wrong.
 
 **Progression Path:**
 1. Start with Common Griffin + Ancestral Spade (very cheap entry, ~30k total).
