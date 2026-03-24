@@ -1442,6 +1442,25 @@ class AIHandler:
                 if stat_result:
                     return stat_result
 
+            # --- Fast path: Diana profit question — direct answer, no AI ---
+            q = question.lower()
+            diana_profit_kws = ["diana profit", "diana coins", "diana money", "diana per hour",
+                                "mythological profit", "mythological money", "mythological coins",
+                                "1h of diana", "hour of diana", "diana making", "diana earn",
+                                "diana income", "diana grind", "how much diana"]
+            if any(kw in q for kw in diana_profit_kws) or ("diana" in q and any(w in q for w in ["profit", "money", "coins", "hour", "earn", "making", "income"])):
+                return (
+                    "**Diana Mythological Ritual Profit Rates:**\n"
+                    "- **Common Griffin:** ~12M coins/hour (mostly Griffin Feathers)\n"
+                    "- **Legendary Griffin (max setup):** 70-100M+ coins/hour\n"
+                    "  - Main income: Chimera books (~100-200M each, 1/81 Inquisitor spawn, ~1% drop)\n"
+                    "  - Daedalus Sticks (~2M each), Minos Relic (~50-60M), Ancient Claws, coin bags\n"
+                    "- **Key factors:** Burrows/hour, Griffin rarity, Magic Find %, spade tier\n"
+                    "- **Max setup:** Legendary/Mythic Griffin + Four-Eyed Fish, Daedalus Blade + Chimera V, "
+                    "Deific Spade + Erudite reforge, Sorrow Armor, SkyHanni mod\n"
+                    "- SkyHanni mod is practically mandatory (~80% efficiency boost from burrow tracking)"
+                )
+
             # --- Fast path: live mayor/election data ---
             mayor_ctx = ""
             mayor_keywords = ["mayor", "current mayor", "election", "mayor perk",
