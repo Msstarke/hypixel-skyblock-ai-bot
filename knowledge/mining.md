@@ -1,3 +1,51 @@
+# Mining Speed and Block Breaking Mechanics
+
+## Breaking Speed Formula
+- Ticks = round( (Block_Strength * 30) / Mining_Speed )
+- 1 tick = 0.05 seconds (20 ticks per second)
+- Softcap (minimum without instant-mine) is always 4 ticks (0.2s)
+- Between softcap (4-tick) and instant mine (1-tick), there is NOTHING — no 3-tick or 2-tick. It jumps from 4 directly to 1.
+- Instant mine for ores: Mining_Speed >= 60 * Block_Strength + 1
+- Instant mine for non-ores (hard stone, cobble): Mining_Speed >= 30 * Block_Strength + 1
+
+## Mithril Mining Speed Thresholds
+
+### Gray Mithril (Block Strength ~500)
+- 5 ticks: > 2,728 Mining Speed
+- 4 ticks (softcap): > 3,334 Mining Speed
+- Instant mine (1 tick): > 30,000 Mining Speed
+
+### Green/Prismarine Mithril (Block Strength ~800)
+- 8 ticks: > 2,824 Mining Speed
+- 7 ticks: > 3,201 Mining Speed
+- 6 ticks: > 3,693 Mining Speed
+- 5 ticks: > 4,364 Mining Speed
+- 4 ticks (softcap): > 5,334 Mining Speed
+- Instant mine (1 tick): > 48,000 Mining Speed
+
+### Blue Mithril (Block Strength ~1,500)
+- 12 ticks: > 3,600 Mining Speed
+- 10 ticks: > 4,286 Mining Speed
+- 8 ticks: > 5,295 Mining Speed
+- 6 ticks: > 6,924 Mining Speed
+- 5 ticks: > 8,182 Mining Speed
+- 4 ticks (softcap): > 10,000 Mining Speed
+- Instant mine (1 tick): > 90,000 Mining Speed
+
+### Titanium (spawns from mithril)
+- 8 ticks: > 7,059 Mining Speed
+
+### Gemstones (Block Strength ~3,000-5,000)
+- Softcap (4 ticks) for Gemstones: ~20,000-33,334 Mining Speed depending on type
+
+## Key Notes
+- "4-tick mithril" means reaching the softcap — the fastest possible mining speed before instant mine.
+- For gray mithril, you need > 3,334 Mining Speed to 4-tick it.
+- For blue mithril (hardest), you need > 10,000 Mining Speed to 4-tick it.
+- Most players asking about "4-tick mithril" mean gray mithril (> 3,334 Mining Speed).
+
+---
+
 # Divan's Armor
 
 Redirect to:
