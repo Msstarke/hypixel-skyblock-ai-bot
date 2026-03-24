@@ -236,6 +236,13 @@ def api_feedback():
 @app.route("/api/feedback/list")
 def api_feedback_list():
     """View feedback stats, downvoted responses, and unanswered questions."""
+    try:
+        return _render_feedback_page()
+    except Exception as e:
+        import traceback
+        return f"<pre>Error: {e}\n\n{traceback.format_exc()}</pre>", 500
+
+def _render_feedback_page():
     from feedback import get_feedback_stats, get_bad_responses, get_unanswered
     stats = get_feedback_stats()
     bad = get_bad_responses(limit=50)
