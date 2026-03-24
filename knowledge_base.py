@@ -20,6 +20,7 @@ FILE_KEYWORDS = {
                        "mage", "tank", "secret", "dungeon armor", "dungeon weapon",
                        "dungeon setup", "dungeon gear", "dungeon mechanic", "dungeon item",
                        "essence upgrade", "dungeonize", "dungeon star", "class level",
+                       "cata 0", "early dungeon", "starter dungeon", "dungeon budget",
                        "cata 0", "cata 1", "cata 2", "cata 3", "cata 4", "cata 5"],
     "dungeon_floors.md": ["floor", "boss", "f1", "f2", "f3", "f4", "f5", "f6", "f7",
                        "m1", "m2", "m3", "m4", "m5", "m6", "m7", "master mode", "scoring",
