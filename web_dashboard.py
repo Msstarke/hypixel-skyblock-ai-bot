@@ -250,16 +250,19 @@ def api_feedback_list():
     html += ".q{color:#00d4ff;max-width:200px}.r{max-width:400px;font-size:12px;white-space:pre-wrap}"
     html += "a{color:#ffa500}</style></head><body>"
 
-    html += f"<h1>SkyAI Feedback Dashboard</h1>"
-    html += f"<p>👍 {stats['thumbs_up']} correct &nbsp; 👎 {stats['thumbs_down']} wrong (unresolved) &nbsp; ❓ {stats['unanswered']} unanswered</p>"
+    import datetime
+    from html import escape
+
+    html += "<h1>SkyAI Feedback Dashboard</h1>"
+    html += f"<p>+{stats['thumbs_up']} correct | -{stats['thumbs_down']} wrong (unresolved) | ?{stats['unanswered']} unanswered</p>"
 
     if bad:
         html += "<h2>Wrong Responses (unresolved)</h2><table><tr><th>#</th><th>User</th><th>Question</th><th>Response</th><th>Time</th></tr>"
         for r in bad:
-            import datetime
             t = datetime.datetime.fromtimestamp(r['created_at']).strftime('%Y-%m-%d %H:%M')
-            resp = r['response'][:300] + "..." if len(r['response']) > 300 else r['response']
-            html += f"<tr><td>{r['id']}</td><td>{r['discord_name']}</td><td class='q'>{r['question']}</td><td class='r'>{resp}</td><td>{t}</td></tr>"
+            resp = r.get('response', '') or ''
+            resp = resp[:300] + "..." if len(resp) > 300 else resp
+            html += f"<tr><td>{r['id']}</td><td>{escape(str(r.get('discord_name','')))}</td><td class='q'>{escape(str(r.get('question','')))}</td><td class='r'>{escape(resp)}</td><td>{t}</td></tr>"
         html += "</table>"
     else:
         html += "<h2>Wrong Responses</h2><p class='good'>None! All resolved.</p>"
@@ -267,9 +270,8 @@ def api_feedback_list():
     if unanswered:
         html += "<h2>Unanswered Questions</h2><table><tr><th>#</th><th>Question</th><th>Time</th></tr>"
         for r in unanswered:
-            import datetime
             t = datetime.datetime.fromtimestamp(r['created_at']).strftime('%Y-%m-%d %H:%M')
-            html += f"<tr><td>{r['id']}</td><td class='q'>{r['question']}</td><td>{t}</td></tr>"
+            html += f"<tr><td>{r['id']}</td><td class='q'>{escape(str(r.get('question','')))}</td><td>{t}</td></tr>"
         html += "</table>"
     else:
         html += "<h2>Unanswered Questions</h2><p class='good'>None!</p>"
