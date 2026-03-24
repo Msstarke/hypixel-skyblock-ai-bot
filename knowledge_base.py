@@ -147,7 +147,8 @@ FILE_KEYWORDS = {
                        "daedalus", "minos", "skeleton horse", "megalodon",
                        "great white shark", "refined mineral", "glossy gemstone",
                        "shen auction", "artifact of control", "baker", "new year",
-                       "traveling zoo", "gaia construct", "brain food"],
+                       "traveling zoo", "gaia construct", "brain food",
+                       "diana profit", "coins per hour", "money making diana"],
 }
 
 
