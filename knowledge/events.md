@@ -271,10 +271,12 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
 - Use fast mobility (AOTE/AOTV) to chain burrows quickly.
 - SkyHanni mod is practically mandatory (~80% efficiency boost from burrow tracking features).
 
-**VERIFIED PROFIT RATES (community data, DO NOT underestimate):**
+### Diana Mythological Ritual Profit Rates
 - Common Griffin: ~12M coins/hour (mostly from Griffin Feathers, ~1.5 stacks/hour).
 - Legendary Griffin (max setup): 70-100M+ coins/hour. Main income from Chimera books (~100-200M each, 1/81 Inquisitor spawn, ~1% Chimera drop), Daedalus Sticks (~2M each), Ancient Claws, and coin bags.
 - These are REAL community-verified rates. Do NOT say 1-3M/hour — that is completely wrong.
+- Key profit variables: burrows/hour, Griffin rarity, Magic Find %, spade tier.
+- Minos Relic (~50-60M), Chimera Book (~100-200M), Daedalus Stick (~2M).
 
 **Progression Path:**
 1. Start with Common Griffin + Ancestral Spade (very cheap entry, ~30k total).
