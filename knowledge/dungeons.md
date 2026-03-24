@@ -1,3 +1,31 @@
+# Early Dungeon Gear Guide (Cata 0 - Cata 10)
+
+### Cata 0 (Entrance & Floor 1)
+- **Armor:** Unstable Dragon Armor (~550-650k total, good crit stats) or any dragon armor (Strong, Young). Non-dungeonized gear works fine.
+- **Weapon:** Aspect of the Dragons (AOTD, cheap, no cata req, Dragon Rage one-shots most Entrance mobs), Super Cleaver for Berserks.
+- **Helmet upgrade:** Bonzo's Mask (drops from F1 boss) — great early helmet.
+- **Healing:** Wand of Mending or Radiant Power Orb.
+- **Budget:** 1-5M is plenty for Entrance/F1.
+
+### Cata 5-10 (Floor 2-4)
+- **Armor:** Adaptive Armor (F2-F3 drops), Zombie Soldier Armor (Cata 9 req).
+- **Weapon:** Spirit Sceptre (mage), Livid Dagger (berserk), Bonzo Staff (mage).
+- **Accessories:** Aim for 100-200 Magical Power minimum.
+
+### Class Recommendations (Early)
+- **Berserk:** AOTD or Super Cleaver → Livid Dagger. Dragon Armor.
+- **Mage:** Wise Dragon Armor → Necromancer Lord Armor. Bonzo Staff → Spirit Sceptre.
+- **Archer:** Strong/Unstable Dragon. Machine Gun Bow → Juju Shortbow (later).
+- **Healer:** Holy Dragon Armor. Wand of Mending/Restoration.
+- **Tank:** Heavy Armor or Dragon Armor with defensive reforges.
+
+### Common Mistakes
+- Do NOT buy Hyperion, Storm Armor, or Necron Armor at Cata 0 — you can't equip them.
+- Do NOT skip straight to F7 gear — work through floors progressively.
+- "Rogue Sword" is a free sword from the Hub, NOT a dungeon weapon. It costs 0 coins.
+
+---
+
 # Dungeons
 
 Dungeons are PvE raid activities in which a team of 1 to 5 players work together to defeat mobs within a procedurally generated series of rooms , ending in a boss fight. Players are rewarded based on their performance within the Dungeon with Dungeoneering XP and items within chests . The rewards scale up with the difficulty of the Dungeon; the more difficult missions can drop some of the strongest items in the game.

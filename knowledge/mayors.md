@@ -101,6 +101,16 @@
 
 **Best for:** Farming contests (GOATed), Garden optimization (Blooming Business), pelt grinding, pest farming. Finnegan was added in the 0.16.1 Update and first appeared in Year 241.
 
+**Trapper / Pelt Mechanics:**
+- Trevor in the Mushroom Desert assigns you an animal to hunt. Kill it to earn pelts.
+- Quest cooldown: ~60 seconds between quests. Time limit: 10 minutes per quest.
+- Animal rarities and pelts: Trackable (1 pelt, 44%), Untrackable (2, 28%), Undetected (4, 22%), Endangered (8, 6%), Elusive (16, <1%).
+- Average pelts per quest (base): ~4.12. With Pelt Belt (+1) and Jake's Plushie (+1): ~6.12.
+- With Finnegan's 1.5x: base+belt+plushie then x1.5 = ~9.23 pelts/quest.
+- Pelt rates: ~150-200 pelts/hour base realistic. With all buffs + Finnegan: up to ~550 pelts/hour.
+- Horse mob only spawns during Finnegan's Pelt-pocalypse.
+- Tips: Use Abiphone with Trevor's contact to accept quests remotely. Travel Scroll to Trapper's Den. Use fast movement speed. Enderman Slayer IX and Trapper Crest boost rare animal spawn rates.
+
 ---
 
 ### Foxy (Events Mayor)
