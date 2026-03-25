@@ -1479,6 +1479,37 @@ class AIHandler:
                 else:
                     return f"The next **Year of the {zodiac_match.title()}** is **Year {next_year}** ({diff} SkyBlock years from now, ~{int(diff * 124 / 24)} real days)."
 
+            # --- Fast path: Shen's Auction timing ---
+            if any(kw in q for kw in ["shen auction", "shens auction", "shen's auction", "next shen"]):
+                import time as _time
+                sb_epoch = 1560275700
+                now = _time.time()
+                sb_year = int((now - sb_epoch) / 446400) + 1
+                # Each SB year = 446400 seconds. Late Spring 1st is roughly 25% through the year.
+                year_start = sb_epoch + (sb_year - 1) * 446400
+                # Late Spring 1st ≈ day 93 of 124 days. Each SB day = 1200s real. Late Spring = month 10 of 12.
+                # SB months: Early Spring(1-3), Spring(4-6), Late Spring(7-9), Early Summer(10-12)...
+                # Actually: 12 months, 31 days each = 372 SB days per year. Late Spring = month 6.
+                # Late Spring day 1 = SB day (5*31)+1 = 156. Each SB day = 20 min real = 1200s.
+                shen_offset = 155 * 1200  # Late Spring 1st (day 156, 0-indexed 155)
+                next_shen = year_start + shen_offset
+                if next_shen < now:
+                    # Already passed this year, next year
+                    next_shen += 446400
+                import datetime
+                shen_dt = datetime.datetime.fromtimestamp(next_shen, tz=datetime.timezone.utc)
+                time_left = next_shen - now
+                hours_left = int(time_left / 3600)
+                days_left = hours_left // 24
+                hrs_rem = hours_left % 24
+                return (
+                    f"**Shen's Auction** happens once per SkyBlock year on Late Spring 1st.\n"
+                    f"Next one: ~**{days_left}d {hrs_rem}h** from now ({shen_dt.strftime('%b %d, %H:%M UTC')}).\n"
+                    f"- Requires Museum Milestone 10 (regular) or 20 (Shen's Special)\n"
+                    f"- Items: Artifact of Control (10/yr), Pandora's Box (20/yr), Shen's Regalia (40/yr)\n"
+                    f"- Diaz mayor doubles available quantities"
+                )
+
             # --- Fast path: Diana profit question — direct answer, no AI ---
             diana_profit_kws = ["diana profit", "diana coins", "diana money", "diana per hour",
                                 "mythological profit", "mythological money", "mythological coins",
