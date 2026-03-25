@@ -1488,6 +1488,33 @@ class AIHandler:
                 else:
                     return f"The next **Year of the {zodiac_match.title()}** is **Year {next_year}** ({diff} SkyBlock years from now, ~{int(diff * 124 / 24)} real days)."
 
+            # --- Fast path: Jerry's Workshop / Season of Jerry timing ---
+            if any(kw in q for kw in ["jerry workshop", "jerrys workshop", "jerry's workshop",
+                                       "season of jerry", "next jerry", "when jerry"]):
+                import time as _time, datetime
+                sb_epoch = 1560275700
+                now = _time.time()
+                sb_year = int((now - sb_epoch) / 446400) + 1
+                year_start = sb_epoch + (sb_year - 1) * 446400
+                # Late Winter = month 12 (last month). Day 24 = Season of Jerry start.
+                # Late Winter day 1 = SB day (11*31)+1 = 342. Each SB day = 1200s.
+                jerry_offset = (341 + 23) * 1200  # Late Winter 24th (day 364, 0-indexed 363)
+                next_jerry = year_start + jerry_offset
+                if next_jerry < now:
+                    next_jerry += 446400  # next year
+                time_left = next_jerry - now
+                hours_left = max(0, int(time_left / 3600))
+                days_left = hours_left // 24
+                hrs_rem = hours_left % 24
+                return (
+                    f"**Jerry's Workshop** opens during Late Winter (last month of the SkyBlock year).\n"
+                    f"**Season of Jerry** (defense event): Late Winter 24-26.\n"
+                    f"Next one: ~**{days_left}d {hrs_rem}h** from now.\n"
+                    f"- Workshop is in the Jerry's Island portal (Hub)\n"
+                    f"- Contains: White/Green Gifts, Jerry NPC, unique items\n"
+                    f"- Jerry mayor's Jerrypocalypse is a separate thing (special mayor perk)"
+                )
+
             # --- Fast path: Shen's Auction timing ---
             if any(kw in q for kw in ["shen auction", "shens auction", "shen's auction", "next shen"]):
                 import time as _time
