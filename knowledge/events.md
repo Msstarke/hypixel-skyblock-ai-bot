@@ -285,6 +285,7 @@ There are 12 months: Early Spring, Spring, Late Spring, Early Summer, Summer, La
 4. Apply Erudite reforge via Daedalus' Notes.
 5. Upgrade Griffin to Mythic for King Minos/Manticore access.
 - **Tracking Stat:** Increases chance to spawn elusive mobs. Boosted by Brain Food (+1 each, max +5), Huntress' Intuition (+10), Golden Fleece (+15), Mythic Griffin (up to +10 on final burrow).
+- **IMPORTANT:** "Elusive" in the Tracking stat context ONLY refers to Mythological Ritual mobs (Minos Inquisitor, Sphinx, Manticore, King Minos). Other mobs like Grim Reapers, Vanquishers, etc. are NOT "elusive" in this sense — they have their own separate spawn mechanics.
 
 ---
 
