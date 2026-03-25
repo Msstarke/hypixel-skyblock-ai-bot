@@ -1451,32 +1451,33 @@ class AIHandler:
                 sb_year = int((_time.time() - sb_epoch) / 446400) + 1
                 return f"The current SkyBlock year is **Year {sb_year}**."
 
-            zodiac_animals = ["rabbit", "pig", "seal", "monkey", "tiger", "horse",
-                              "sheep", "dog", "rooster", "ox", "rat", "snake", "dragon"]
+            # Known SkyBlock yearly event cycle: use known anchor points to calculate
+            # Known: Year 476 = Witch, cycle is 12 years
+            _YEARLY_EVENTS = {
+                "pig": 0, "seal": 1, "witch": 2,
+                # Remaining 9 slots in the 12-year cycle are TBA/unknown
+            }
+            # Year 476 = Witch (offset 2), so Year 474 = Pig (offset 0) in this cycle
+            _CYCLE_BASE = 474  # Year where offset 0 (Pig) falls
+            _CYCLE_LEN = 12
             zodiac_match = None
-            for animal in zodiac_animals:
-                if f"year of the {animal}" in q or f"year of {animal}" in q:
-                    zodiac_match = animal
+            for name in _YEARLY_EVENTS:
+                if f"year of the {name}" in q or f"year of {name}" in q:
+                    zodiac_match = name
                     break
             if zodiac_match:
                 import time as _time
                 sb_epoch = 1560275700
                 sb_year = int((_time.time() - sb_epoch) / 446400) + 1
-                # Zodiac cycle: 12 years. Year 1 = Rabbit.
-                zodiac_order = ["rabbit", "pig", "seal", "monkey", "tiger", "horse",
-                                "sheep", "dog", "rooster", "ox", "rat", "snake", "dragon"]
-                if zodiac_match in zodiac_order:
-                    animal_idx = zodiac_order.index(zodiac_match)
-                    # Year 1 mod 12 = 1 -> rabbit (idx 0), so offset = (animal_idx + 1)
-                    # Next occurrence: find smallest year >= sb_year where (year - 1) % 12 == animal_idx
-                    current_mod = (sb_year - 1) % 12
-                    diff = (animal_idx - current_mod) % 12
-                    next_year = sb_year + diff if diff > 0 else sb_year + 12
-                    # Check if current year IS that animal
-                    if diff == 0:
-                        return f"It is currently the **Year of the {zodiac_match.title()}** (Year {sb_year})! The next one will be Year {sb_year + 12}."
-                    else:
-                        return f"The next **Year of the {zodiac_match.title()}** is **Year {next_year}** ({diff} SkyBlock years from now, ~{int(diff * 124 / 24)} real days)."
+                offset = _YEARLY_EVENTS[zodiac_match]
+                # Find next year >= sb_year where (year - _CYCLE_BASE) % _CYCLE_LEN == offset
+                current_pos = (sb_year - _CYCLE_BASE) % _CYCLE_LEN
+                diff = (offset - current_pos) % _CYCLE_LEN
+                next_year = sb_year + diff if diff > 0 else sb_year + _CYCLE_LEN
+                if diff == 0:
+                    return f"It is currently the **Year of the {zodiac_match.title()}** (Year {sb_year})! The next one will be Year {sb_year + _CYCLE_LEN}."
+                else:
+                    return f"The next **Year of the {zodiac_match.title()}** is **Year {next_year}** ({diff} SkyBlock years from now, ~{int(diff * 124 / 24)} real days)."
 
             # --- Fast path: Diana profit question — direct answer, no AI ---
             diana_profit_kws = ["diana profit", "diana coins", "diana money", "diana per hour",
