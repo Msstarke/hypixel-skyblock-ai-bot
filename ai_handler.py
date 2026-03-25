@@ -1444,7 +1444,7 @@ class AIHandler:
 
             # --- Fast path: SkyBlock year / zodiac cycle ---
             q = question.lower()
-            if any(kw in q for kw in ["current year", "currant year", "skyblock year", "what year", "whats the year", "sb year"]):
+            if any(kw in q for kw in ["current year", "currant year", "skyblock year", "what year", "whats the year", "sb year", "next year"]):
                 import time as _time
                 # SkyBlock epoch: June 11, 2019 at 4:55 PM UTC. Each year = 124 hours (446400 seconds).
                 sb_epoch = 1560275700
