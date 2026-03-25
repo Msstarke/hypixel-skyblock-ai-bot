@@ -1449,7 +1449,16 @@ class AIHandler:
                 # SkyBlock epoch: June 11, 2019 at 4:55 PM UTC. Each year = 124 hours (446400 seconds).
                 sb_epoch = 1560275700
                 sb_year = int((_time.time() - sb_epoch) / 446400) + 1
-                return f"The current SkyBlock year is **Year {sb_year}**."
+                year_start = sb_epoch + (sb_year - 1) * 446400
+                year_end = year_start + 446400
+                import datetime
+                time_left = year_end - _time.time()
+                hours_left = max(0, int(time_left / 3600))
+                days_left = hours_left // 24
+                hrs_rem = hours_left % 24
+                if "next year" in q or "next skyblock" in q:
+                    return f"The current SkyBlock year is **Year {sb_year}**. **Year {sb_year + 1}** starts in ~**{days_left}d {hrs_rem}h**."
+                return f"The current SkyBlock year is **Year {sb_year}**. Year {sb_year + 1} starts in ~{days_left}d {hrs_rem}h."
 
             # Known SkyBlock yearly event cycle: use known anchor points to calculate
             # Known: Year 476 = Witch, cycle is 12 years
