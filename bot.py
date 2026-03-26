@@ -1683,8 +1683,8 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
                 if not search_result or len(search_result.strip()) < 100:
                     return
                 # Ask AI to produce a corrected answer using wiki data
-                fix_resp = await ai_handler.client.chat.completions.create(
-                    model=ai_handler.model,
+                fix_resp = await ai.client.chat.completions.create(
+                    model=ai.model,
                     messages=[
                         {"role": "system", "content": (
                             "You are a Hypixel Skyblock assistant. A player marked the previous answer as wrong. "
