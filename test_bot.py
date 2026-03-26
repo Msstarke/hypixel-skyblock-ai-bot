@@ -206,7 +206,7 @@ def run(url: str, suite_filter: str | None, verbose: bool):
     print(f"{'='*70}")
 
     for status, suite, question, reason, resp, elapsed in results:
-        icon = "✓" if status == "PASS" else "✗"
+        icon = "+" if status == "PASS" else "X"
         print(f"\n[{icon}] [{suite}] {question}")
         print(f"    → {reason}  ({elapsed:.1f}s)")
         if verbose or status == "FAIL":
