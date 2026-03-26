@@ -208,7 +208,7 @@ def run(url: str, suite_filter: str | None, verbose: bool):
     for status, suite, question, reason, resp, elapsed in results:
         icon = "+" if status == "PASS" else "X"
         print(f"\n[{icon}] [{suite}] {question}")
-        print(f"    → {reason}  ({elapsed:.1f}s)")
+        print(f"    > {reason}  ({elapsed:.1f}s)")
         if verbose or status == "FAIL":
             short = resp[:300].replace("\n", " ")
             print(f"    Response: {short}")
