@@ -1716,6 +1716,8 @@ class AIHandler:
                 "- PRICES: Use ONLY live price data provided below. Never guess or estimate prices.\n"
                 "- If the user has linked their account, reference their actual stats/gear.\n"
                 "- When unsure, say 'I'm not sure about that — check the wiki' rather than making something up.\n"
+                "- DUNGEON SCORES: S+ requires 300+ total score (Exploration+Speed+Skill+Bonus+Completion). Do NOT say S+ is a Kuudra thing or invent other scoring systems.\n"
+                "- NEVER describe a mechanic as belonging to a different game mode than it actually does (e.g. don't say S+ run is from Kuudra).\n"
                 + cata_note
                 + "- Budget questions: only list items whose live price fits the budget.\n"
                 "- Off-topic: say you only help with Skyblock.\n\n"
