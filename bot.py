@@ -1676,7 +1676,7 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     if vote == "down":
         async def _auto_fix():
             try:
-                from ai_handler import wiki_context
+                from wiki_lookup import wiki_context
                 from learned_facts import save_fact
                 import re as _re
                 search_result = await wiki_context(question, max_chars=5000)
