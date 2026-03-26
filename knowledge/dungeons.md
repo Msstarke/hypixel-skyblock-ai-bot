@@ -1,3 +1,21 @@
+# Dungeon Run Scoring (S+ Grade)
+
+To achieve **S+** (the highest grade) in a dungeon run you need a total score of **300+**.
+
+Score is made up of 5 components:
+- **Exploration** (max 100): Open all rooms + find all secrets. Secrets are hidden chests/bats/lever+fairy rooms. Target: find 100% of secrets.
+- **Speed** (max 100): Finish faster → higher score. S+ requires finishing within the floor's speed threshold (varies per floor). F7 S+ threshold: under ~17 minutes.
+- **Skill** (max 100): No deaths, no failed puzzles, no missed rooms. Every death = -2 skill score. Every failed puzzle = -10.
+- **Bonus** (up to +10): Based on Paul mayor (+10 if Paul is mayor), completing bonus objectives.
+- **Completion** (40): Just for finishing the floor.
+
+**Tips for S+:**
+- Find ALL secrets — use a dungeon map mod to track them.
+- Don't die — use Bonzo's Mask or Gyrokinetic Wand.
+- Don't fail puzzles — learn Creeper/Blaze/Tic-Tac-Toe solutions.
+- Paul mayor gives +10 bonus score automatically.
+- A 300 score gives the best chest quality (Obsidian/Bedrock tier).
+
 # Early Dungeon Gear Guide (Cata 0 - Cata 10)
 
 ### Cata 0 (Entrance & Floor 1)
