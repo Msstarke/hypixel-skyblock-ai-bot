@@ -31,6 +31,15 @@ def _connect() -> sqlite3.Connection:
             created_at   INTEGER NOT NULL
         )
     """)
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS question_log (
+            id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            username     TEXT NOT NULL,
+            question     TEXT NOT NULL,
+            response     TEXT NOT NULL,
+            created_at   INTEGER NOT NULL
+        )
+    """)
     # Add resolved column to existing tables (safe to re-run)
     for table in ("feedback", "unanswered"):
         try:
