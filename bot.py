@@ -1672,6 +1672,41 @@ async def on_reaction_add(reaction: discord.Reaction, user: discord.User):
     log_vote(user.id, str(user), question, response, vote)
     print(f"[feedback] {user} voted {emoji} on: {question[:60]}")
 
+    # Auto-fix: on downvote, search wiki and cache a better answer
+    if vote == "down":
+        async def _auto_fix():
+            try:
+                from ai_handler import wiki_context
+                from learned_facts import save_fact
+                import re as _re
+                search_result = await wiki_context(question, max_chars=5000)
+                if not search_result or len(search_result.strip()) < 100:
+                    return
+                # Ask AI to produce a corrected answer using wiki data
+                fix_resp = await ai_handler.client.chat.completions.create(
+                    model=ai_handler.model,
+                    messages=[
+                        {"role": "system", "content": (
+                            "You are a Hypixel Skyblock assistant. A player marked the previous answer as wrong. "
+                            "Use ONLY the wiki data below to give a correct, concise answer. "
+                            "Do not guess or invent anything not in the wiki data.\n\n"
+                            f"WIKI DATA:\n{search_result}"
+                        )},
+                        {"role": "user", "content": question},
+                    ],
+                    max_tokens=600,
+                    temperature=0.0,
+                )
+                fixed = fix_resp.choices[0].message.content.strip()
+                fixed = _re.sub(r"<think>[\s\S]*?</think>", "", fixed, flags=_re.IGNORECASE).strip()
+                if fixed and len(fixed) > 50:
+                    keywords = _re.sub(r"[^\w\s]", "", question.lower())
+                    save_fact(question, keywords, fixed, source="downvote_autofix")
+                    print(f"[autofix] Cached corrected answer for: {question[:60]}")
+            except Exception as e:
+                print(f"[autofix] Error: {e}")
+        asyncio.create_task(_auto_fix())
+
 
 @bot.command(name="feedback")
 @commands.is_owner()
