@@ -162,9 +162,9 @@ TESTS = [
     {
         "suite": "dungeons",
         "question": "Is the Rogue Sword good for dungeons?",
-        "required_any": ["free", "hub", "speed"],
+        "required_any": ["not", "low", "common", "upgrade", "better", "limited"],
         "required_all": [],
-        "bad_keywords": [],
+        "bad_keywords": ["yes", "great", "recommended", "best"],
     },
     {
         "suite": "dungeons",
