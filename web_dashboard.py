@@ -149,6 +149,13 @@ def api_ask():
     if hotm_data:
         result["hotm"] = hotm_data
 
+    # Log every question
+    try:
+        from feedback import log_question
+        log_question(mc_username or "unknown", question, response)
+    except Exception:
+        pass
+
     return jsonify(result)
 
 
