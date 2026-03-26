@@ -210,7 +210,7 @@ def run(url: str, suite_filter: str | None, verbose: bool):
         print(f"\n[{icon}] [{suite}] {question}")
         print(f"    > {reason}  ({elapsed:.1f}s)")
         if verbose or status == "FAIL":
-            short = resp[:300].replace("\n", " ")
+            short = resp[:300].replace("\n", " ").encode("ascii", "replace").decode()
             print(f"    Response: {short}")
 
     print(f"\n{'='*70}")
