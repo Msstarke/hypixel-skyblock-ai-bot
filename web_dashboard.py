@@ -242,56 +242,22 @@ def api_feedback():
 
 @app.route("/api/feedback/list")
 def api_feedback_list():
-    """View feedback stats, downvoted responses, and unanswered questions."""
-    try:
-        return _render_feedback_page()
-    except Exception as e:
-        import traceback
-        return f"<pre>Error: {e}\n\n{traceback.format_exc()}</pre>", 500
-
-def _render_feedback_page():
+    """JSON: feedback stats, downvoted responses, unanswered questions."""
     from feedback import get_feedback_stats, get_bad_responses, get_unanswered
-    stats = get_feedback_stats()
-    bad = get_bad_responses(limit=50)
-    unanswered = get_unanswered(limit=50)
+    return jsonify({
+        "stats": get_feedback_stats(),
+        "wrong": get_bad_responses(limit=50),
+        "unanswered": get_unanswered(limit=50),
+    })
 
-    # Build simple HTML page
-    html = "<html><head><title>SkyAI Feedback</title>"
-    html += "<style>body{font-family:monospace;background:#1a1a2e;color:#e0e0e0;padding:20px;max-width:900px;margin:0 auto}"
-    html += "h1{color:#00d4ff}h2{color:#ffa500;margin-top:30px}table{border-collapse:collapse;width:100%}"
-    html += "td,th{border:1px solid #333;padding:8px;text-align:left;vertical-align:top}th{background:#2a2a4a}"
-    html += "tr:nth-child(even){background:#1e1e3a}.bad{color:#ff6b6b}.good{color:#6bff6b}"
-    html += ".q{color:#00d4ff;max-width:200px}.r{max-width:400px;font-size:12px;white-space:pre-wrap}"
-    html += "a{color:#ffa500}</style></head><body>"
 
-    import datetime
-    from html import escape
-
-    html += "<h1>SkyAI Feedback Dashboard</h1>"
-    html += f"<p>+{stats['thumbs_up']} correct | -{stats['thumbs_down']} wrong (unresolved) | ?{stats['unanswered']} unanswered</p>"
-
-    if bad:
-        html += "<h2>Wrong Responses (unresolved)</h2><table><tr><th>#</th><th>User</th><th>Question</th><th>Response</th><th>Time</th></tr>"
-        for r in bad:
-            t = datetime.datetime.fromtimestamp(r['created_at']).strftime('%Y-%m-%d %H:%M')
-            resp = r.get('response', '') or ''
-            resp = resp[:300] + "..." if len(resp) > 300 else resp
-            html += f"<tr><td>{r['id']}</td><td>{escape(str(r.get('discord_name','')))}</td><td class='q'>{escape(str(r.get('question','')))}</td><td class='r'>{escape(resp)}</td><td>{t}</td></tr>"
-        html += "</table>"
-    else:
-        html += "<h2>Wrong Responses</h2><p class='good'>None! All resolved.</p>"
-
-    if unanswered:
-        html += "<h2>Unanswered Questions</h2><table><tr><th>#</th><th>Question</th><th>Time</th></tr>"
-        for r in unanswered:
-            t = datetime.datetime.fromtimestamp(r['created_at']).strftime('%Y-%m-%d %H:%M')
-            html += f"<tr><td>{r['id']}</td><td class='q'>{escape(str(r.get('question','')))}</td><td>{t}</td></tr>"
-        html += "</table>"
-    else:
-        html += "<h2>Unanswered Questions</h2><p class='good'>None!</p>"
-
-    html += "</body></html>"
-    return html, 200, {"Content-Type": "text/html"}
+@app.route("/api/questions")
+def api_questions():
+    """JSON: recent questions asked to the bot."""
+    from feedback import get_questions
+    limit = min(int(request.args.get("limit", 50)), 200)
+    offset = int(request.args.get("offset", 0))
+    return jsonify(get_questions(limit=limit, offset=offset))
 
 
 @app.route("/api/health")
