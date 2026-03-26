@@ -108,6 +108,24 @@ def resolve_feedback(feedback_id: int) -> bool:
     return cur.rowcount > 0
 
 
+def log_question(username: str, question: str, response: str) -> None:
+    """Log every question asked to the bot."""
+    _con.execute(
+        "INSERT INTO question_log (username, question, response, created_at) VALUES (?, ?, ?, ?)",
+        (username[:100], question[:500], response[:1000], int(time.time())),
+    )
+    _con.commit()
+
+
+def get_questions(limit: int = 50, offset: int = 0) -> list[dict]:
+    """Get recent questions from the log."""
+    rows = _con.execute(
+        "SELECT * FROM question_log ORDER BY created_at DESC LIMIT ? OFFSET ?",
+        (limit, offset),
+    ).fetchall()
+    return [dict(r) for r in rows]
+
+
 def resolve_all_feedback() -> int:
     """Mark all unresolved downvotes and unanswered questions as resolved. Returns count resolved."""
     c1 = _con.execute("UPDATE feedback SET resolved = 1 WHERE vote = 'down' AND resolved = 0").rowcount
