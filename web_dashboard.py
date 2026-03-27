@@ -419,7 +419,18 @@ def api_mod_version():
 
 @app.route("/api/mod/download")
 def api_mod_download():
-    """Serves the latest mod jar for auto-update."""
+    """Serves the latest mod jar. Requires session token or admin password."""
+    # Allow download via session token (from mod auto-updater)
+    session = request.args.get("session", "")
+    if session:
+        from licenses import validate_session
+        info = validate_session(session)
+        if not info:
+            return jsonify({"error": "Invalid session"}), 401
+    # Allow download via admin password (for manual distribution)
+    elif not _check_admin():
+        return jsonify({"error": "Login required to download. Visit the SkyAI website."}), 401
+
     from flask import send_from_directory
     if not MOD_DIR.exists():
         return jsonify({"error": "No mod builds available"}), 404
