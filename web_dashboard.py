@@ -966,8 +966,6 @@ def _render_dashboard(mc_username, key, plan):
 
 # ── Admin Panel ────────────────────────────────────────────────────────────
 
-_ADMIN_STYLE = f'<style>{_PAGE_CSS}</style>'
-
 @app.route("/admin")
 def admin_panel():
     """Admin dashboard — manage licenses, users, questions, feedback."""
