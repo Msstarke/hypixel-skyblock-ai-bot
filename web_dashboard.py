@@ -392,6 +392,18 @@ def api_license_unbind():
     return jsonify({"ok": ok})
 
 
+@app.route("/api/admin/promote", methods=["POST"])
+def api_admin_promote():
+    """Promote a user to admin. Requires admin password."""
+    if not _check_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    username = data.get("username", "")
+    from accounts import make_admin
+    ok = make_admin(username)
+    return jsonify({"ok": ok, "username": username})
+
+
 @app.route("/")
 def index():
     """Serve the landing page."""
