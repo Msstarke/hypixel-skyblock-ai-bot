@@ -704,6 +704,207 @@ def _render_dashboard(mc_username, key, plan):
     </body></html>""", 200, {"Content-Type": "text/html"}
 
 
+# ── Admin Panel ────────────────────────────────────────────────────────────
+
+_ADMIN_STYLE = _PAGE_STYLE.replace("max-width: 480px", "max-width: 900px")
+
+@app.route("/admin")
+def admin_panel():
+    """Admin dashboard — manage licenses, users, questions, feedback."""
+    mc_username = _get_web_user()
+    if not mc_username:
+        return redirect("/login?next=/admin")
+    from accounts import is_admin
+    if not is_admin(mc_username):
+        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>SkyAI — Admin</title>{_PAGE_STYLE}</head><body>
+        <div class="card"><h1><span class="gradient">Access Denied</span></h1><p class="sub">You are not an admin.</p>
+        <a href="/dashboard" class="btn btn-ghost">Back to Dashboard</a></div></body></html>""", 403, {"Content-Type": "text/html"}
+
+    from html import escape
+    from licenses import list_licenses, _con as lcon
+    from accounts import list_accounts
+    from feedback import get_feedback_stats, get_bad_responses, get_questions
+    import datetime
+
+    licenses = list_licenses(100)
+    accounts = list_accounts(100)
+    stats = get_feedback_stats()
+    wrong = get_bad_responses(20)
+    questions = get_questions(20)
+
+    # Build license table
+    lic_rows = ""
+    for l in licenses:
+        exp = "Never" if not l.get("expires_at") else datetime.datetime.fromtimestamp(l["expires_at"]).strftime("%Y-%m-%d")
+        status = "Active" if l.get("active") else "Inactive"
+        s_color = "#22c55e" if l.get("active") else "#ef4444"
+        lic_rows += f"""<tr>
+            <td style="font-family:monospace;font-size:0.75rem;">{escape(str(l.get('license_key','')))}</td>
+            <td>{escape(str(l.get('mc_username','') or '—'))}</td>
+            <td>{escape(str(l.get('plan','')))}</td>
+            <td style="color:{s_color}">{status}</td>
+            <td>{exp}</td>
+            <td>
+                <form method="POST" action="/admin/action" style="display:inline">
+                    <input type="hidden" name="key" value="{escape(str(l.get('license_key','')))}">
+                    <button name="action" value="{'deactivate' if l.get('active') else 'reactivate'}" class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem;">{'Deactivate' if l.get('active') else 'Reactivate'}</button>
+                    <button name="action" value="unbind" class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Unbind</button>
+                </form>
+            </td></tr>"""
+
+    # Build accounts table
+    acc_rows = ""
+    for a in accounts:
+        admin_badge = '<span style="color:#f59e0b;">Admin</span>' if a.get("is_admin") else "User"
+        acc_rows += f"""<tr>
+            <td>{escape(str(a.get('mc_username','')))}</td>
+            <td>{admin_badge}</td>
+            <td>{datetime.datetime.fromtimestamp(a.get('created_at',0)).strftime("%Y-%m-%d")}</td>
+            <td>
+                {"" if a.get("is_admin") else '<form method="POST" action="/admin/action" style="display:inline"><input type="hidden" name="username" value="' + escape(str(a.get("mc_username",""))) + '"><button name="action" value="make_admin" class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Make Admin</button></form>'}
+            </td></tr>"""
+
+    # Build wrong answers table
+    wrong_rows = ""
+    for w in wrong[:10]:
+        q = escape(str(w.get("question", ""))[:80])
+        r = escape(str(w.get("response", ""))[:100])
+        wrong_rows += f"<tr><td>{q}</td><td style='font-size:0.75rem;'>{r}</td></tr>"
+
+    # Build questions table
+    q_rows = ""
+    for q in questions[:10]:
+        qu = escape(str(q.get("question", ""))[:80])
+        usr = escape(str(q.get("username", "")))
+        q_rows += f"<tr><td>{usr}</td><td>{qu}</td></tr>"
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>SkyAI — Admin</title>{_ADMIN_STYLE}</head><body style="display:block;padding:24px;">
+    <div style="max-width:1000px;margin:0 auto;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+            <h1><span class="gradient">SkyAI Admin</span></h1>
+            <div><a href="/dashboard" style="color:#94a3b8;margin-right:16px;">Dashboard</a><a href="/" style="color:#94a3b8;margin-right:16px;">Site</a><a href="/logout" style="color:#ef4444;">Logout</a></div>
+        </div>
+
+        <!-- Stats -->
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px;">
+            <div class="card" style="padding:20px;text-align:center;"><div style="font-size:2rem;font-weight:800;">{len(licenses)}</div><div style="color:#64748b;font-size:0.8rem;">Licenses</div></div>
+            <div class="card" style="padding:20px;text-align:center;"><div style="font-size:2rem;font-weight:800;">{len(accounts)}</div><div style="color:#64748b;font-size:0.8rem;">Accounts</div></div>
+            <div class="card" style="padding:20px;text-align:center;"><div style="font-size:2rem;font-weight:800;color:#22c55e;">{stats.get('thumbs_up',0)}</div><div style="color:#64748b;font-size:0.8rem;">Upvotes</div></div>
+            <div class="card" style="padding:20px;text-align:center;"><div style="font-size:2rem;font-weight:800;color:#ef4444;">{stats.get('thumbs_down',0)}</div><div style="color:#64748b;font-size:0.8rem;">Downvotes</div></div>
+        </div>
+
+        <!-- Generate Keys -->
+        <div class="card" style="padding:20px;margin-bottom:24px;">
+            <h3 style="margin-bottom:12px;">Generate License Keys</h3>
+            <form method="POST" action="/admin/action" style="display:flex;gap:8px;flex-wrap:wrap;">
+                <select name="plan" style="padding:8px 12px;background:#0c0c1d;border:1px solid #1a1a3a;border-radius:6px;color:#e2e8f0;">
+                    <option value="free">Free</option>
+                    <option value="basic" selected>Basic (30d)</option>
+                    <option value="pro">Pro (30d)</option>
+                    <option value="unlimited">Unlimited (perm)</option>
+                </select>
+                <input type="number" name="count" value="5" min="1" max="50" style="width:60px;padding:8px;background:#0c0c1d;border:1px solid #1a1a3a;border-radius:6px;color:#e2e8f0;">
+                <button name="action" value="generate_keys" class="btn btn-primary" style="padding:8px 20px;">Generate</button>
+            </form>
+        </div>
+
+        <!-- Generated keys display -->
+        <div id="generated-keys"></div>
+
+        <!-- Licenses -->
+        <div class="card" style="padding:20px;margin-bottom:24px;">
+            <h3 style="margin-bottom:12px;">Licenses ({len(licenses)})</h3>
+            <div style="overflow-x:auto;">
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                <tr style="border-bottom:1px solid #1a1a3a;"><th style="text-align:left;padding:8px;color:#64748b;">Key</th><th style="text-align:left;padding:8px;color:#64748b;">User</th><th style="text-align:left;padding:8px;color:#64748b;">Plan</th><th style="text-align:left;padding:8px;color:#64748b;">Status</th><th style="text-align:left;padding:8px;color:#64748b;">Expires</th><th style="text-align:left;padding:8px;color:#64748b;">Actions</th></tr>
+                {lic_rows}
+            </table></div>
+        </div>
+
+        <!-- Accounts -->
+        <div class="card" style="padding:20px;margin-bottom:24px;">
+            <h3 style="margin-bottom:12px;">Accounts ({len(accounts)})</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                <tr style="border-bottom:1px solid #1a1a3a;"><th style="text-align:left;padding:8px;color:#64748b;">Username</th><th style="text-align:left;padding:8px;color:#64748b;">Role</th><th style="text-align:left;padding:8px;color:#64748b;">Created</th><th style="text-align:left;padding:8px;color:#64748b;">Actions</th></tr>
+                {acc_rows}
+            </table>
+        </div>
+
+        <!-- Wrong Answers -->
+        <div class="card" style="padding:20px;margin-bottom:24px;">
+            <h3 style="margin-bottom:12px;">Wrong Answers ({stats.get('thumbs_down',0)})</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                <tr style="border-bottom:1px solid #1a1a3a;"><th style="text-align:left;padding:8px;color:#64748b;">Question</th><th style="text-align:left;padding:8px;color:#64748b;">Response</th></tr>
+                {wrong_rows if wrong_rows else "<tr><td colspan='2' style='padding:8px;color:#22c55e;'>None!</td></tr>"}
+            </table>
+        </div>
+
+        <!-- Recent Questions -->
+        <div class="card" style="padding:20px;margin-bottom:24px;">
+            <h3 style="margin-bottom:12px;">Recent Questions</h3>
+            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
+                <tr style="border-bottom:1px solid #1a1a3a;"><th style="text-align:left;padding:8px;color:#64748b;">User</th><th style="text-align:left;padding:8px;color:#64748b;">Question</th></tr>
+                {q_rows if q_rows else "<tr><td colspan='2' style='padding:8px;color:#64748b;'>No questions yet</td></tr>"}
+            </table>
+        </div>
+    </div>
+    </body></html>""", 200, {"Content-Type": "text/html"}
+
+
+@app.route("/admin/action", methods=["POST"])
+def admin_action():
+    """Handle admin actions (generate keys, deactivate, etc)."""
+    mc_username = _get_web_user()
+    if not mc_username:
+        return redirect("/login?next=/admin")
+    from accounts import is_admin
+    if not is_admin(mc_username):
+        return redirect("/dashboard")
+
+    action = request.form.get("action", "")
+
+    if action == "generate_keys":
+        plan = request.form.get("plan", "basic")
+        count = min(int(request.form.get("count", 5)), 50)
+        expires = None if plan == "unlimited" else 30
+        from licenses import generate_keys
+        keys = generate_keys(count, plan, expires)
+        # Show keys on a simple page
+        key_list = "<br>".join(keys)
+        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>Generated Keys</title>{_PAGE_STYLE}</head><body>
+        <div class="card">
+            <h1><span class="gradient">Keys Generated</span></h1>
+            <p class="sub">{count} {plan} keys</p>
+            <div class="key-box" style="text-align:left;font-size:0.8rem;line-height:2;">{key_list}</div>
+            <a href="/admin" class="btn btn-ghost">Back to Admin</a>
+        </div></body></html>""", 200, {"Content-Type": "text/html"}
+
+    elif action == "deactivate":
+        key = request.form.get("key", "")
+        from licenses import deactivate_key
+        deactivate_key(key)
+
+    elif action == "reactivate":
+        key = request.form.get("key", "")
+        from licenses import reactivate_key
+        reactivate_key(key)
+
+    elif action == "unbind":
+        key = request.form.get("key", "")
+        from licenses import unbind_key
+        unbind_key(key)
+
+    elif action == "make_admin":
+        username = request.form.get("username", "")
+        from accounts import make_admin
+        make_admin(username)
+
+    return redirect("/admin")
+
+
 # --- Mod auto-update endpoints ---
 
 MOD_DIR = Path(__file__).parent / "fabric-mod" / "dist"
