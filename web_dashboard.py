@@ -417,6 +417,12 @@ def api_admin_promote():
     return jsonify({"ok": ok, "username": username})
 
 
+@app.route("/.well-known/apple-developer-merchantid-domain-association")
+def apple_pay_verification():
+    """Apple Pay domain verification file."""
+    return "7b2276657273696f6e223a312c227073704964223a2236343641384242363234393134464232453835354239443531364642353530333338314132444446383545414643463630323336443830413044434235334632222c22637265617465644f6e223a313736303636343737373433327d", 200, {"Content-Type": "text/plain"}
+
+
 @app.route("/")
 def index():
     """Serve the landing page."""
