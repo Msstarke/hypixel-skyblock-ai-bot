@@ -980,72 +980,100 @@ def admin_panel():
         usr = escape(str(q.get("username", "")))
         q_rows += f"<tr><td>{usr}</td><td>{qu}</td></tr>"
 
-    return f"""{_page_head("SkyAI — Admin")}<body>
+    return f"""{_page_head("SkyAI — Admin")}
+    <style>
+        .ap {{ max-width: 900px; margin: 0 auto; padding: 32px 24px 80px; }}
+        .ap h1 {{ font-size: 1.6rem; font-weight: 800; margin-bottom: 24px; }}
+        .ap-stats {{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 28px; }}
+        .ap-stat {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 20px; text-align: center; }}
+        .ap-stat-val {{ font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; }}
+        .ap-stat-lbl {{ font-size: 0.72rem; color: #4a5268; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-top: 4px; }}
+        .ap-section {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; margin-bottom: 20px; overflow: hidden; }}
+        .ap-section-hdr {{ padding: 16px 20px; border-bottom: 1px solid #12122a; display: flex; justify-content: space-between; align-items: center; }}
+        .ap-section-hdr h3 {{ font-size: 0.85rem; font-weight: 700; }}
+        .ap-section-body {{ padding: 16px 20px; overflow-x: auto; }}
+        .ap-tbl {{ width: 100%; border-collapse: collapse; }}
+        .ap-tbl th {{ text-align: left; padding: 8px 10px; color: #3a3a5a; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #12122a; }}
+        .ap-tbl td {{ padding: 8px 10px; border-bottom: 1px solid #0a0a1e; font-size: 0.82rem; vertical-align: middle; }}
+        .ap-tbl tr:last-child td {{ border-bottom: none; }}
+        .ap-btn {{ display: inline-block; padding: 4px 12px; font-size: 0.72rem; font-weight: 600; border: 1px solid #16162a; border-radius: 6px; background: transparent; color: #8892a8; cursor: pointer; transition: all 0.15s; text-decoration: none; }}
+        .ap-btn:hover {{ background: rgba(99,102,241,0.08); color: #e2e8f0; border-color: #22224a; text-decoration: none; }}
+        .ap-btn-danger:hover {{ background: rgba(239,68,68,0.08); color: #ef4444; border-color: rgba(239,68,68,0.2); }}
+        .ap-gen {{ display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }}
+        .ap-gen select, .ap-gen input[type=number] {{ padding: 8px 12px; background: #06061a; border: 1px solid #16162a; border-radius: 8px; color: #e2e8f0; font-size: 0.82rem; font-family: inherit; width: auto; margin: 0; }}
+        .ap-gen button {{ padding: 8px 20px; border-radius: 8px; font-size: 0.82rem; font-weight: 700; }}
+        .ap-key {{ font-family: 'JetBrains Mono', monospace; font-size: 0.72rem; color: #f59e0b; }}
+        .ap-badge {{ display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; }}
+        .ap-badge-active {{ background: rgba(34,197,94,0.1); color: #22c55e; }}
+        .ap-badge-inactive {{ background: rgba(239,68,68,0.1); color: #ef4444; }}
+        .ap-badge-admin {{ background: rgba(245,158,11,0.1); color: #f59e0b; }}
+        .ap-badge-user {{ background: rgba(99,102,241,0.06); color: #4a5268; }}
+        .ap-empty {{ padding: 20px; text-align: center; color: #3a3a5a; font-size: 0.82rem; }}
+        @media (max-width: 768px) {{ .ap-stats {{ grid-template-columns: repeat(2, 1fr); }} }}
+    </style>
+    <body>
     {_page_nav("admin")}
-    <div class="page-wide">
-        <h1 style="font-size:2rem;margin-bottom:32px;"><span class="gradient">Admin Panel</span></h1>
+    <div class="ap">
+        <h1><span class="gradient">Admin Panel</span></h1>
 
-        <!-- Stats -->
-        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px;">
-            <div class="card" style="padding:20px;text-align:center;"><div style="font-size:2rem;font-weight:800;">{len(licenses)}</div><div style="color:#64748b;font-size:0.8rem;">Licenses</div></div>
-            <div class="card" style="padding:20px;text-align:center;"><div style="font-size:2rem;font-weight:800;">{len(accounts)}</div><div style="color:#64748b;font-size:0.8rem;">Accounts</div></div>
-            <div class="card" style="padding:20px;text-align:center;"><div style="font-size:2rem;font-weight:800;color:#22c55e;">{stats.get('thumbs_up',0)}</div><div style="color:#64748b;font-size:0.8rem;">Upvotes</div></div>
-            <div class="card" style="padding:20px;text-align:center;"><div style="font-size:2rem;font-weight:800;color:#ef4444;">{stats.get('thumbs_down',0)}</div><div style="color:#64748b;font-size:0.8rem;">Downvotes</div></div>
+        <div class="ap-stats">
+            <div class="ap-stat"><div class="ap-stat-val">{len(licenses)}</div><div class="ap-stat-lbl">Licenses</div></div>
+            <div class="ap-stat"><div class="ap-stat-val">{len(accounts)}</div><div class="ap-stat-lbl">Accounts</div></div>
+            <div class="ap-stat"><div class="ap-stat-val" style="color:#22c55e;">{stats.get('thumbs_up',0)}</div><div class="ap-stat-lbl">Upvotes</div></div>
+            <div class="ap-stat"><div class="ap-stat-val" style="color:#ef4444;">{stats.get('thumbs_down',0)}</div><div class="ap-stat-lbl">Downvotes</div></div>
         </div>
 
-        <!-- Generate Keys -->
-        <div class="card" style="padding:20px;margin-bottom:24px;">
-            <h3 style="margin-bottom:12px;">Generate License Keys</h3>
-            <form method="POST" action="/admin/action" style="display:flex;gap:8px;flex-wrap:wrap;">
-                <select name="plan" style="padding:8px 12px;background:#0c0c1d;border:1px solid #1a1a3a;border-radius:6px;color:#e2e8f0;">
-                    <option value="free">Free</option>
-                    <option value="basic" selected>Basic (30d)</option>
-                    <option value="pro">Pro (30d)</option>
-                    <option value="unlimited">Unlimited (perm)</option>
-                </select>
-                <input type="number" name="count" value="5" min="1" max="50" style="width:60px;padding:8px;background:#0c0c1d;border:1px solid #1a1a3a;border-radius:6px;color:#e2e8f0;">
-                <button name="action" value="generate_keys" class="btn btn-primary" style="padding:8px 20px;">Generate</button>
-            </form>
+        <div class="ap-section">
+            <div class="ap-section-hdr">
+                <h3>Generate Keys</h3>
+            </div>
+            <div class="ap-section-body">
+                <form method="POST" action="/admin/action" class="ap-gen">
+                    <select name="plan"><option value="free">Free</option><option value="basic" selected>Basic (30d)</option><option value="pro">Pro (30d)</option><option value="unlimited">Unlimited (perm)</option></select>
+                    <input type="number" name="count" value="5" min="1" max="50">
+                    <button name="action" value="generate_keys" class="btn btn-primary" style="width:auto;margin:0;">Generate</button>
+                </form>
+            </div>
         </div>
 
-        <!-- Generated keys display -->
-        <div id="generated-keys"></div>
-
-        <!-- Licenses -->
-        <div class="card" style="padding:20px;margin-bottom:24px;">
-            <h3 style="margin-bottom:12px;">Licenses ({len(licenses)})</h3>
-            <div style="overflow-x:auto;">
-            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
-                <tr style="border-bottom:1px solid #1a1a3a;"><th style="text-align:left;padding:8px;color:#64748b;">Key</th><th style="text-align:left;padding:8px;color:#64748b;">User</th><th style="text-align:left;padding:8px;color:#64748b;">Plan</th><th style="text-align:left;padding:8px;color:#64748b;">Status</th><th style="text-align:left;padding:8px;color:#64748b;">Expires</th><th style="text-align:left;padding:8px;color:#64748b;">Actions</th></tr>
-                {lic_rows}
-            </table></div>
+        <div class="ap-section">
+            <div class="ap-section-hdr"><h3>Licenses ({len(licenses)})</h3></div>
+            <div class="ap-section-body">
+                <table class="ap-tbl">
+                    <tr><th>Key</th><th>User</th><th>Plan</th><th>Status</th><th>Expires</th><th>Actions</th></tr>
+                    {lic_rows if lic_rows else "<tr><td colspan='6' class='ap-empty'>No licenses yet</td></tr>"}
+                </table>
+            </div>
         </div>
 
-        <!-- Accounts -->
-        <div class="card" style="padding:20px;margin-bottom:24px;">
-            <h3 style="margin-bottom:12px;">Accounts ({len(accounts)})</h3>
-            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
-                <tr style="border-bottom:1px solid #1a1a3a;"><th style="text-align:left;padding:8px;color:#64748b;">Username</th><th style="text-align:left;padding:8px;color:#64748b;">Role</th><th style="text-align:left;padding:8px;color:#64748b;">Created</th><th style="text-align:left;padding:8px;color:#64748b;">Actions</th></tr>
-                {acc_rows}
-            </table>
+        <div class="ap-section">
+            <div class="ap-section-hdr"><h3>Accounts ({len(accounts)})</h3></div>
+            <div class="ap-section-body">
+                <table class="ap-tbl">
+                    <tr><th>Username</th><th>Role</th><th>Created</th><th>Actions</th></tr>
+                    {acc_rows if acc_rows else "<tr><td colspan='4' class='ap-empty'>No accounts yet</td></tr>"}
+                </table>
+            </div>
         </div>
 
-        <!-- Wrong Answers -->
-        <div class="card" style="padding:20px;margin-bottom:24px;">
-            <h3 style="margin-bottom:12px;">Wrong Answers ({stats.get('thumbs_down',0)})</h3>
-            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
-                <tr style="border-bottom:1px solid #1a1a3a;"><th style="text-align:left;padding:8px;color:#64748b;">Question</th><th style="text-align:left;padding:8px;color:#64748b;">Response</th></tr>
-                {wrong_rows if wrong_rows else "<tr><td colspan='2' style='padding:8px;color:#22c55e;'>None!</td></tr>"}
-            </table>
+        <div class="ap-section">
+            <div class="ap-section-hdr"><h3>Wrong Answers ({stats.get('thumbs_down',0)})</h3></div>
+            <div class="ap-section-body">
+                <table class="ap-tbl">
+                    <tr><th>Question</th><th>Response</th></tr>
+                    {wrong_rows if wrong_rows else "<tr><td colspan='2' class='ap-empty'>None — all good!</td></tr>"}
+                </table>
+            </div>
         </div>
 
-        <!-- Recent Questions -->
-        <div class="card" style="padding:20px;margin-bottom:24px;">
-            <h3 style="margin-bottom:12px;">Recent Questions</h3>
-            <table style="width:100%;border-collapse:collapse;font-size:0.85rem;">
-                <tr style="border-bottom:1px solid #1a1a3a;"><th style="text-align:left;padding:8px;color:#64748b;">User</th><th style="text-align:left;padding:8px;color:#64748b;">Question</th></tr>
-                {q_rows if q_rows else "<tr><td colspan='2' style='padding:8px;color:#64748b;'>No questions yet</td></tr>"}
-            </table>
+        <div class="ap-section">
+            <div class="ap-section-hdr"><h3>Recent Questions</h3></div>
+            <div class="ap-section-body">
+                <table class="ap-tbl">
+                    <tr><th>User</th><th>Question</th></tr>
+                    {q_rows if q_rows else "<tr><td colspan='2' class='ap-empty'>No questions yet</td></tr>"}
+                </table>
+            </div>
         </div>
     </div>
     </body></html>""", 200, {"Content-Type": "text/html"}
