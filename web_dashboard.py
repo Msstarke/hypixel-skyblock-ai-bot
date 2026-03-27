@@ -99,18 +99,10 @@ def api_ask():
     if not data or "question" not in data:
         return jsonify({"error": "Missing 'question' field"}), 400
 
-    # Session-based auth (new system)
-    session = data.get("session", "").strip()
-    if session:
-        license_info, err = _auth_session(data)
-        if err:
-            return err
-    else:
-        # Legacy auth: global API key (for backwards compat / testing)
-        if INGAME_API_KEY:
-            provided_key = data.get("api_key", "")
-            if provided_key != INGAME_API_KEY:
-                return jsonify({"error": "Invalid API key"}), 401
+    # Session-based auth — license key required
+    license_info, err = _auth_session(data)
+    if err:
+        return err
 
     question = data["question"].strip()
     if not question:
