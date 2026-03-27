@@ -573,6 +573,9 @@ def _login_required_page():
 @app.route("/login", methods=["GET", "POST"])
 def web_login():
     """Login page."""
+    # If already logged in, go to dashboard
+    if _get_web_user():
+        return redirect("/dashboard")
     from html import escape
     error = ""
     next_url = request.args.get("next", request.form.get("next", "/dashboard"))
@@ -587,11 +590,12 @@ def web_login():
             return resp
         error = result["error"]
 
-    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>SkyAI — Login</title>{_PAGE_STYLE}</head><body>
+    return f"""{_page_head("SkyAI — Sign In")}<body>
+    {_page_nav()}
+    <div class="page-center">
     <div class="card">
-        <h1><span class="gradient">SkyAI</span></h1>
-        <p class="sub">Sign in to your account</p>
+        <h1><span class="gradient">Welcome back</span></h1>
+        <p class="sub">Sign in to your SkyAI account</p>
         {"<p class='error'>" + escape(error) + "</p>" if error else ""}
         <form method="POST">
             <input type="hidden" name="next" value="{escape(next_url)}">
@@ -599,7 +603,8 @@ def web_login():
             <input type="password" name="password" placeholder="Password" required>
             <button type="submit" class="btn btn-primary">Sign In</button>
         </form>
-        <a href="/register?next={escape(next_url)}" class="btn btn-ghost">Create Account</a>
+        <a href="/register?next={escape(next_url)}" class="btn btn-ghost">Don't have an account? Sign Up</a>
+    </div>
     </div>
     </body></html>""", 200, {"Content-Type": "text/html"}
 
@@ -607,6 +612,8 @@ def web_login():
 @app.route("/register", methods=["GET", "POST"])
 def web_register():
     """Register page."""
+    if _get_web_user():
+        return redirect("/dashboard")
     from html import escape
     error = ""
     next_url = request.args.get("next", request.form.get("next", "/dashboard"))
@@ -628,11 +635,12 @@ def web_register():
                     return resp
             error = result.get("error", "Registration failed")
 
-    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>SkyAI — Register</title>{_PAGE_STYLE}</head><body>
+    return f"""{_page_head("SkyAI — Sign Up")}<body>
+    {_page_nav()}
+    <div class="page-center">
     <div class="card">
-        <h1><span class="gradient">SkyAI</span></h1>
-        <p class="sub">Create your SkyAI account</p>
+        <h1><span class="gradient">Create account</span></h1>
+        <p class="sub">Sign up to get started with SkyAI</p>
         {"<p class='error'>" + escape(error) + "</p>" if error else ""}
         <form method="POST">
             <input type="hidden" name="next" value="{escape(next_url)}">
@@ -642,6 +650,7 @@ def web_register():
             <button type="submit" class="btn btn-primary">Create Account</button>
         </form>
         <a href="/login?next={escape(next_url)}" class="btn btn-ghost">Already have an account? Sign In</a>
+    </div>
     </div>
     </body></html>""", 200, {"Content-Type": "text/html"}
 
