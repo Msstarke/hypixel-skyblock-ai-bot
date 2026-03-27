@@ -1,1 +1,1 @@
-Added feedback buttons (Y/N keys), removed !aiconfig, bug fixes
+License key system added. Use !aikey to activate your subscription.
