@@ -793,8 +793,27 @@ TESTS = [
 
 # ---------------------------------------------------------------------------
 
+def activate_session(base_url: str) -> str:
+    """Activate the test license key and return a session token."""
+    payload = json.dumps({
+        "license_key": TEST_LICENSE_KEY,
+        "mc_uuid": "test-uuid-0000",
+        "username": "TestBot",
+    }).encode()
+    req = urllib.request.Request(
+        base_url + "/api/activate",
+        data=payload,
+        headers={"Content-Type": "application/json"},
+        method="POST",
+    )
+    with urllib.request.urlopen(req, timeout=10) as resp:
+        body = json.loads(resp.read())
+        return body["session"]
+
+
 def ask(url: str, question: str) -> tuple[str, float]:
-    payload = json.dumps({"question": question}).encode()
+    global _session_token
+    payload = json.dumps({"question": question, "session": _session_token or "", "username": "TestBot"}).encode()
     req = urllib.request.Request(
         url,
         data=payload,
