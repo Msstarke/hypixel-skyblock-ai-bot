@@ -846,7 +846,9 @@ def dashboard():
 
 def _render_dashboard(mc_username, key, plan):
     """Render the dashboard page with key + download."""
+    from html import escape as _esc
     from accounts import is_admin as _is_admin
+    mc_username = _esc(mc_username)
     plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro", "unlimited": "Unlimited"}
     plan_class = f"plan-{plan}" if plan in ("free", "basic", "pro", "unlimited") else "plan-free"
     limits = {"free": "10", "basic": "30", "pro": "100", "unlimited": "Unlimited"}
