@@ -121,6 +121,16 @@ def logout(token: str):
     _con.commit()
 
 
+def reset_password(mc_username: str, new_password: str) -> bool:
+    """Reset a user's password."""
+    cur = _con.execute(
+        "UPDATE accounts SET password_hash = ? WHERE mc_username = ?",
+        (_hash_password(new_password), mc_username),
+    )
+    _con.commit()
+    return cur.rowcount > 0
+
+
 def is_admin(mc_username: str) -> bool:
     """Check if user is an admin."""
     row = _con.execute("SELECT is_admin FROM accounts WHERE mc_username = ?", (mc_username,)).fetchone()
