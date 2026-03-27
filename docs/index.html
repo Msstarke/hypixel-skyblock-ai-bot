@@ -481,7 +481,7 @@
             <a href="#features">Features</a>
             <a href="#buy">Pricing</a>
             <a href="#faq">FAQ</a>
-            <a href="https://github.com/Msstarke/hypixel-skyblock-ai-bot/releases/latest">Download</a>
+            <a href="#buy">Download</a>
         </div>
     </nav>
 
@@ -491,7 +491,7 @@
         <h1>Ask anything.<br><span class="gradient">Get answers instantly.</span></h1>
         <p class="sub">AI-powered Skyblock assistant that lives inside your game. Real-time prices, accurate guides, personalized advice.</p>
         <div class="hero-buttons">
-            <a href="https://github.com/Msstarke/hypixel-skyblock-ai-bot/releases/latest" class="btn btn-primary">Download Free</a>
+            <a href="#buy" class="btn btn-primary">Get Started Free</a>
             <a href="#buy" class="btn btn-ghost">View Pricing</a>
         </div>
     </div>
@@ -574,7 +574,7 @@
                 <div class="step-num">1</div>
                 <div>
                     <h3>Download the mod</h3>
-                    <p>Grab the <a href="https://github.com/Msstarke/hypixel-skyblock-ai-bot/releases/latest">.jar from GitHub</a>. Drop it in your Fabric mods folder.</p>
+                    <p>Sign up above and download the mod from your dashboard. Drop it in your Fabric mods folder.</p>
                 </div>
             </div>
             <div class="step-item">
@@ -613,7 +613,7 @@
                     <li><span class="check">&#10003;</span> SkyBlock calendar</li>
                     <li><span class="check">&#10003;</span> In-game overlay</li>
                 </ul>
-                <a href="https://github.com/Msstarke/hypixel-skyblock-ai-bot/releases/latest" class="plan-btn plan-btn-free">Download Free</a>
+                <button onclick="openCheckout('free')" class="plan-btn plan-btn-free">Get Free</button>
             </div>
             <!-- Basic -->
             <div class="plan-card popular">
@@ -654,6 +654,7 @@
             <div id="checkout-basic" style="display:none;">
                 <div
                     data-whop-checkout-plan-id="plan_7EWYWncqMDHH4"
+                    data-whop-checkout-return-url="https://worker-production-f916.up.railway.app/purchased?plan=basic"
                     data-whop-checkout-theme="light"
                     style="min-height: 400px;"
                 ></div>
@@ -661,6 +662,7 @@
             <div id="checkout-pro" style="display:none;">
                 <div
                     data-whop-checkout-plan-id="plan_sTXEVOZOyHZBA"
+                    data-whop-checkout-return-url="https://worker-production-f916.up.railway.app/purchased?plan=pro"
                     data-whop-checkout-theme="light"
                     style="min-height: 400px;"
                 ></div>
@@ -710,6 +712,11 @@
 
 <script>
 function openCheckout(plan) {
+    if (plan === 'free') {
+        // Free tier — go straight to activation (will route through Whop once free plan ID is set)
+        window.location.href = 'https://worker-production-f916.up.railway.app/purchased?plan=free';
+        return;
+    }
     document.getElementById('checkout-basic').style.display = plan === 'basic' ? 'block' : 'none';
     document.getElementById('checkout-pro').style.display = plan === 'pro' ? 'block' : 'none';
     document.getElementById('modal-overlay').classList.add('active');
