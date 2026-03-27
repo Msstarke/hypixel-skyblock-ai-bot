@@ -346,7 +346,7 @@ def api_health():
 
 # ── License admin endpoints (password-protected) ──────────────────────────
 
-ADMIN_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "skyblock2026")
+ADMIN_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "")
 
 def _check_admin():
     pwd = request.args.get("pwd", "") or request.headers.get("X-Admin-Password", "")
