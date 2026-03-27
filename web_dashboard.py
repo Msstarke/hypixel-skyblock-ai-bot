@@ -780,53 +780,136 @@ def _render_dashboard(mc_username, key, plan):
     plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro", "unlimited": "Unlimited"}
     plan_class = f"plan-{plan}" if plan in ("free", "basic", "pro", "unlimited") else "plan-free"
     limits = {"free": "10", "basic": "30", "pro": "100", "unlimited": "Unlimited"}
-    upgrade_text = f'<a href="/#pricing" class="btn btn-ghost btn-sm" style="margin-top:0;">Upgrade Plan</a>' if plan in ("free",) else ""
+    plan_colors = {"free": "#22c55e", "basic": "#6366f1", "pro": "#a855f7", "unlimited": "#f59e0b"}
+    color = plan_colors.get(plan, "#6366f1")
+    is_free = plan == "free"
 
-    return f"""{_page_head("SkyAI — Dashboard")}<body>
+    return f"""{_page_head("SkyAI — Dashboard")}
+    <style>
+        .db-hero {{ padding: 48px 0 40px; border-bottom: 1px solid #16162a; margin-bottom: 32px; }}
+        .db-hero-inner {{ display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }}
+        .db-hero-left h1 {{ font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }}
+        .db-hero-left p {{ color: #4a5268; font-size: 0.85rem; }}
+        .db-plan-pill {{ display: flex; align-items: center; gap: 10px; background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 14px 22px; }}
+        .db-plan-dot {{ width: 10px; height: 10px; border-radius: 50%; background: {color}; box-shadow: 0 0 12px {color}88; }}
+        .db-plan-name {{ font-weight: 700; font-size: 0.9rem; }}
+        .db-plan-limit {{ color: #4a5268; font-size: 0.78rem; }}
+
+        .db-section {{ margin-bottom: 24px; }}
+        .db-section-title {{ font-size: 0.72rem; font-weight: 700; color: #4a5268; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }}
+
+        .db-key-card {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 16px; padding: 24px; position: relative; overflow: hidden; }}
+        .db-key-card::before {{ content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, {color}, transparent); }}
+        .db-key-value {{ font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: #f59e0b; letter-spacing: 0.5px; word-break: break-all; user-select: all; padding: 14px 0; }}
+        .db-key-hint {{ color: #3a3a5a; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; }}
+
+        .db-actions {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }}
+        .db-action {{ display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; text-decoration: none; color: #e2e8f0; font-weight: 600; font-size: 0.88rem; transition: all 0.2s; }}
+        .db-action:hover {{ background: #0e0e22; border-color: #22224a; text-decoration: none; transform: translateY(-1px); }}
+        .db-action-primary {{ background: linear-gradient(135deg, #6366f1, #a855f7); border: none; box-shadow: 0 4px 20px rgba(99,102,241,0.25); }}
+        .db-action-primary:hover {{ box-shadow: 0 6px 30px rgba(99,102,241,0.4); }}
+        .db-action-icon {{ font-size: 1.1rem; }}
+
+        .db-setup {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 16px; overflow: hidden; }}
+        .db-setup-header {{ padding: 18px 24px; border-bottom: 1px solid #16162a; font-weight: 700; font-size: 0.85rem; }}
+        .db-setup-steps {{ padding: 4px 24px; }}
+        .db-step {{ display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #0d0d20; align-items: flex-start; }}
+        .db-step:last-child {{ border-bottom: none; }}
+        .db-step-num {{ min-width: 28px; height: 28px; border-radius: 8px; background: rgba(99,102,241,0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.78rem; flex-shrink: 0; margin-top: 1px; }}
+        .db-step-text {{ color: #8892a8; font-size: 0.85rem; line-height: 1.6; }}
+        .db-step-text code {{ background: rgba(99,102,241,0.08); color: #818cf8; padding: 3px 8px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }}
+        .db-step-text strong {{ color: #e2e8f0; }}
+
+        .db-upgrade {{ margin-top: 24px; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.04)); border: 1px solid rgba(99,102,241,0.12); border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }}
+        .db-upgrade-text h3 {{ font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }}
+        .db-upgrade-text p {{ color: #4a5268; font-size: 0.82rem; }}
+
+        @media (max-width: 600px) {{
+            .db-hero-inner {{ flex-direction: column; align-items: flex-start; }}
+            .db-actions {{ grid-template-columns: 1fr; }}
+            .db-upgrade {{ flex-direction: column; text-align: center; }}
+        }}
+    </style>
+    <body>
     {_page_nav("dashboard")}
-    <div class="page" style="max-width:700px;">
+    <div style="max-width:680px;margin:0 auto;padding:0 24px;">
 
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
-            <div>
-                <h1 style="font-size:1.8rem;margin-bottom:4px;">Welcome back, <span class="gradient">{mc_username}</span></h1>
-                <p style="color:#4a5268;font-size:0.85rem;">Manage your SkyAI license and download the mod.</p>
-            </div>
-            <span class="plan-badge {plan_class}">{plan_names.get(plan, plan)}</span>
-        </div>
-
-        <div class="dash-grid">
-            <div class="dash-card">
-                <h3>Plan</h3>
-                <div class="value gradient">{plan_names.get(plan, plan)}</div>
-            </div>
-            <div class="dash-card">
-                <h3>Rate Limit</h3>
-                <div class="value">{limits.get(plan, "?")}<span style="font-size:0.8rem;color:#4a5268;font-weight:500;"> /hr</span></div>
+        <div class="db-hero">
+            <div class="db-hero-inner">
+                <div class="db-hero-left">
+                    <h1>Welcome back, <span class="gradient">{mc_username}</span></h1>
+                    <p>Your SkyAI dashboard</p>
+                </div>
+                <div class="db-plan-pill">
+                    <div class="db-plan-dot"></div>
+                    <div>
+                        <div class="db-plan-name">{plan_names.get(plan, plan)} Plan</div>
+                        <div class="db-plan-limit">{limits.get(plan, "?")} questions/hr</div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="dash-card" style="margin-bottom:16px;">
-            <h3>Your License Key</h3>
-            <div class="key-box" style="margin:12px 0 0;">{key}</div>
-        </div>
-
-        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
-            <a href="/download" class="btn btn-primary" style="margin:0;">Download Mod</a>
-            {upgrade_text if upgrade_text else '<a href="https://whop.com/orders" class="btn btn-ghost" style="margin:0;">Manage Subscription</a>'}
-        </div>
-
-        <div class="dash-card">
-            <h3>Setup Guide</h3>
-            <div class="steps-list" style="background:none;border:none;padding:0;margin:8px 0 0;">
-                <div class="step-item"><div class="step-num">1</div><span>Download the mod and put it in <code>.minecraft/mods/</code></span></div>
-                <div class="step-item"><div class="step-num">2</div><span>Install <strong>Fabric Loader</strong> + <strong>Fabric API</strong> for MC 1.21.10</span></div>
-                <div class="step-item"><div class="step-num">3</div><span>Launch Minecraft and join any server</span></div>
-                <div class="step-item"><div class="step-num">4</div><span>Type in chat: <code>!aikey {key}</code></span></div>
-                <div class="step-item"><div class="step-num">5</div><span>Ask anything with <code>!ai your question</code></span></div>
+        <div class="db-section">
+            <div class="db-section-title">License Key</div>
+            <div class="db-key-card">
+                <div class="db-key-value">{key}</div>
+                <div class="db-key-hint">
+                    <span>Click to copy &middot; Use with</span> <code>!aikey</code> <span>in-game</span>
+                </div>
             </div>
         </div>
+
+        <div class="db-section">
+            <div class="db-section-title">Quick Actions</div>
+            <div class="db-actions">
+                <a href="/download" class="db-action db-action-primary">
+                    <span class="db-action-icon">&#8595;</span> Download Mod
+                </a>
+                <a href="{'/#pricing' if is_free else 'https://whop.com/orders'}" class="db-action">
+                    <span class="db-action-icon">{'&#9889;' if is_free else '&#9881;'}</span> {'Upgrade Plan' if is_free else 'Manage Plan'}
+                </a>
+            </div>
+        </div>
+
+        <div class="db-section">
+            <div class="db-section-title">Getting Started</div>
+            <div class="db-setup">
+                <div class="db-setup-header">Setup in 2 minutes</div>
+                <div class="db-setup-steps">
+                    <div class="db-step">
+                        <div class="db-step-num">1</div>
+                        <div class="db-step-text">Download the mod jar above and place it in your <code>.minecraft/mods</code> folder</div>
+                    </div>
+                    <div class="db-step">
+                        <div class="db-step-num">2</div>
+                        <div class="db-step-text">Install <strong>Fabric Loader</strong> and <strong>Fabric API</strong> for Minecraft 1.21.10</div>
+                    </div>
+                    <div class="db-step">
+                        <div class="db-step-num">3</div>
+                        <div class="db-step-text">Launch Minecraft, join any server, and type: <code>!aikey {key}</code></div>
+                    </div>
+                    <div class="db-step">
+                        <div class="db-step-num">4</div>
+                        <div class="db-step-text">Ask anything with <code>!ai your question</code> — instant answers in your HUD</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        {"<div class='db-upgrade'><div class='db-upgrade-text'><h3>Want more questions?</h3><p>Upgrade to Basic for 30/hr or Pro for 100/hr.</p></div><a href=\"/#pricing\" class=\"btn btn-primary\" style=\"width:auto;padding:12px 24px;margin:0;white-space:nowrap;\">View Plans</a></div>" if is_free else ""}
 
     </div>
+
+    <script>
+    document.querySelector('.db-key-value').addEventListener('click', function() {{
+        navigator.clipboard.writeText(this.textContent.trim());
+        var hint = document.querySelector('.db-key-hint');
+        var old = hint.innerHTML;
+        hint.innerHTML = '<span style="color:#22c55e;">Copied to clipboard!</span>';
+        setTimeout(function() {{ hint.innerHTML = old; }}, 2000);
+    }});
+    </script>
     </body></html>""", 200, {"Content-Type": "text/html"}
 
 
