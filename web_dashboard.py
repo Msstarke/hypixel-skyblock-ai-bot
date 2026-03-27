@@ -491,11 +491,25 @@ def well_known(filename):
 
 @app.route("/")
 def index():
-    """Serve the landing page."""
+    """Serve the landing page with dynamic nav based on login state."""
     landing = Path(__file__).parent / "docs" / "index.html"
-    if landing.exists():
-        return landing.read_text(encoding="utf-8"), 200, {"Content-Type": "text/html"}
-    return jsonify({"status": "ok", "service": "hypixel-ai-bot"})
+    if not landing.exists():
+        return jsonify({"status": "ok", "service": "hypixel-ai-bot"})
+
+    html = landing.read_text(encoding="utf-8")
+
+    user = _get_web_user()
+    if user:
+        from accounts import is_admin as _is_admin
+        admin_link = '<a href="/admin">Admin</a>' if _is_admin(user) else ""
+        new_nav = f"""<a href="/dashboard">Dashboard</a>
+            {admin_link}
+            <a href="/logout" class="nav-cta" style="color:#ef4444 !important;border-color:rgba(239,68,68,0.25) !important;background:rgba(239,68,68,0.08) !important;">{user}</a>"""
+        html = html.replace(
+            '<a href="/dashboard">Dashboard</a>\n            <a href="/login" class="nav-cta">Sign In</a>',
+            new_nav
+        )
+    return html, 200, {"Content-Type": "text/html"}
 
 
 # ── Purchase / Dashboard pages ────────────────────────────────────────────
