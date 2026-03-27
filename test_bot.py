@@ -24,7 +24,7 @@ RAILWAY_URL  = RAILWAY_BASE + "/api/ask"
 LOCAL_URL    = LOCAL_BASE + "/api/ask"
 
 # Test license key — generated with 'unlimited' plan, no expiry
-TEST_LICENSE_KEY = "SKYAI-E2692A451692D7101ABAEBCB"
+TEST_LICENSE_KEY = "SKYAI-E78B62E403F29E8693136DAA"
 _session_token = None
 
 # ---------------------------------------------------------------------------
