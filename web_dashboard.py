@@ -614,16 +614,6 @@ def _page_nav(active=""):
     </nav>"""
 
 
-# Legacy alias
-_PAGE_STYLE = f'<style>{_PAGE_CSS}</style><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">'
-
-
-import secrets as _secrets
-
-# One-time purchase tokens: {token: (plan, created_at)}
-_purchase_tokens = {}
-
-
 def _get_web_user():
     """Get logged-in username from cookie. Returns None if not logged in."""
     from accounts import get_session_user
