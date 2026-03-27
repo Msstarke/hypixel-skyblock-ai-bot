@@ -60,6 +60,7 @@ _con = _connect()
 
 # Rate limit: max requests per hour per license
 RATE_LIMITS = {
+    "free": 10,
     "basic": 30,
     "pro": 100,
     "unlimited": 999999,
