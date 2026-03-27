@@ -650,7 +650,7 @@ def web_login():
         return redirect("/dashboard")
     from html import escape
     error = ""
-    next_url = request.args.get("next", request.form.get("next", "/dashboard"))
+    next_url = _safe_next_url(request.args.get("next", request.form.get("next", "/dashboard")))
     if request.method == "POST":
         mc_username = request.form.get("mc_username", "").strip()
         password = request.form.get("password", "")
@@ -658,7 +658,7 @@ def web_login():
         result = login(mc_username, password)
         if result["ok"]:
             resp = make_response(redirect(next_url))
-            resp.set_cookie("skyai_session", result["token"], max_age=7*86400, httponly=True, samesite="Lax")
+            resp.set_cookie("skyai_session", result["token"], max_age=7*86400, httponly=True, samesite="Lax", secure=True)
             return resp
         error = result["error"]
 
