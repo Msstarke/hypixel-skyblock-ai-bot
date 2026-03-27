@@ -924,5 +924,14 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     url = LOCAL_URL if args.local else RAILWAY_URL
+    base = LOCAL_BASE if args.local else RAILWAY_BASE
+
+    # Activate test license
+    try:
+        _session_token = activate_session(base)
+        print(f"  Session activated: {_session_token[:16]}...")
+    except Exception as e:
+        print(f"  WARNING: Could not activate session ({e}), tests may fail with 401")
+
     success = run(url, args.suite, args.verbose, args.fail_only)
     sys.exit(0 if success else 1)
