@@ -400,6 +400,62 @@ def api_license_unbind():
     return jsonify({"ok": ok})
 
 
+# ── Whop Webhook ──────────────────────────────────────────────────────────
+
+WHOP_WEBHOOK_SECRET = os.getenv("WHOP_WEBHOOK_SECRET", "")
+
+@app.route("/api/whop/webhook", methods=["POST"])
+def whop_webhook():
+    """Handle Whop webhook events (membership activated/deactivated, payment succeeded)."""
+    body = request.get_data(as_text=True)
+    data = request.get_json(silent=True)
+
+    if not data:
+        return jsonify({"error": "Invalid payload"}), 400
+
+    event_type = data.get("type", "")
+    event_data = data.get("data", {})
+
+    print(f"[whop] Webhook received: {event_type}")
+
+    if event_type == "membership.activated":
+        membership_id = event_data.get("id", "")
+        user = event_data.get("user", {})
+        user_email = user.get("email", "")
+        plan_id = event_data.get("plan", {}).get("id", "") if isinstance(event_data.get("plan"), dict) else event_data.get("plan_id", "")
+
+        from licenses import whop_activate_membership
+        result = whop_activate_membership(membership_id, user_email, plan_id)
+        print(f"[whop] Membership activated: {membership_id} -> {result}")
+        return jsonify(result)
+
+    elif event_type == "membership.deactivated":
+        membership_id = event_data.get("id", "")
+        from licenses import whop_deactivate_membership
+        result = whop_deactivate_membership(membership_id)
+        print(f"[whop] Membership deactivated: {membership_id} -> {result}")
+        return jsonify(result)
+
+    elif event_type == "payment.succeeded":
+        # Renew membership on recurring payment
+        membership_id = event_data.get("membership_id", "") or event_data.get("membership", {}).get("id", "")
+        if membership_id:
+            from licenses import whop_renew_membership
+            result = whop_renew_membership(membership_id)
+            print(f"[whop] Payment succeeded, renewed: {membership_id} -> {result}")
+            return jsonify(result)
+
+    elif event_type == "payment.failed":
+        membership_id = event_data.get("membership_id", "") or event_data.get("membership", {}).get("id", "")
+        if membership_id:
+            from licenses import whop_deactivate_membership
+            result = whop_deactivate_membership(membership_id)
+            print(f"[whop] Payment failed, deactivated: {membership_id} -> {result}")
+            return jsonify(result)
+
+    return jsonify({"ok": True, "event": event_type})
+
+
 @app.route("/api/admin/reset-password", methods=["POST"])
 def api_admin_reset_password():
     """Reset a user's password. Requires admin password."""
