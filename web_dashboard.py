@@ -854,128 +854,140 @@ def _render_dashboard(mc_username, key, plan):
 
     return f"""{_page_head("SkyAI — Dashboard")}
     <style>
-        .db-hero {{ padding: 48px 0 40px; border-bottom: 1px solid #16162a; margin-bottom: 32px; }}
-        .db-hero-inner {{ display: flex; justify-content: space-between; align-items: center; gap: 24px; flex-wrap: wrap; }}
-        .db-hero-left h1 {{ font-size: 1.6rem; font-weight: 800; margin-bottom: 6px; }}
-        .db-hero-left p {{ color: #4a5268; font-size: 0.85rem; }}
-        .db-plan-pill {{ display: flex; align-items: center; gap: 10px; background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 14px 22px; }}
-        .db-plan-dot {{ width: 10px; height: 10px; border-radius: 50%; background: {color}; box-shadow: 0 0 12px {color}88; }}
-        .db-plan-name {{ font-weight: 700; font-size: 0.9rem; }}
-        .db-plan-limit {{ color: #4a5268; font-size: 0.78rem; }}
+        .db-layout {{ display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 56px); }}
+        .db-sidebar {{ background: #06060f; border-right: 1px solid #12122a; padding: 32px 0; }}
+        .db-sidebar-section {{ padding: 0 16px; margin-bottom: 24px; }}
+        .db-sidebar-label {{ font-size: 0.65rem; font-weight: 700; color: #3a3a5a; text-transform: uppercase; letter-spacing: 1.5px; padding: 0 12px; margin-bottom: 8px; }}
+        .db-sidebar a {{ display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: #6a6a8a; font-size: 0.84rem; font-weight: 500; text-decoration: none; transition: all 0.15s; }}
+        .db-sidebar a:hover {{ background: rgba(99,102,241,0.06); color: #c4c4e4; text-decoration: none; }}
+        .db-sidebar a.active {{ background: rgba(99,102,241,0.1); color: #e2e8f0; font-weight: 600; }}
+        .db-sidebar-icon {{ font-size: 1rem; width: 20px; text-align: center; }}
+        .db-sidebar-user {{ padding: 16px; margin: 0 16px; background: #0a0a18; border: 1px solid #16162a; border-radius: 12px; margin-bottom: 24px; }}
+        .db-sidebar-user-name {{ font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }}
+        .db-sidebar-user-plan {{ display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 600; color: {color}; }}
+        .db-sidebar-user-dot {{ width: 6px; height: 6px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color}88; }}
 
-        .db-section {{ margin-bottom: 24px; }}
-        .db-section-title {{ font-size: 0.72rem; font-weight: 700; color: #4a5268; text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 12px; }}
+        .db-main {{ padding: 32px 40px; max-width: 780px; }}
+        .db-main h1 {{ font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }}
+        .db-main .db-sub {{ color: #4a5268; font-size: 0.84rem; margin-bottom: 32px; }}
 
-        .db-key-card {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 16px; padding: 24px; position: relative; overflow: hidden; }}
-        .db-key-card::before {{ content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, {color}, transparent); }}
-        .db-key-value {{ font-family: 'JetBrains Mono', monospace; font-size: 0.95rem; color: #f59e0b; letter-spacing: 0.5px; word-break: break-all; user-select: all; padding: 14px 0; }}
-        .db-key-hint {{ color: #3a3a5a; font-size: 0.75rem; display: flex; align-items: center; gap: 6px; }}
+        .db-cards {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 28px; }}
+        .db-stat {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 20px; }}
+        .db-stat-label {{ font-size: 0.7rem; font-weight: 600; color: #3a3a5a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }}
+        .db-stat-value {{ font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }}
 
-        .db-actions {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }}
-        .db-action {{ display: flex; align-items: center; justify-content: center; gap: 10px; padding: 16px; background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; text-decoration: none; color: #e2e8f0; font-weight: 600; font-size: 0.88rem; transition: all 0.2s; }}
-        .db-action:hover {{ background: #0e0e22; border-color: #22224a; text-decoration: none; transform: translateY(-1px); }}
-        .db-action-primary {{ background: linear-gradient(135deg, #6366f1, #a855f7); border: none; box-shadow: 0 4px 20px rgba(99,102,241,0.25); }}
-        .db-action-primary:hover {{ box-shadow: 0 6px 30px rgba(99,102,241,0.4); }}
-        .db-action-icon {{ font-size: 1.1rem; }}
+        .db-key-section {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 24px; margin-bottom: 20px; position: relative; overflow: hidden; }}
+        .db-key-section::before {{ content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, {color}, {color}44, transparent); }}
+        .db-key-section h3 {{ font-size: 0.78rem; font-weight: 700; color: #4a5268; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }}
+        .db-key-val {{ font-family: 'JetBrains Mono', monospace; font-size: 0.92rem; color: #f59e0b; letter-spacing: 0.5px; word-break: break-all; user-select: all; cursor: pointer; padding: 14px 16px; background: #08081a; border: 1px solid #12122a; border-radius: 10px; transition: border-color 0.2s; }}
+        .db-key-val:hover {{ border-color: #f59e0b44; }}
+        .db-key-hint {{ color: #3a3a5a; font-size: 0.72rem; margin-top: 10px; }}
+        .db-key-cmd {{ display: inline-block; margin-top: 8px; background: rgba(99,102,241,0.08); color: #818cf8; padding: 6px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }}
 
-        .db-setup {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 16px; overflow: hidden; }}
-        .db-setup-header {{ padding: 18px 24px; border-bottom: 1px solid #16162a; font-weight: 700; font-size: 0.85rem; }}
-        .db-setup-steps {{ padding: 4px 24px; }}
-        .db-step {{ display: flex; gap: 16px; padding: 16px 0; border-bottom: 1px solid #0d0d20; align-items: flex-start; }}
-        .db-step:last-child {{ border-bottom: none; }}
-        .db-step-num {{ min-width: 28px; height: 28px; border-radius: 8px; background: rgba(99,102,241,0.1); color: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.78rem; flex-shrink: 0; margin-top: 1px; }}
-        .db-step-text {{ color: #8892a8; font-size: 0.85rem; line-height: 1.6; }}
-        .db-step-text code {{ background: rgba(99,102,241,0.08); color: #818cf8; padding: 3px 8px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }}
-        .db-step-text strong {{ color: #e2e8f0; }}
+        .db-actions {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }}
+        .db-act {{ display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; background: #0a0a18; border: 1px solid #16162a; border-radius: 12px; text-decoration: none; color: #c4c4e4; font-weight: 600; font-size: 0.86rem; transition: all 0.2s; }}
+        .db-act:hover {{ background: #0e0e22; border-color: #22224a; text-decoration: none; transform: translateY(-1px); }}
+        .db-act-primary {{ background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; border: none; box-shadow: 0 4px 20px rgba(99,102,241,0.25); }}
+        .db-act-primary:hover {{ box-shadow: 0 6px 30px rgba(99,102,241,0.4); }}
 
-        .db-upgrade {{ margin-top: 24px; background: linear-gradient(135deg, rgba(99,102,241,0.06), rgba(168,85,247,0.04)); border: 1px solid rgba(99,102,241,0.12); border-radius: 16px; padding: 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }}
-        .db-upgrade-text h3 {{ font-size: 0.95rem; font-weight: 700; margin-bottom: 4px; }}
-        .db-upgrade-text p {{ color: #4a5268; font-size: 0.82rem; }}
+        .db-setup {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; overflow: hidden; }}
+        .db-setup-title {{ padding: 16px 24px; border-bottom: 1px solid #12122a; font-weight: 700; font-size: 0.82rem; }}
+        .db-setup-list {{ padding: 4px 24px; }}
+        .db-s {{ display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid #0a0a1e; align-items: flex-start; }}
+        .db-s:last-child {{ border-bottom: none; }}
+        .db-sn {{ min-width: 26px; height: 26px; border-radius: 8px; background: rgba(99,102,241,0.08); color: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.72rem; flex-shrink: 0; }}
+        .db-st {{ color: #6a6a8a; font-size: 0.82rem; line-height: 1.6; }}
+        .db-st code {{ background: rgba(99,102,241,0.06); color: #818cf8; padding: 2px 7px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }}
+        .db-st strong {{ color: #c4c4e4; }}
 
-        @media (max-width: 600px) {{
-            .db-hero-inner {{ flex-direction: column; align-items: flex-start; }}
+        .db-upgrade {{ margin-top: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(168,85,247,0.03)); border: 1px solid rgba(99,102,241,0.1); border-radius: 14px; padding: 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }}
+        .db-upgrade h4 {{ font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; }}
+        .db-upgrade p {{ color: #4a5268; font-size: 0.78rem; }}
+
+        @media (max-width: 768px) {{
+            .db-layout {{ grid-template-columns: 1fr; }}
+            .db-sidebar {{ display: none; }}
+            .db-main {{ padding: 24px 16px; }}
+            .db-cards {{ grid-template-columns: 1fr; }}
             .db-actions {{ grid-template-columns: 1fr; }}
             .db-upgrade {{ flex-direction: column; text-align: center; }}
         }}
     </style>
     <body>
     {_page_nav("dashboard")}
-    <div style="max-width:680px;margin:0 auto;padding:0 24px;">
-
-        <div class="db-hero">
-            <div class="db-hero-inner">
-                <div class="db-hero-left">
-                    <h1>Welcome back, <span class="gradient">{mc_username}</span></h1>
-                    <p>Your SkyAI dashboard</p>
-                </div>
-                <div class="db-plan-pill">
-                    <div class="db-plan-dot"></div>
-                    <div>
-                        <div class="db-plan-name">{plan_names.get(plan, plan)} Plan</div>
-                        <div class="db-plan-limit">{limits.get(plan, "?")} questions/hr</div>
-                    </div>
-                </div>
+    <div class="db-layout">
+        <div class="db-sidebar">
+            <div class="db-sidebar-user">
+                <div class="db-sidebar-user-name">{mc_username}</div>
+                <div class="db-sidebar-user-plan"><span class="db-sidebar-user-dot"></span> {plan_names.get(plan, plan)} Plan</div>
+            </div>
+            <div class="db-sidebar-section">
+                <div class="db-sidebar-label">Account</div>
+                <a href="/dashboard" class="active"><span class="db-sidebar-icon">&#9776;</span> Overview</a>
+                <a href="/download"><span class="db-sidebar-icon">&#8595;</span> Download Mod</a>
+                <a href="{'/#pricing' if is_free else 'https://whop.com/orders'}"><span class="db-sidebar-icon">{'&#9889;' if is_free else '&#9881;'}</span> {'Upgrade' if is_free else 'Manage Plan'}</a>
+            </div>
+            <div class="db-sidebar-section">
+                <div class="db-sidebar-label">Links</div>
+                <a href="/"><span class="db-sidebar-icon">&#127968;</span> Homepage</a>
+                <a href="/#faq"><span class="db-sidebar-icon">&#63;</span> FAQ</a>
+            </div>
+            {"<div class='db-sidebar-section'><div class='db-sidebar-label'>Admin</div><a href='/admin'><span class='db-sidebar-icon'>&#9881;</span> Admin Panel</a></div>" if is_admin_user else ""}
+            <div class="db-sidebar-section" style="margin-top:auto;">
+                <a href="/logout" style="color:#ef4444;"><span class="db-sidebar-icon">&#10140;</span> Sign Out</a>
             </div>
         </div>
+        <div class="db-main">
+            <h1>Overview</h1>
+            <p class="db-sub">Your SkyAI account at a glance.</p>
 
-        <div class="db-section">
-            <div class="db-section-title">License Key</div>
-            <div class="db-key-card">
-                <div class="db-key-value">{key}</div>
-                <div class="db-key-hint">
-                    <span>Click to copy &middot; Use with</span> <code>!aikey</code> <span>in-game</span>
+            <div class="db-cards">
+                <div class="db-stat">
+                    <div class="db-stat-label">Plan</div>
+                    <div class="db-stat-value" style="color:{color};">{plan_names.get(plan, plan)}</div>
+                </div>
+                <div class="db-stat">
+                    <div class="db-stat-label">Rate Limit</div>
+                    <div class="db-stat-value">{limits.get(plan, "?")}<span style="font-size:0.7rem;color:#3a3a5a;font-weight:500;">/hr</span></div>
+                </div>
+                <div class="db-stat">
+                    <div class="db-stat-label">Status</div>
+                    <div class="db-stat-value" style="color:#22c55e;">Active</div>
                 </div>
             </div>
-        </div>
 
-        <div class="db-section">
-            <div class="db-section-title">Quick Actions</div>
+            <div class="db-key-section">
+                <h3>License Key</h3>
+                <div class="db-key-val" id="license-key">{key}</div>
+                <div class="db-key-hint" id="key-hint">Click to copy</div>
+                <div class="db-key-cmd">!aikey {key}</div>
+            </div>
+
             <div class="db-actions">
-                <a href="/download" class="db-action db-action-primary">
-                    <span class="db-action-icon">&#8595;</span> Download Mod
-                </a>
-                <a href="{'/#pricing' if is_free else 'https://whop.com/orders'}" class="db-action">
-                    <span class="db-action-icon">{'&#9889;' if is_free else '&#9881;'}</span> {'Upgrade Plan' if is_free else 'Manage Plan'}
-                </a>
+                <a href="/download" class="db-act db-act-primary">&#8595; Download Mod</a>
+                <a href="{'/#pricing' if is_free else 'https://whop.com/orders'}" class="db-act">{'&#9889; Upgrade Plan' if is_free else '&#9881; Manage Subscription'}</a>
             </div>
-        </div>
 
-        <div class="db-section">
-            <div class="db-section-title">Getting Started</div>
             <div class="db-setup">
-                <div class="db-setup-header">Setup in 2 minutes</div>
-                <div class="db-setup-steps">
-                    <div class="db-step">
-                        <div class="db-step-num">1</div>
-                        <div class="db-step-text">Download the mod jar above and place it in your <code>.minecraft/mods</code> folder</div>
-                    </div>
-                    <div class="db-step">
-                        <div class="db-step-num">2</div>
-                        <div class="db-step-text">Install <strong>Fabric Loader</strong> and <strong>Fabric API</strong> for Minecraft 1.21.10</div>
-                    </div>
-                    <div class="db-step">
-                        <div class="db-step-num">3</div>
-                        <div class="db-step-text">Launch Minecraft, join any server, and type: <code>!aikey {key}</code></div>
-                    </div>
-                    <div class="db-step">
-                        <div class="db-step-num">4</div>
-                        <div class="db-step-text">Ask anything with <code>!ai your question</code> — instant answers in your HUD</div>
-                    </div>
+                <div class="db-setup-title">Quick Start Guide</div>
+                <div class="db-setup-list">
+                    <div class="db-s"><div class="db-sn">1</div><div class="db-st">Download the mod and place the <code>.jar</code> file in your <code>.minecraft/mods</code> folder</div></div>
+                    <div class="db-s"><div class="db-sn">2</div><div class="db-st">Install <strong>Fabric Loader</strong> and <strong>Fabric API</strong> for Minecraft 1.21.10</div></div>
+                    <div class="db-s"><div class="db-sn">3</div><div class="db-st">Launch Minecraft, join any server, type: <code>!aikey {key}</code></div></div>
+                    <div class="db-s"><div class="db-sn">4</div><div class="db-st">Ask anything: <code>!ai what's the best money method</code></div></div>
                 </div>
             </div>
+
+            {"<div class='db-upgrade'><div><h4>Want more questions?</h4><p>Upgrade to Basic (30/hr) or Pro (100/hr).</p></div><a href='/#pricing' class='btn btn-primary' style='width:auto;padding:11px 22px;margin:0;white-space:nowrap;font-size:0.82rem;'>View Plans</a></div>" if is_free else ""}
         </div>
-
-        {"<div class='db-upgrade'><div class='db-upgrade-text'><h3>Want more questions?</h3><p>Upgrade to Basic for 30/hr or Pro for 100/hr.</p></div><a href=\"/#pricing\" class=\"btn btn-primary\" style=\"width:auto;padding:12px 24px;margin:0;white-space:nowrap;\">View Plans</a></div>" if is_free else ""}
-
     </div>
 
     <script>
-    document.querySelector('.db-key-value').addEventListener('click', function() {{
+    document.getElementById('license-key').addEventListener('click', function() {{
         navigator.clipboard.writeText(this.textContent.trim());
-        var hint = document.querySelector('.db-key-hint');
-        var old = hint.innerHTML;
-        hint.innerHTML = '<span style="color:#22c55e;">Copied to clipboard!</span>';
-        setTimeout(function() {{ hint.innerHTML = old; }}, 2000);
+        var h = document.getElementById('key-hint');
+        h.innerHTML = '<span style="color:#22c55e;">Copied!</span>';
+        setTimeout(function() {{ h.textContent = 'Click to copy'; }}, 2000);
     }});
     </script>
     </body></html>""", 200, {"Content-Type": "text/html"}
