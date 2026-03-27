@@ -750,7 +750,8 @@ def _render_dashboard(mc_username, key, plan):
 
         <p class="info">
             Plan: <strong>{plan_names.get(plan, plan)}</strong> — {limits.get(plan, "?")} questions/hr<br>
-            {"Upgrade anytime at <a href='https://msstarke.github.io/hypixel-skyblock-ai-bot/#buy' style='color:#3b82f6;'>skyai website</a>" if plan == "free" else "Manage your subscription on <a href='https://whop.com/orders' style='color:#3b82f6;'>Whop</a>"}
+            {"Upgrade anytime at <a href='/#buy' style='color:#3b82f6;'>pricing page</a>" if plan == "free" else "Manage your subscription on <a href='https://whop.com/orders' style='color:#3b82f6;'>Whop</a>"}
+            <br><br><a href="/logout" style="color:#ef4444;">Sign Out</a>
         </p>
     </div>
     </body></html>""", 200, {"Content-Type": "text/html"}
