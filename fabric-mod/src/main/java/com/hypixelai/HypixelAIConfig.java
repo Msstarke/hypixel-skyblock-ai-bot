@@ -1,28 +1,22 @@
 package com.hypixelai;
 
 import java.io.*;
-import java.net.HttpURLConnection;
-import java.net.URI;
-import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
 /**
- * Simple config file for the HypixelAI mod.
+ * Config for the HypixelAI mod.
  * Stored at .minecraft/config/hypixelai.properties
  *
- * On startup, fetches the latest API URL from GitHub so the server
- * can change its URL without pushing a mod update.
+ * Stores license key and session token. Server URL is hardcoded.
  */
 public class HypixelAIConfig {
 
-    private static final String DEFAULT_URL = "https://worker-production-f916.up.railway.app/api/ask";
-    private static final String REMOTE_CONFIG_URL =
-            "https://raw.githubusercontent.com/Msstarke/hypixel-skyblock-ai-bot/master/fabric-mod/remote-config.txt";
+    private static final String API_BASE = "https://worker-production-f916.up.railway.app";
 
-    private static String apiUrl = DEFAULT_URL;
-    private static String apiKey = "";
+    private static String licenseKey = "";
+    private static String sessionToken = "";
     private static Path configPath;
 
     public static void load() {
@@ -46,8 +40,8 @@ public class HypixelAIConfig {
                         String value = parts.length > 1 ? parts[1].trim() : "";
 
                         switch (key) {
-                            case "api_url" -> apiUrl = value;
-                            case "api_key" -> apiKey = value;
+                            case "license_key" -> licenseKey = value;
+                            case "session_token" -> sessionToken = value;
                         }
                     }
                 }
@@ -57,72 +51,19 @@ public class HypixelAIConfig {
                 HypixelAIMod.LOGGER.info("[HypixelAI] Default config created at {}", configPath);
             }
 
-            // Migrate old ngrok/localhost configs
-            if (apiUrl.contains("localhost") || apiUrl.contains("127.0.0.1") || apiUrl.contains("ngrok")) {
-                HypixelAIMod.LOGGER.info("[HypixelAI] Migrating old URL to current server");
-                apiUrl = DEFAULT_URL;
-                save();
-            }
-
-            // Fetch remote config in background — lets us change the URL without a mod update
-            new Thread(() -> fetchRemoteConfig(), "HypixelAI-RemoteConfig").start();
-
         } catch (Exception e) {
             HypixelAIMod.LOGGER.error("[HypixelAI] Failed to load config", e);
         }
     }
 
-    /**
-     * Fetch the API URL from a raw GitHub file.
-     * Format: just the URL on the first line, e.g.
-     *   https://your-server.up.railway.app/api/ask
-     */
-    private static void fetchRemoteConfig() {
-        try {
-            URL url = URI.create(REMOTE_CONFIG_URL).toURL();
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setConnectTimeout(3000);
-            conn.setReadTimeout(5000);
-
-            if (conn.getResponseCode() != 200) return;
-
-            StringBuilder sb = new StringBuilder();
-            try (BufferedReader r = new BufferedReader(
-                    new InputStreamReader(conn.getInputStream(), StandardCharsets.UTF_8))) {
-                String line;
-                while ((line = r.readLine()) != null) {
-                    line = line.trim();
-                    if (!line.isEmpty() && !line.startsWith("#")) {
-                        sb.append(line);
-                        break; // only need the first non-comment line
-                    }
-                }
-            }
-            conn.disconnect();
-
-            String remoteUrl = sb.toString().trim();
-            if (!remoteUrl.isEmpty() && remoteUrl.startsWith("http") && !remoteUrl.equals(apiUrl)) {
-                HypixelAIMod.LOGGER.info("[HypixelAI] Remote config updated URL: {}", remoteUrl);
-                apiUrl = remoteUrl;
-                save();
-            }
-        } catch (Exception e) {
-            // Silent fail — remote config is optional
-        }
-    }
-
-    private static void save() {
+    public static void save() {
         try {
             String content = """
                     # HypixelAI Mod Configuration
-                    # api_url is auto-managed. Only change if you run your own server.
-                    api_url=%s
-
-                    # api_key: Must match INGAME_API_KEY in your bot's .env file
-                    # Leave blank if you didn't set one.
-                    api_key=%s
-                    """.formatted(apiUrl, apiKey);
+                    # Use !aikey <key> in-game to activate your license.
+                    license_key=%s
+                    session_token=%s
+                    """.formatted(licenseKey, sessionToken);
 
             Files.writeString(configPath, content, StandardCharsets.UTF_8);
         } catch (Exception e) {
@@ -131,11 +72,37 @@ public class HypixelAIConfig {
     }
 
     public static String getApiUrl() {
-        return apiUrl;
+        return API_BASE + "/api/ask";
     }
 
-    public static String getApiKey() {
-        return apiKey;
+    public static String getActivateUrl() {
+        return API_BASE + "/api/activate";
+    }
+
+    public static String getBaseUrl() {
+        return API_BASE;
+    }
+
+    public static String getLicenseKey() {
+        return licenseKey;
+    }
+
+    public static void setLicenseKey(String key) {
+        licenseKey = key;
+        save();
+    }
+
+    public static String getSessionToken() {
+        return sessionToken;
+    }
+
+    public static void setSessionToken(String token) {
+        sessionToken = token;
+        save();
+    }
+
+    public static boolean hasSession() {
+        return sessionToken != null && !sessionToken.isEmpty();
     }
 
     public static String getConfigPath() {

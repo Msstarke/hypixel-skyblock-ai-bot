@@ -57,6 +57,11 @@ public class HypixelAIClient implements ClientModInitializer {
         // Check for updates in background
         new Thread(() -> HypixelAIUpdater.checkForUpdate(), "HypixelAI-Updater").start();
 
+        // Auto-activate license on startup if we have a key
+        if (!HypixelAIConfig.getLicenseKey().isEmpty()) {
+            new Thread(() -> activateLicense(HypixelAIConfig.getLicenseKey(), true), "HypixelAI-Auth").start();
+        }
+
         // Show update message when player joins a world
         final boolean[] notified = {false};
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -104,6 +109,20 @@ public class HypixelAIClient implements ClientModInitializer {
                 return false;
             }
 
+            if (lower.startsWith("!aikey ")) {
+                handleActivateKey(message.substring(7).trim());
+                return false;
+            }
+            if (lower.equals("!aikey")) {
+                if (HypixelAIConfig.hasSession()) {
+                    sendChat(prefix().append(Text.literal("License active.").formatted(SUCCESS)));
+                } else {
+                    sendChat(prefix().append(Text.literal("Usage: ").formatted(BODY))
+                            .append(Text.literal("!aikey <license-key>").formatted(HIGHLIGHT)));
+                }
+                return false;
+            }
+
             if (lower.startsWith("!link ")) {
                 handleLink(message.substring(6).trim());
                 return false;
@@ -131,6 +150,170 @@ public class HypixelAIClient implements ClientModInitializer {
         HypixelAIMod.LOGGER.info("[HypixelAI] Client mod loaded v{}", HypixelAIUpdater.MOD_VERSION);
     }
 
+
+    // ── License activation ───────────────────────────────────────────────
+
+    private void handleActivateKey(String key) {
+        if (key.isEmpty()) {
+            sendChat(prefix().append(Text.literal("Usage: ").formatted(BODY))
+                    .append(Text.literal("!aikey <license-key>").formatted(HIGHLIGHT)));
+            return;
+        }
+
+        sendChat(prefix().append(Text.literal("Activating license...").formatted(BODY)));
+        new Thread(() -> activateLicense(key, false), "HypixelAI-Activate").start();
+    }
+
+    private void activateLicense(String key, boolean silent) {
+        try {
+            String uuid = getUUID();
+            String username = getUsername();
+
+            String payload = "{\"license_key\":" + jsonEscape(key)
+                    + ",\"mc_uuid\":" + jsonEscape(uuid)
+                    + ",\"username\":" + jsonEscape(username) + "}";
+
+            URL url = URI.create(HypixelAIConfig.getActivateUrl()).toURL();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(10000);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(payload.getBytes(StandardCharsets.UTF_8));
+            }
+
+            int code = conn.getResponseCode();
+            String body = readStream(code == 200 ? conn.getInputStream() : conn.getErrorStream());
+            conn.disconnect();
+
+            if (code == 200) {
+                // Parse session token from response
+                String session = parseStringField(body, "\"session\"", 0);
+                String plan = parseStringField(body, "\"plan\"", 0);
+
+                HypixelAIConfig.setLicenseKey(key);
+                HypixelAIConfig.setSessionToken(session);
+
+                if (!silent) {
+                    sendChat(prefix().append(Text.literal("\u2714 License activated! ").formatted(SUCCESS))
+                            .append(Text.literal("Plan: " + plan).formatted(BRAND)));
+                }
+                HypixelAIMod.LOGGER.info("[HypixelAI] License activated (plan={})", plan);
+            } else {
+                String error = parseStringField(body, "\"error\"", 0);
+                if (!silent) {
+                    sendChat(prefix().append(Text.literal("\u2716 ").formatted(ERROR))
+                            .append(Text.literal(error.isEmpty() ? "Activation failed" : error).formatted(BODY)));
+                }
+                HypixelAIMod.LOGGER.warn("[HypixelAI] Activation failed: {} ({})", error, code);
+            }
+        } catch (Exception e) {
+            if (!silent) {
+                sendChat(prefix().append(Text.literal("\u2716 Activation failed: ").formatted(ERROR))
+                        .append(Text.literal(e.getMessage()).formatted(MUTED)));
+            }
+        }
+    }
+
+
+    // ── Question handling ────────────────────────────────────────────────
+
+    private void handleQuestion(String question) {
+        if (question.isEmpty()) {
+            showHelp();
+            return;
+        }
+
+        // Check if activated
+        if (!HypixelAIConfig.hasSession()) {
+            sendChat(prefix().append(Text.literal("No license active. Use ").formatted(ERROR))
+                    .append(Text.literal("!aikey <key>").formatted(HIGHLIGHT))
+                    .append(Text.literal(" to activate.").formatted(ERROR)));
+            return;
+        }
+
+        // Cooldown
+        long now = System.currentTimeMillis();
+        if (now - lastRequest < COOLDOWN_MS) {
+            sendChat(prefix().append(Text.literal("Slow down! Wait a moment.").formatted(Formatting.YELLOW)));
+            return;
+        }
+        lastRequest = now;
+
+        SkyAIOverlay.showThinking(question);
+
+        String username = getUsername();
+        new Thread(() -> {
+            try {
+                String response = callAPI(question, username);
+                if (response != null) {
+                    displayResponse(question, response);
+                } else {
+                    SkyAIOverlay.clear();
+                }
+            } catch (Exception e) {
+                HypixelAIMod.LOGGER.error("[HypixelAI] API call failed", e);
+                SkyAIOverlay.clear();
+                sendChat(prefix().append(Text.literal("\u2716 ").formatted(ERROR))
+                        .append(Text.literal(e.getMessage()).formatted(MUTED)));
+            }
+        }, "HypixelAI-API").start();
+    }
+
+    private String callAPI(String question, String username) throws Exception {
+        String apiUrl = HypixelAIConfig.getApiUrl();
+        String session = HypixelAIConfig.getSessionToken();
+
+        URL url = URI.create(apiUrl).toURL();
+        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+        conn.setRequestMethod("POST");
+        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+        conn.setDoOutput(true);
+        conn.setConnectTimeout(5000);
+        conn.setReadTimeout(30000);
+
+        String payload = "{\"question\":" + jsonEscape(question)
+                + ",\"session\":" + jsonEscape(session)
+                + ",\"username\":" + jsonEscape(username) + "}";
+
+        try (OutputStream os = conn.getOutputStream()) {
+            os.write(payload.getBytes(StandardCharsets.UTF_8));
+        }
+
+        int code = conn.getResponseCode();
+
+        if (code == 200) {
+            return readStream(conn.getInputStream());
+        } else if (code == 401) {
+            // Session expired — try to re-activate
+            String key = HypixelAIConfig.getLicenseKey();
+            if (!key.isEmpty()) {
+                activateLicense(key, true);
+                // Retry once with new session
+                if (HypixelAIConfig.hasSession()) {
+                    conn.disconnect();
+                    return callAPI(question, username);
+                }
+            }
+            sendChat(prefix().append(Text.literal("\u2716 Session expired. Use !aikey to re-activate.").formatted(ERROR)));
+        } else if (code == 429) {
+            sendChat(prefix().append(Text.literal("\u2716 Rate limit reached. Try again later.").formatted(Formatting.YELLOW)));
+        } else if (code == 503) {
+            sendChat(prefix().append(Text.literal("\u231B Bot is starting up, try again.").formatted(Formatting.YELLOW)));
+        } else {
+            sendChat(prefix().append(Text.literal("\u2716 HTTP " + code).formatted(ERROR)));
+        }
+
+        conn.disconnect();
+        return null;
+    }
+
+
+    // ── Link / Unlink ────────────────────────────────────────────────────
+
     private void handleLink(String ign) {
         if (ign.isEmpty()) {
             sendChat(prefix().append(Text.literal("Usage: ").formatted(BODY))
@@ -145,10 +328,10 @@ public class HypixelAIClient implements ClientModInitializer {
 
         new Thread(() -> {
             try {
-                String baseUrl = HypixelAIConfig.getApiUrl().replace("/api/ask", "");
+                String baseUrl = HypixelAIConfig.getBaseUrl();
                 String payload = "{\"username\":" + jsonEscape(username)
                         + ",\"ign\":" + jsonEscape(ign)
-                        + ",\"api_key\":" + jsonEscape(HypixelAIConfig.getApiKey()) + "}";
+                        + ",\"session\":" + jsonEscape(HypixelAIConfig.getSessionToken()) + "}";
 
                 URL url = URI.create(baseUrl + "/api/link").toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -186,9 +369,9 @@ public class HypixelAIClient implements ClientModInitializer {
 
         new Thread(() -> {
             try {
-                String baseUrl = HypixelAIConfig.getApiUrl().replace("/api/ask", "");
+                String baseUrl = HypixelAIConfig.getBaseUrl();
                 String payload = "{\"username\":" + jsonEscape(username)
-                        + ",\"api_key\":" + jsonEscape(HypixelAIConfig.getApiKey()) + "}";
+                        + ",\"session\":" + jsonEscape(HypixelAIConfig.getSessionToken()) + "}";
 
                 URL url = URI.create(baseUrl + "/api/unlink").toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -218,6 +401,9 @@ public class HypixelAIClient implements ClientModInitializer {
         }, "HypixelAI-Unlink").start();
     }
 
+
+    // ── Feedback ─────────────────────────────────────────────────────────
+
     private void handleFeedback(String vote) {
         if (!SkyAIOverlay.hasPendingFeedback()) {
             sendChat(prefix().append(Text.literal("No response to rate right now.").formatted(MUTED)));
@@ -229,7 +415,7 @@ public class HypixelAIClient implements ClientModInitializer {
         SkyAIOverlay.setFeedback(vote);
         sendChat(prefix().append(Text.literal("Feedback: ").formatted(BODY))
                 .append(Text.literal(label).formatted(color))
-                .append(Text.literal(" — thanks!").formatted(BODY)));
+                .append(Text.literal(" \u2014 thanks!").formatted(BODY)));
 
         String question = SkyAIOverlay.getLastQuestion();
         String response = SkyAIOverlay.getLastResponse();
@@ -237,12 +423,12 @@ public class HypixelAIClient implements ClientModInitializer {
 
         new Thread(() -> {
             try {
-                String baseUrl = HypixelAIConfig.getApiUrl().replace("/api/ask", "");
+                String baseUrl = HypixelAIConfig.getBaseUrl();
                 String payload = "{\"vote\":" + jsonEscape(vote)
                         + ",\"username\":" + jsonEscape(username)
                         + ",\"question\":" + jsonEscape(question != null ? question : "")
                         + ",\"response\":" + jsonEscape(response != null ? response : "")
-                        + ",\"api_key\":" + jsonEscape(HypixelAIConfig.getApiKey()) + "}";
+                        + ",\"session\":" + jsonEscape(HypixelAIConfig.getSessionToken()) + "}";
 
                 URL url = URI.create(baseUrl + "/api/feedback").toURL();
                 HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -264,76 +450,8 @@ public class HypixelAIClient implements ClientModInitializer {
         }, "HypixelAI-Feedback").start();
     }
 
-    private void handleQuestion(String question) {
-        if (question.isEmpty()) {
-            showHelp();
-            return;
-        }
 
-        // Cooldown
-        long now = System.currentTimeMillis();
-        if (now - lastRequest < COOLDOWN_MS) {
-            sendChat(prefix().append(Text.literal("Slow down! Wait a moment.").formatted(Formatting.YELLOW)));
-            return;
-        }
-        lastRequest = now;
-
-        SkyAIOverlay.showThinking(question);
-
-        String username = getUsername();
-        new Thread(() -> {
-            try {
-                String response = callAPI(question, username);
-                if (response != null) {
-                    displayResponse(question, response);
-                } else {
-                    SkyAIOverlay.clear();
-                }
-            } catch (Exception e) {
-                HypixelAIMod.LOGGER.error("[HypixelAI] API call failed", e);
-                SkyAIOverlay.clear();
-                sendChat(prefix().append(Text.literal("\u2716 ").formatted(ERROR))
-                        .append(Text.literal(e.getMessage()).formatted(MUTED)));
-            }
-        }, "HypixelAI-API").start();
-    }
-
-    private String callAPI(String question, String username) throws Exception {
-        String apiUrl = HypixelAIConfig.getApiUrl();
-        String apiKey = HypixelAIConfig.getApiKey();
-
-        URL url = URI.create(apiUrl).toURL();
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
-        conn.setRequestProperty("ngrok-skip-browser-warning", "true");
-        conn.setDoOutput(true);
-        conn.setConnectTimeout(5000);
-        conn.setReadTimeout(30000);
-
-        String payload = "{\"question\":" + jsonEscape(question)
-                + ",\"api_key\":" + jsonEscape(apiKey)
-                + ",\"username\":" + jsonEscape(username) + "}";
-
-        try (OutputStream os = conn.getOutputStream()) {
-            os.write(payload.getBytes(StandardCharsets.UTF_8));
-        }
-
-        int code = conn.getResponseCode();
-
-        if (code == 200) {
-            return readStream(conn.getInputStream());
-        } else if (code == 401) {
-            sendChat(prefix().append(Text.literal("\u2716 Invalid API key.").formatted(ERROR)));
-        } else if (code == 503) {
-            sendChat(prefix().append(Text.literal("\u231B Bot is starting up, try again.").formatted(Formatting.YELLOW)));
-        } else {
-            sendChat(prefix().append(Text.literal("\u2716 HTTP " + code).formatted(ERROR)));
-        }
-
-        conn.disconnect();
-        return null;
-    }
+    // ── Display ──────────────────────────────────────────────────────────
 
     private void displayResponse(String question, String jsonBody) {
         String[] lines = parseChatLines(jsonBody);
@@ -355,6 +473,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 "Commands:",
                 "",
                 "- !ai <question>  \u2014  Ask anything about Skyblock",
+                "- !aikey <key>  \u2014  Activate your license",
                 "- !link <ign>  \u2014  Link your account",
                 "- !unlink  \u2014  Remove linked account",
                 "- !correct / !wrong  \u2014  Rate the AI response",
@@ -392,7 +511,18 @@ public class HypixelAIClient implements ClientModInitializer {
         return "";
     }
 
+    private static String getUUID() {
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null && client.getSession() != null) {
+            return client.getSession().getUuidOrNull() != null
+                    ? client.getSession().getUuidOrNull().toString()
+                    : "";
+        }
+        return "";
+    }
+
     private static String readStream(InputStream is) throws IOException {
+        if (is == null) return "{}";
         StringBuilder sb = new StringBuilder();
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8))) {
             String line;
@@ -422,53 +552,36 @@ public class HypixelAIClient implements ClientModInitializer {
 
     /**
      * Parse HOTM data from JSON response for pixel art rendering.
-     * Returns int[70] (10 tiers x 7 cols) where each value is:
-     *   0 = empty (no perk at this position)
-     *  -1 = locked (tier above player level)
-     *   1 = unlocked but level 0
-     *   2 = partially leveled
-     *   3 = maxed
-     *   4 = ability (unlocked)
-     *   5 = ability (selected/active)
-     * Returns null if no HOTM data in response.
      */
     private static int[] parseHotmData(String json) {
         int hotmIdx = json.indexOf("\"hotm\"");
         if (hotmIdx == -1) return null;
 
-        // Parse level
         int levelVal = parseIntField(json, "\"level\"", hotmIdx);
         if (levelVal < 0) return null;
 
-        // Parse selected ability
         String selectedAbility = parseStringField(json, "\"selected_ability\"", hotmIdx);
 
-        // Parse perks object
         int perksIdx = json.indexOf("\"perks\"", hotmIdx);
         if (perksIdx == -1) return null;
 
-        // Tree layout: [tier][col] -> api_id
-        // Tier 0=tier1(bottom), tier 9=tier10(top)
         String[][] TREE = {
-            {null, null, null, "mining_speed", null, null, null},           // T1
-            {null, "mining_speed_boost", "precision_mining", "mining_fortune", "titanium_insanium", "pickaxe_toss", null}, // T2
-            {null, "random_event", null, "efficient_miner", null, "forge_time", null},  // T3
-            {"daily_effect", "old_school", "professional", "mole", "fortunate", "mining_experience", "front_loaded"}, // T4
-            {null, "daily_grind", null, "special_0", null, "daily_powder", null},        // T5
-            {"anomalous_desire", "blockhead", "subterranean_fisher", "keep_it_cool", "lonesome_miner", "great_explorer", "maniac_miner"}, // T6
-            {null, "mining_speed_2", null, "powder_buff", null, "mining_fortune_2", null}, // T7
-            {"miners_blessing", "no_stone_unturned", "strong_arm", "steady_hand", "warm_hearted", "surveyor", "mineshaft_mayhem"}, // T8
-            {null, "metal_head", null, "rags_to_riches", null, "eager_adventurer", null}, // T9
-            {"gemstone_infusion", "crystalline", "gifts_from_the_departed", "mining_master", "hungry_for_more", "vanguard_seeker", "sheer_force"}, // T10
+            {null, null, null, "mining_speed", null, null, null},
+            {null, "mining_speed_boost", "precision_mining", "mining_fortune", "titanium_insanium", "pickaxe_toss", null},
+            {null, "random_event", null, "efficient_miner", null, "forge_time", null},
+            {"daily_effect", "old_school", "professional", "mole", "fortunate", "mining_experience", "front_loaded"},
+            {null, "daily_grind", null, "special_0", null, "daily_powder", null},
+            {"anomalous_desire", "blockhead", "subterranean_fisher", "keep_it_cool", "lonesome_miner", "great_explorer", "maniac_miner"},
+            {null, "mining_speed_2", null, "powder_buff", null, "mining_fortune_2", null},
+            {"miners_blessing", "no_stone_unturned", "strong_arm", "steady_hand", "warm_hearted", "surveyor", "mineshaft_mayhem"},
+            {null, "metal_head", null, "rags_to_riches", null, "eager_adventurer", null},
+            {"gemstone_infusion", "crystalline", "gifts_from_the_departed", "mining_master", "hungry_for_more", "vanguard_seeker", "sheer_force"},
         };
-
-        int[] MAX_LEVELS = {50, 1,1,50,50,1, 45,100,20, 1,20,140,200,20,100,1, 1,10,1, 1,20,40,50,45,20,1, 50,50,50, 1,50,100,100,50,20,1, 20,50,100, 1,50,100,10,50,50,1};
 
         java.util.Set<String> ABILITIES = new java.util.HashSet<>(java.util.Arrays.asList(
             "mining_speed_boost", "pickaxe_toss", "anomalous_desire", "maniac_miner", "gemstone_infusion", "sheer_force"
         ));
 
-        // Build max level lookup
         java.util.Map<String, Integer> maxLevels = new java.util.HashMap<>();
         maxLevels.put("mining_speed", 50); maxLevels.put("mining_speed_boost", 1); maxLevels.put("precision_mining", 1);
         maxLevels.put("mining_fortune", 50); maxLevels.put("titanium_insanium", 50); maxLevels.put("pickaxe_toss", 1);
@@ -487,7 +600,7 @@ public class HypixelAIClient implements ClientModInitializer {
         maxLevels.put("mining_master", 10); maxLevels.put("hungry_for_more", 50); maxLevels.put("vanguard_seeker", 50);
         maxLevels.put("sheer_force", 1);
 
-        int[] grid = new int[70]; // 10 tiers x 7 cols
+        int[] grid = new int[70];
 
         for (int tier = 0; tier < 10; tier++) {
             boolean locked = (tier + 1) > levelVal;
@@ -495,9 +608,9 @@ public class HypixelAIClient implements ClientModInitializer {
                 String perkId = TREE[tier][col];
                 int idx = tier * 7 + col;
                 if (perkId == null) {
-                    grid[idx] = 0; // empty
+                    grid[idx] = 0;
                 } else if (locked) {
-                    grid[idx] = -1; // locked
+                    grid[idx] = -1;
                 } else {
                     int perkLevel = parseIntField(json, "\"" + perkId + "\"", perksIdx);
                     if (perkLevel < 0) perkLevel = 0;
@@ -507,11 +620,11 @@ public class HypixelAIClient implements ClientModInitializer {
                     if (isAbility && perkLevel > 0) {
                         grid[idx] = (perkId.equals(selectedAbility)) ? 5 : 4;
                     } else if (perkLevel >= maxLvl && perkLevel > 0) {
-                        grid[idx] = 3; // maxed
+                        grid[idx] = 3;
                     } else if (perkLevel > 0) {
-                        grid[idx] = 2; // partial
+                        grid[idx] = 2;
                     } else {
-                        grid[idx] = 1; // unlocked, 0
+                        grid[idx] = 1;
                     }
                 }
             }
@@ -524,7 +637,6 @@ public class HypixelAIClient implements ClientModInitializer {
         if (idx == -1) return -1;
         int colon = json.indexOf(':', idx + key.length());
         if (colon == -1) return -1;
-        // Find the number
         int start = colon + 1;
         while (start < json.length() && (json.charAt(start) == ' ' || json.charAt(start) == '"')) start++;
         int end = start;
@@ -549,9 +661,6 @@ public class HypixelAIClient implements ClientModInitializer {
         return json.substring(qStart + 1, qEnd);
     }
 
-    /**
-     * Parse the "chat_lines" array from the JSON response.
-     */
     private static String[] parseChatLines(String json) {
         int idx = json.indexOf("\"chat_lines\"");
         if (idx == -1) return new String[0];
@@ -584,36 +693,24 @@ public class HypixelAIClient implements ClientModInitializer {
                     } catch (NumberFormatException e) {
                         current.append(c);
                     }
+                } else {
+                    current.append(c);
                 }
-                else current.append(c);
                 escaped = false;
-                continue;
-            }
-
-            if (c == '\\') {
+            } else if (c == '\\' && inString) {
                 escaped = true;
-                continue;
-            }
-
-            if (c == '"') {
+            } else if (c == '"') {
                 inString = !inString;
-                continue;
-            }
-
-            if (c == ',' && !inString) {
-                String line = current.toString().trim();
-                if (!line.isEmpty()) lines.add(line);
+            } else if (c == ',' && !inString) {
+                lines.add(current.toString());
                 current = new StringBuilder();
-                continue;
-            }
-
-            if (inString) {
+            } else if (inString) {
                 current.append(c);
             }
         }
-
-        String last = current.toString().trim();
-        if (!last.isEmpty()) lines.add(last);
+        if (current.length() > 0) {
+            lines.add(current.toString());
+        }
 
         return lines.toArray(new String[0]);
     }
