@@ -394,7 +394,10 @@ def api_license_unbind():
 
 @app.route("/")
 def index():
-    """Root endpoint — just confirms the API is running."""
+    """Serve the landing page."""
+    landing = Path(__file__).parent / "docs" / "index.html"
+    if landing.exists():
+        return landing.read_text(encoding="utf-8"), 200, {"Content-Type": "text/html"}
     return jsonify({"status": "ok", "service": "hypixel-ai-bot"})
 
 
