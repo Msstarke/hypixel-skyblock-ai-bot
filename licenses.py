@@ -52,6 +52,20 @@ def _connect() -> sqlite3.Connection:
         )
     """)
 
+    con.execute("""
+        CREATE TABLE IF NOT EXISTS whop_memberships (
+            id              INTEGER PRIMARY KEY AUTOINCREMENT,
+            whop_membership_id TEXT UNIQUE,
+            whop_user_email TEXT,
+            mc_username     TEXT,
+            plan            TEXT NOT NULL,
+            license_key     TEXT,
+            status          TEXT NOT NULL DEFAULT 'active',
+            created_at      INTEGER NOT NULL,
+            updated_at      INTEGER NOT NULL
+        )
+    """)
+
     con.commit()
     return con
 
