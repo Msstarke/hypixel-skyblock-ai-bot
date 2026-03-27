@@ -310,6 +310,62 @@ def api_health():
     return jsonify({"status": "ok", "ai_ready": _live_ai_handler is not None})
 
 
+# ── License admin endpoints (password-protected) ──────────────────────────
+
+ADMIN_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "")
+
+def _check_admin():
+    pwd = request.args.get("pwd", "") or request.headers.get("X-Admin-Password", "")
+    return pwd == ADMIN_PASSWORD and ADMIN_PASSWORD != ""
+
+
+@app.route("/api/licenses/generate", methods=["POST"])
+def api_license_generate():
+    """Generate license key(s). Requires admin password."""
+    if not _check_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    count = min(int(data.get("count", 1)), 50)
+    plan = data.get("plan", "basic")
+    days = data.get("expires_days", 30)
+    from licenses import generate_keys
+    keys = generate_keys(count, plan, days)
+    return jsonify({"keys": keys, "plan": plan, "expires_days": days})
+
+
+@app.route("/api/licenses")
+def api_licenses_list():
+    """List all licenses. Requires admin password."""
+    if not _check_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    from licenses import list_licenses
+    return jsonify(list_licenses(limit=100))
+
+
+@app.route("/api/licenses/deactivate", methods=["POST"])
+def api_license_deactivate():
+    """Deactivate a license key."""
+    if not _check_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    key = data.get("license_key", "")
+    from licenses import deactivate_key
+    ok = deactivate_key(key)
+    return jsonify({"ok": ok})
+
+
+@app.route("/api/licenses/unbind", methods=["POST"])
+def api_license_unbind():
+    """Unbind a license key from its UUID (allow re-binding)."""
+    if not _check_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    key = data.get("license_key", "")
+    from licenses import unbind_key
+    ok = unbind_key(key)
+    return jsonify({"ok": ok})
+
+
 @app.route("/")
 def index():
     """Root endpoint — just confirms the API is running."""
