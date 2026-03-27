@@ -333,13 +333,13 @@ def api_questions():
 @app.route("/api/health")
 def api_health():
     """Health check endpoint."""
-    from data_dir import DATA_DIR
+    from data_dir import DATA_DIR, _startup_log
     return jsonify({
         "status": "ok",
         "ai_ready": _live_ai_handler is not None,
         "data_dir": str(DATA_DIR),
         "data_dir_env": os.getenv("DATA_DIR", "NOT SET"),
-        "data_dir_exists": DATA_DIR.exists(),
+        "startup_log": _startup_log,
         "data_dir_files": [f for f in os.listdir(str(DATA_DIR))] if DATA_DIR.exists() else [],
     })
 
