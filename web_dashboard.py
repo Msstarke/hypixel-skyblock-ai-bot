@@ -628,11 +628,6 @@ def _safe_next_url(url):
     return url
 
 
-def _login_required_page():
-    """Returns HTML redirect to login page."""
-    return redirect("/login")
-
-
 @app.route("/login", methods=["GET", "POST"])
 def web_login():
     """Login page."""
