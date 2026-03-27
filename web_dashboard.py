@@ -738,7 +738,7 @@ def _render_dashboard(mc_username, key, plan):
         <div class="key-box">{key}</div>
 
         <a href="/api/mod/download?pwd={ADMIN_PASSWORD}" class="btn btn-primary" download>Download Mod</a>
-        <a href="/dashboard?username={mc_username}" class="btn btn-ghost">View Dashboard</a>
+        <a href="/#buy" class="btn btn-ghost">Upgrade Plan</a>
 
         <div class="step">
             <div class="step-item"><div class="step-num">1</div><span>Download the mod above and put it in <code>.minecraft/mods/</code></span></div>
