@@ -74,6 +74,40 @@ def api_activate():
         return jsonify({"ok": False, "error": result["error"]}), 403
 
 
+@app.route("/api/register", methods=["POST"])
+def api_register():
+    """Auto-register a free account. Creates a free-tier key bound to this UUID."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Missing JSON body"}), 400
+
+    mc_uuid = data.get("mc_uuid", "").strip()
+    mc_username = data.get("username", "").strip()
+
+    if not mc_uuid:
+        return jsonify({"error": "Missing mc_uuid"}), 400
+
+    from licenses import _con, generate_key, validate_key
+
+    # Check if this UUID already has a key
+    existing = _con.execute(
+        "SELECT license_key, plan FROM licenses WHERE mc_uuid = ? AND active = 1", (mc_uuid,)
+    ).fetchone()
+    if existing:
+        # Already registered — just re-activate
+        result = validate_key(existing["license_key"], mc_uuid, mc_username)
+        if result["ok"]:
+            return jsonify({"ok": True, "session": result["session"], "plan": result["plan"], "license_key": existing["license_key"]})
+        return jsonify({"ok": False, "error": result.get("error", "Activation failed")}), 403
+
+    # Create a free key bound to this UUID (never expires)
+    key = generate_key(plan="free", expires_days=None)
+    result = validate_key(key, mc_uuid, mc_username)
+    if result["ok"]:
+        return jsonify({"ok": True, "session": result["session"], "plan": "free", "license_key": key, "new": True})
+    return jsonify({"ok": False, "error": "Registration failed"}), 500
+
+
 def _auth_session(data: dict) -> tuple:
     """Validate session token from request data. Returns (license_info, error_response)."""
     session = data.get("session", "").strip()
