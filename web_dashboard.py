@@ -716,12 +716,13 @@ def purchased():
         token_plan, _ = _purchase_tokens[token]
         if token_plan != plan:
             return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-            <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
-            <div class="card">
-                <h1><span class="gradient">SkyAI</span></h1>
+            <title>SkyAI — Error</title><style>{_PAGE_CSS}</style></head><body>
+            {_page_nav()}
+            <div class="page-center"><div class="card">
+                <h1><span class="gradient">Error</span></h1>
                 <p class="error">Purchase token does not match this plan.</p>
                 <a href="/" class="btn btn-primary">Go to SkyAI</a>
-            </div></body></html>""", 403, {"Content-Type": "text/html"}
+            </div></div></body></html>""", 403, {"Content-Type": "text/html"}
         # Consume the token
         del _purchase_tokens[token]
 
