@@ -832,7 +832,7 @@ def _render_dashboard(mc_username, key, plan):
 
 # ── Admin Panel ────────────────────────────────────────────────────────────
 
-_ADMIN_STYLE = _PAGE_STYLE.replace("max-width: 480px", "max-width: 900px")
+_ADMIN_STYLE = f'<style>{_PAGE_CSS}</style>'
 
 @app.route("/admin")
 def admin_panel():
