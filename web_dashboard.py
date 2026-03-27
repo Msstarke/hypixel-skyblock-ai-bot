@@ -398,6 +398,201 @@ def index():
     return jsonify({"status": "ok", "service": "hypixel-ai-bot"})
 
 
+# ── Purchase / Dashboard pages ────────────────────────────────────────────
+
+_RATE_LIMIT_CACHE = {}  # ip -> (count, first_request_time)
+
+def _rate_limit_ip(limit=5, window=3600):
+    """Rate limit by IP. Returns True if allowed."""
+    ip = request.remote_addr or "unknown"
+    now = int(time.time())
+    if ip in _RATE_LIMIT_CACHE:
+        count, first = _RATE_LIMIT_CACHE[ip]
+        if now - first > window:
+            _RATE_LIMIT_CACHE[ip] = (1, now)
+            return True
+        if count >= limit:
+            return False
+        _RATE_LIMIT_CACHE[ip] = (count + 1, first)
+        return True
+    _RATE_LIMIT_CACHE[ip] = (1, now)
+    return True
+
+
+_PAGE_STYLE = """
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #060611; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+    .card { background: #10102a; border: 1px solid #1a1a3a; border-radius: 20px; padding: 40px; max-width: 480px; width: 90%; text-align: center; }
+    h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
+    h1 .gradient { background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .sub { color: #94a3b8; font-size: 0.9rem; margin-bottom: 28px; }
+    .plan-badge { display: inline-block; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; }
+    .plan-free { background: rgba(34,197,94,0.15); color: #22c55e; }
+    .plan-basic { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .plan-pro { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+    input { width: 100%; padding: 14px 18px; background: #0c0c1d; border: 1px solid #1a1a3a; border-radius: 10px; color: #e2e8f0; font-size: 0.95rem; outline: none; margin-bottom: 12px; }
+    input:focus { border-color: #3b82f6; }
+    input::placeholder { color: #4a5568; }
+    .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-decoration: none; text-align: center; }
+    .btn-primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(59,130,246,0.4); }
+    .btn-ghost { background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid #1a1a3a; margin-top: 10px; }
+    .btn-ghost:hover { background: rgba(255,255,255,0.1); }
+    .key-box { background: #0c0c1d; border: 1px solid #1a1a3a; border-radius: 10px; padding: 16px; margin: 20px 0; font-family: monospace; font-size: 0.95rem; color: #f59e0b; word-break: break-all; letter-spacing: 0.5px; user-select: all; }
+    .info { color: #64748b; font-size: 0.82rem; margin-top: 16px; line-height: 1.6; }
+    .info code { background: rgba(59,130,246,0.1); color: #3b82f6; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
+    .error { color: #ef4444; font-size: 0.88rem; margin-bottom: 16px; }
+    .success { color: #22c55e; }
+    .step { text-align: left; background: #0c0c1d; border: 1px solid #1a1a3a; border-radius: 10px; padding: 16px; margin: 16px 0; }
+    .step-item { display: flex; gap: 12px; padding: 8px 0; color: #94a3b8; font-size: 0.88rem; }
+    .step-num { background: rgba(59,130,246,0.15); color: #3b82f6; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; flex-shrink: 0; }
+</style>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+"""
+
+
+@app.route("/purchased")
+def purchased():
+    """Post-checkout page. User enters MC username to get their key."""
+    plan = request.args.get("plan", "free")
+    if plan not in ("free", "basic", "pro"):
+        plan = "free"
+
+    plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro"}
+    plan_class = f"plan-{plan}"
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>SkyAI — Activate</title>{_PAGE_STYLE}</head><body>
+    <div class="card">
+        <h1>Welcome to <span class="gradient">SkyAI</span></h1>
+        <p class="sub">Enter your Minecraft username to activate your license.</p>
+        <span class="plan-badge {plan_class}">{plan_names[plan]} Plan</span>
+        <form method="POST" action="/activate-purchase">
+            <input type="hidden" name="plan" value="{plan}">
+            <input type="text" name="mc_username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
+            <button type="submit" class="btn btn-primary">Activate License</button>
+        </form>
+        <p class="info">Your username is used to bind the license to your Minecraft account.</p>
+    </div>
+    </body></html>""", 200, {"Content-Type": "text/html"}
+
+
+@app.route("/activate-purchase", methods=["POST"])
+def activate_purchase():
+    """Generate a key for the purchased plan and show the dashboard."""
+    plan = request.form.get("plan", "free")
+    mc_username = request.form.get("mc_username", "").strip()
+
+    if plan not in ("free", "basic", "pro"):
+        plan = "free"
+    if not mc_username or len(mc_username) < 3 or len(mc_username) > 16:
+        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
+        <div class="card">
+            <h1><span class="gradient">SkyAI</span></h1>
+            <p class="error">Invalid username. Must be 3-16 characters.</p>
+            <a href="/purchased?plan={plan}" class="btn btn-primary">Try Again</a>
+        </div></body></html>""", 400, {"Content-Type": "text/html"}
+
+    # Rate limit
+    if not _rate_limit_ip(limit=5, window=3600):
+        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
+        <div class="card">
+            <h1><span class="gradient">SkyAI</span></h1>
+            <p class="error">Too many activations. Try again later.</p>
+        </div></body></html>""", 429, {"Content-Type": "text/html"}
+
+    from licenses import generate_key, _con
+
+    # Check if user already has a key for this plan
+    existing = _con.execute(
+        "SELECT license_key FROM licenses WHERE mc_username = ? AND plan = ? AND active = 1",
+        (mc_username, plan),
+    ).fetchone()
+
+    if existing:
+        key = existing["license_key"]
+    else:
+        expires = None if plan == "free" else 30
+        key = generate_key(plan=plan, expires_days=expires)
+        # Pre-bind username (UUID binding happens in-game)
+        _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, key))
+        _con.commit()
+
+    return _render_dashboard(mc_username, key, plan)
+
+
+@app.route("/dashboard")
+def dashboard():
+    """View your license info. Pass ?username=XXX to look up."""
+    mc_username = request.args.get("username", "").strip()
+    if not mc_username:
+        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>SkyAI — Dashboard</title>{_PAGE_STYLE}</head><body>
+        <div class="card">
+            <h1><span class="gradient">SkyAI</span> Dashboard</h1>
+            <p class="sub">Enter your Minecraft username to view your license.</p>
+            <form method="GET" action="/dashboard">
+                <input type="text" name="username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
+                <button type="submit" class="btn btn-primary">View License</button>
+            </form>
+        </div></body></html>""", 200, {"Content-Type": "text/html"}
+
+    from licenses import _con
+    row = _con.execute(
+        "SELECT license_key, plan, created_at, expires_at FROM licenses WHERE mc_username = ? AND active = 1 ORDER BY created_at DESC LIMIT 1",
+        (mc_username,),
+    ).fetchone()
+
+    if not row:
+        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+        <title>SkyAI — Dashboard</title>{_PAGE_STYLE}</head><body>
+        <div class="card">
+            <h1><span class="gradient">SkyAI</span></h1>
+            <p class="error">No license found for "{mc_username}"</p>
+            <a href="/dashboard" class="btn btn-ghost">Try Again</a>
+            <a href="https://msstarke.github.io/hypixel-skyblock-ai-bot/#buy" class="btn btn-primary" style="margin-top:10px;">Get SkyAI</a>
+        </div></body></html>""", 200, {"Content-Type": "text/html"}
+
+    return _render_dashboard(mc_username, row["license_key"], row["plan"])
+
+
+def _render_dashboard(mc_username, key, plan):
+    """Render the dashboard page with key + download."""
+    plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro", "unlimited": "Unlimited"}
+    plan_class = f"plan-{plan}" if plan in ("free", "basic", "pro") else "plan-pro"
+    limits = {"free": "10", "basic": "30", "pro": "100", "unlimited": "Unlimited"}
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>SkyAI — Your License</title>{_PAGE_STYLE}</head><body>
+    <div class="card">
+        <h1><span class="gradient">SkyAI</span></h1>
+        <span class="plan-badge {plan_class}">{plan_names.get(plan, plan)} Plan</span>
+        <p class="sub">Welcome, <strong>{mc_username}</strong>! Here's your license.</p>
+
+        <div class="key-box">{key}</div>
+
+        <a href="/api/mod/download?pwd={ADMIN_PASSWORD}" class="btn btn-primary" download>Download Mod</a>
+        <a href="/dashboard?username={mc_username}" class="btn btn-ghost">View Dashboard</a>
+
+        <div class="step">
+            <div class="step-item"><div class="step-num">1</div><span>Download the mod above and put it in <code>.minecraft/mods/</code></span></div>
+            <div class="step-item"><div class="step-num">2</div><span>You need <strong>Fabric Loader</strong> + <strong>Fabric API</strong> for 1.21.11</span></div>
+            <div class="step-item"><div class="step-num">3</div><span>Launch Minecraft, join any server</span></div>
+            <div class="step-item"><div class="step-num">4</div><span>Type in chat: <code>!aikey {key}</code></span></div>
+            <div class="step-item"><div class="step-num">5</div><span>Done! Ask anything with <code>!ai your question</code></span></div>
+        </div>
+
+        <p class="info">
+            Plan: <strong>{plan_names.get(plan, plan)}</strong> — {limits.get(plan, "?")} questions/hr<br>
+            {"Upgrade anytime at <a href='https://msstarke.github.io/hypixel-skyblock-ai-bot/#buy' style='color:#3b82f6;'>skyai website</a>" if plan == "free" else "Manage your subscription on <a href='https://whop.com/orders' style='color:#3b82f6;'>Whop</a>"}
+        </p>
+    </div>
+    </body></html>""", 200, {"Content-Type": "text/html"}
+
+
 # --- Mod auto-update endpoints ---
 
 MOD_DIR = Path(__file__).parent / "fabric-mod" / "dist"
