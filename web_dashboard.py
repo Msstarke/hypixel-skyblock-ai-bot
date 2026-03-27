@@ -830,10 +830,11 @@ def dashboard():
     ).fetchone()
 
     if not row:
+        from html import escape as _esc
         return f"""{_page_head("SkyAI — Dashboard")}<body>
         {_page_nav("dashboard")}
         <div class="page" style="text-align:center;">
-            <h1 style="font-size:2rem;margin-bottom:12px;">Welcome, <span class="gradient">{mc_username}</span></h1>
+            <h1 style="font-size:2rem;margin-bottom:12px;">Welcome, <span class="gradient">{_esc(mc_username)}</span></h1>
             <p class="sub">You don't have a license yet. Get started for free.</p>
             <div style="max-width:300px;margin:0 auto;">
                 <a href="/purchased?plan=free" class="btn btn-primary">Get Free License</a>
