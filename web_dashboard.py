@@ -842,10 +842,10 @@ def admin_panel():
         return redirect("/login?next=/admin")
     from accounts import is_admin
     if not is_admin(mc_username):
-        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>SkyAI — Admin</title>{_PAGE_STYLE}</head><body>
-        <div class="card"><h1><span class="gradient">Access Denied</span></h1><p class="sub">You are not an admin.</p>
-        <a href="/dashboard" class="btn btn-ghost">Back to Dashboard</a></div></body></html>""", 403, {"Content-Type": "text/html"}
+        return f"""{_page_head("SkyAI — Admin")}<body>
+        {_page_nav()}
+        <div class="page-center"><div class="card"><h1><span class="gradient">Access Denied</span></h1><p class="sub">You are not an admin.</p>
+        <a href="/dashboard" class="btn btn-ghost">Back to Dashboard</a></div></div></body></html>""", 403, {"Content-Type": "text/html"}
 
     from html import escape
     from licenses import list_licenses, _con as lcon
