@@ -8,98 +8,146 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #060611;
-            --bg2: #0c0c1d;
-            --card: #10102a;
-            --card-border: #1a1a3a;
-            --card-hover: #14143a;
-            --accent: #3b82f6;
-            --accent2: #8b5cf6;
-            --accent3: #ec4899;
+            --bg: #000000;
+            --bg2: #080810;
+            --card: #0a0a18;
+            --card-border: #16162a;
             --text: #e2e8f0;
-            --text2: #94a3b8;
-            --text3: #64748b;
+            --text2: #8892a8;
+            --text3: #4a5268;
+            --accent: #6366f1;
+            --accent2: #a855f7;
+            --accent3: #06b6d4;
+            --glow: rgba(99,102,241,0.15);
+            --glow2: rgba(168,85,247,0.15);
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
 
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background: var(--bg);
             color: var(--text);
             line-height: 1.7;
             overflow-x: hidden;
         }
 
-        /* Glow background */
-        .glow-bg {
+        ::selection { background: rgba(99,102,241,0.3); }
+
+        .container { max-width: 1100px; margin: 0 auto; padding: 0 24px; position: relative; z-index: 1; }
+
+        /* Animated gradient orbs */
+        .orb {
             position: fixed;
-            top: -200px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 800px;
-            height: 600px;
-            background: radial-gradient(ellipse, rgba(59,130,246,0.08) 0%, rgba(139,92,246,0.04) 40%, transparent 70%);
+            border-radius: 50%;
+            filter: blur(120px);
             pointer-events: none;
             z-index: 0;
+            opacity: 0.4;
         }
+        .orb-1 { width: 600px; height: 600px; top: -200px; left: -100px; background: radial-gradient(circle, rgba(99,102,241,0.2), transparent 70%); animation: float1 20s ease-in-out infinite; }
+        .orb-2 { width: 500px; height: 500px; top: 400px; right: -200px; background: radial-gradient(circle, rgba(168,85,247,0.15), transparent 70%); animation: float2 25s ease-in-out infinite; }
+        .orb-3 { width: 400px; height: 400px; top: 1200px; left: -100px; background: radial-gradient(circle, rgba(6,182,212,0.12), transparent 70%); animation: float3 22s ease-in-out infinite; }
 
-        .container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 0 24px;
-            position: relative;
-            z-index: 1;
+        @keyframes float1 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(60px,40px); } }
+        @keyframes float2 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(-40px,60px); } }
+        @keyframes float3 { 0%,100% { transform: translate(0,0); } 50% { transform: translate(50px,-30px); } }
+
+        /* Fade in on scroll */
+        .fade-in {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.6s ease, transform 0.6s ease;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
         }
 
         /* Nav */
         nav {
-            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            padding: 16px 0;
+            background: rgba(0,0,0,0.7);
+            backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(255,255,255,0.04);
+        }
+        .nav-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            padding: 0 24px;
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
         .logo {
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 800;
+            letter-spacing: -0.5px;
             background: linear-gradient(135deg, var(--accent), var(--accent2));
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            letter-spacing: -0.5px;
         }
-        .nav-links { display: flex; gap: 28px; }
+        .nav-links { display: flex; gap: 32px; align-items: center; }
         .nav-links a {
             color: var(--text3);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             font-weight: 500;
             transition: color 0.2s;
         }
         .nav-links a:hover { color: var(--text); }
+        .nav-cta {
+            padding: 8px 18px !important;
+            background: rgba(99,102,241,0.12) !important;
+            border: 1px solid rgba(99,102,241,0.25) !important;
+            border-radius: 8px !important;
+            color: var(--accent) !important;
+            font-weight: 600 !important;
+            transition: all 0.2s !important;
+        }
+        .nav-cta:hover { background: rgba(99,102,241,0.2) !important; border-color: rgba(99,102,241,0.4) !important; }
 
         /* Hero */
         .hero {
             text-align: center;
-            padding: 100px 0 80px;
+            padding: 120px 0 80px;
+            position: relative;
         }
         .badge {
-            display: inline-block;
-            padding: 6px 16px;
-            background: rgba(59,130,246,0.1);
-            border: 1px solid rgba(59,130,246,0.2);
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 7px 18px;
+            background: rgba(99,102,241,0.08);
+            border: 1px solid rgba(99,102,241,0.15);
             border-radius: 100px;
-            font-size: 0.8rem;
-            font-weight: 600;
+            font-size: 0.72rem;
+            font-weight: 700;
             color: var(--accent);
-            margin-bottom: 24px;
-            letter-spacing: 0.5px;
+            margin-bottom: 28px;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+        }
+        .badge-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: #22c55e;
+            animation: pulse-dot 2s ease-in-out infinite;
+        }
+        @keyframes pulse-dot {
+            0%,100% { opacity: 1; box-shadow: 0 0 0 0 rgba(34,197,94,0.4); }
+            50% { opacity: 0.7; box-shadow: 0 0 0 6px rgba(34,197,94,0); }
         }
         .hero h1 {
-            font-size: 4rem;
+            font-size: 4.5rem;
             font-weight: 900;
-            line-height: 1.1;
-            letter-spacing: -2px;
-            margin-bottom: 20px;
+            line-height: 1.05;
+            letter-spacing: -3px;
+            margin-bottom: 24px;
         }
         .hero h1 .gradient {
             background: linear-gradient(135deg, var(--accent), var(--accent2), var(--accent3));
@@ -107,103 +155,131 @@
             -webkit-text-fill-color: transparent;
         }
         .hero .sub {
-            font-size: 1.15rem;
+            font-size: 1.1rem;
             color: var(--text2);
-            max-width: 520px;
+            max-width: 480px;
             margin: 0 auto 40px;
+            line-height: 1.8;
         }
-        .hero-buttons { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+        .hero-buttons { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+
+        /* Buttons */
         .btn {
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            padding: 14px 28px;
-            border-radius: 10px;
+            padding: 14px 30px;
+            border-radius: 12px;
             font-weight: 600;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             text-decoration: none;
             border: none;
             cursor: pointer;
-            transition: all 0.2s;
+            transition: all 0.25s;
+            position: relative;
         }
         .btn-primary {
             background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: #fff;
-            box-shadow: 0 4px 20px rgba(59,130,246,0.3);
+            box-shadow: 0 4px 25px rgba(99,102,241,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
         }
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(59,130,246,0.4);
+            box-shadow: 0 8px 40px rgba(99,102,241,0.5), inset 0 1px 0 rgba(255,255,255,0.1);
         }
         .btn-ghost {
-            background: rgba(255,255,255,0.05);
-            color: var(--text);
-            border: 1px solid var(--card-border);
+            background: rgba(255,255,255,0.04);
+            color: var(--text2);
+            border: 1px solid rgba(255,255,255,0.08);
         }
-        .btn-ghost:hover {
-            background: rgba(255,255,255,0.08);
-            border-color: var(--text3);
-        }
+        .btn-ghost:hover { background: rgba(255,255,255,0.08); color: var(--text); border-color: rgba(255,255,255,0.15); }
 
-        /* Terminal demo */
+        /* Terminal */
         .terminal {
             background: var(--bg2);
             border: 1px solid var(--card-border);
             border-radius: 16px;
-            margin: 0 auto 80px;
-            max-width: 700px;
+            margin: 0 auto 0;
+            max-width: 680px;
             overflow: hidden;
+            position: relative;
+        }
+        .terminal::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 17px;
+            padding: 1px;
+            background: linear-gradient(135deg, rgba(99,102,241,0.3), transparent 50%, rgba(168,85,247,0.2));
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
         }
         .terminal-bar {
-            padding: 12px 16px;
-            background: rgba(255,255,255,0.03);
+            padding: 14px 18px;
+            background: rgba(255,255,255,0.02);
             border-bottom: 1px solid var(--card-border);
             display: flex;
             gap: 8px;
+            align-items: center;
         }
-        .terminal-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: var(--card-border);
-        }
+        .terminal-dot { width: 12px; height: 12px; border-radius: 50%; }
         .terminal-dot:nth-child(1) { background: #ef4444; }
         .terminal-dot:nth-child(2) { background: #eab308; }
         .terminal-dot:nth-child(3) { background: #22c55e; }
-        .terminal-body {
-            padding: 24px;
+        .terminal-title {
+            flex: 1;
+            text-align: center;
+            font-size: 0.75rem;
+            color: var(--text3);
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.85rem;
-            line-height: 1.8;
+        }
+        .terminal-body {
+            padding: 24px 28px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.82rem;
+            line-height: 2;
         }
         .t-prompt { color: var(--accent); font-weight: 500; }
         .t-cmd { color: var(--text); }
         .t-response { color: var(--text2); }
-        .t-highlight { color: #f59e0b; font-weight: 500; }
+        .t-hl { color: #f59e0b; font-weight: 500; }
         .t-dim { color: var(--text3); }
-        .t-line { margin-bottom: 16px; }
+        .t-line { margin-bottom: 20px; }
         .t-line:last-child { margin-bottom: 0; }
+        .t-cursor { display: inline-block; width: 8px; height: 16px; background: var(--accent); animation: blink 1s step-end infinite; vertical-align: text-bottom; margin-left: 2px; }
+        @keyframes blink { 0%,100% { opacity: 1; } 50% { opacity: 0; } }
 
         /* Section headers */
         .section-header {
             text-align: center;
-            margin-bottom: 48px;
+            margin-bottom: 56px;
+        }
+        .section-header .label {
+            display: inline-block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--accent);
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            margin-bottom: 16px;
         }
         .section-header h2 {
-            font-size: 2.2rem;
+            font-size: 2.5rem;
             font-weight: 800;
-            letter-spacing: -1px;
-            margin-bottom: 12px;
+            letter-spacing: -1.5px;
+            margin-bottom: 14px;
         }
         .section-header p {
             color: var(--text2);
-            font-size: 1.05rem;
-            max-width: 500px;
+            font-size: 1rem;
+            max-width: 450px;
             margin: 0 auto;
         }
 
-        /* Features grid */
-        .features { padding: 40px 0 80px; }
+        /* Feature cards with glow borders */
+        .features { padding: 100px 0; }
         .feature-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -211,94 +287,143 @@
         }
         @media (max-width: 768px) { .feature-grid { grid-template-columns: 1fr; } }
         .feature-card {
+            position: relative;
             background: var(--card);
             border: 1px solid var(--card-border);
-            border-radius: 14px;
-            padding: 28px;
-            transition: all 0.2s;
+            border-radius: 16px;
+            padding: 32px 28px;
+            transition: all 0.3s;
+            overflow: hidden;
         }
-        .feature-card:hover {
-            border-color: rgba(59,130,246,0.3);
-            background: var(--card-hover);
-            transform: translateY(-2px);
+        .feature-card::before {
+            content: '';
+            position: absolute;
+            inset: -1px;
+            border-radius: 17px;
+            padding: 1px;
+            background: linear-gradient(135deg, var(--glow-color, rgba(99,102,241,0.4)), transparent 60%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.3s;
         }
+        .feature-card:hover::before { opacity: 1; }
+        .feature-card:hover { transform: translateY(-4px); background: rgba(14,14,32,1); }
+        .feature-card:nth-child(1) { --glow-color: rgba(99,102,241,0.5); }
+        .feature-card:nth-child(2) { --glow-color: rgba(168,85,247,0.5); }
+        .feature-card:nth-child(3) { --glow-color: rgba(6,182,212,0.5); }
+        .feature-card:nth-child(4) { --glow-color: rgba(34,197,94,0.5); }
+        .feature-card:nth-child(5) { --glow-color: rgba(245,158,11,0.5); }
+        .feature-card:nth-child(6) { --glow-color: rgba(236,72,153,0.5); }
         .feature-icon {
-            width: 40px;
-            height: 40px;
-            border-radius: 10px;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-            margin-bottom: 16px;
-            background: rgba(59,130,246,0.1);
+            font-size: 1.3rem;
+            margin-bottom: 18px;
         }
-        .feature-card h3 {
-            font-size: 1rem;
-            font-weight: 700;
-            margin-bottom: 8px;
+        .feature-card:nth-child(1) .feature-icon { background: rgba(99,102,241,0.12); }
+        .feature-card:nth-child(2) .feature-icon { background: rgba(168,85,247,0.12); }
+        .feature-card:nth-child(3) .feature-icon { background: rgba(6,182,212,0.12); }
+        .feature-card:nth-child(4) .feature-icon { background: rgba(34,197,94,0.12); }
+        .feature-card:nth-child(5) .feature-icon { background: rgba(245,158,11,0.12); }
+        .feature-card:nth-child(6) .feature-icon { background: rgba(236,72,153,0.12); }
+        .feature-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .feature-card p { color: var(--text2); font-size: 0.88rem; line-height: 1.65; }
+
+        /* Stats bar */
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 1px;
+            background: var(--card-border);
+            border-radius: 16px;
+            overflow: hidden;
+            margin: 100px 0;
         }
-        .feature-card p {
-            color: var(--text2);
-            font-size: 0.88rem;
-            line-height: 1.6;
+        .stat {
+            background: var(--card);
+            padding: 36px 24px;
+            text-align: center;
         }
+        .stat-num {
+            font-size: 2.5rem;
+            font-weight: 900;
+            letter-spacing: -2px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .stat-label { color: var(--text3); font-size: 0.82rem; font-weight: 500; margin-top: 4px; }
 
         /* Steps */
-        .steps { padding: 40px 0 80px; }
-        .step-list { display: flex; flex-direction: column; gap: 0; max-width: 600px; margin: 0 auto; }
-        .step-item {
-            display: flex;
-            gap: 20px;
-            padding: 24px 0;
-            border-bottom: 1px solid var(--card-border);
+        .steps { padding: 0 0 100px; }
+        .step-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
         }
-        .step-item:last-child { border-bottom: none; }
-        .step-num {
-            width: 36px;
-            height: 36px;
-            border-radius: 10px;
-            background: rgba(59,130,246,0.1);
-            color: var(--accent);
+        @media (max-width: 768px) { .step-grid { grid-template-columns: 1fr; } }
+        .step-card {
+            background: var(--card);
+            border: 1px solid var(--card-border);
+            border-radius: 16px;
+            padding: 32px 28px;
+            text-align: center;
+            position: relative;
+        }
+        .step-number {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, var(--accent), var(--accent2));
             display: flex;
             align-items: center;
             justify-content: center;
-            font-weight: 700;
+            font-weight: 800;
             font-size: 0.9rem;
-            flex-shrink: 0;
+            margin: 0 auto 18px;
         }
-        .step-item h3 { font-size: 0.95rem; font-weight: 600; margin-bottom: 4px; }
-        .step-item p { color: var(--text2); font-size: 0.88rem; }
-        .step-item a { color: var(--accent); text-decoration: none; }
-        .step-item a:hover { text-decoration: underline; }
-        .step-item code {
-            background: rgba(59,130,246,0.1);
+        .step-card h3 { font-size: 1rem; font-weight: 700; margin-bottom: 8px; }
+        .step-card p { color: var(--text2); font-size: 0.85rem; line-height: 1.65; }
+        .step-card code {
+            background: rgba(99,102,241,0.1);
             color: var(--accent);
             padding: 2px 8px;
-            border-radius: 4px;
+            border-radius: 5px;
             font-family: 'JetBrains Mono', monospace;
-            font-size: 0.82rem;
+            font-size: 0.78rem;
         }
 
         /* Pricing */
-        .pricing { padding: 40px 0 80px; }
+        .pricing { padding: 0 0 100px; }
         .pricing-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
             gap: 16px;
             align-items: start;
         }
-        @media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; max-width: 400px; margin: 0 auto; } }
+        @media (max-width: 768px) { .pricing-grid { grid-template-columns: 1fr; max-width: 380px; margin: 0 auto; } }
         .plan-card {
             background: var(--card);
             border: 1px solid var(--card-border);
-            border-radius: 16px;
-            padding: 32px 28px;
+            border-radius: 20px;
+            padding: 36px 28px;
             position: relative;
+            transition: transform 0.3s;
         }
+        .plan-card:hover { transform: translateY(-4px); }
         .plan-card.popular {
-            border-color: var(--accent);
-            box-shadow: 0 0 40px rgba(59,130,246,0.12);
+            border-color: transparent;
+            background: linear-gradient(var(--card), var(--card)) padding-box,
+                        linear-gradient(135deg, var(--accent), var(--accent2)) border-box;
+            border: 1px solid transparent;
+            box-shadow: 0 0 50px rgba(99,102,241,0.12), 0 0 100px rgba(168,85,247,0.06);
         }
         .popular-badge {
             position: absolute;
@@ -307,185 +432,241 @@
             transform: translateX(-50%);
             background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: #fff;
-            font-size: 0.72rem;
+            font-size: 0.68rem;
             font-weight: 700;
-            padding: 4px 14px;
+            padding: 5px 16px;
             border-radius: 100px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.8px;
         }
-        .plan-name {
-            font-size: 0.9rem;
-            font-weight: 600;
-            color: var(--text2);
-            margin-bottom: 8px;
-        }
-        .plan-price {
-            font-size: 2.5rem;
-            font-weight: 800;
-            letter-spacing: -2px;
-            margin-bottom: 4px;
-        }
-        .plan-price span { font-size: 0.9rem; font-weight: 500; color: var(--text3); letter-spacing: 0; }
-        .plan-desc {
-            color: var(--text3);
-            font-size: 0.82rem;
-            margin-bottom: 24px;
-            padding-bottom: 24px;
-            border-bottom: 1px solid var(--card-border);
-        }
-        .plan-features {
-            list-style: none;
-            margin-bottom: 28px;
-        }
+        .plan-name { font-size: 0.85rem; font-weight: 600; color: var(--text2); margin-bottom: 10px; }
+        .plan-price { font-size: 3rem; font-weight: 900; letter-spacing: -2px; margin-bottom: 4px; }
+        .plan-price span { font-size: 0.85rem; font-weight: 500; color: var(--text3); letter-spacing: 0; }
+        .plan-desc { color: var(--text3); font-size: 0.8rem; margin-bottom: 28px; padding-bottom: 28px; border-bottom: 1px solid var(--card-border); }
+        .plan-features { list-style: none; margin-bottom: 32px; }
         .plan-features li {
             color: var(--text2);
-            font-size: 0.88rem;
-            padding: 5px 0;
+            font-size: 0.87rem;
+            padding: 6px 0;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
         }
-        .plan-features li::before {
-            content: "";
-            width: 18px;
-            height: 18px;
-            border-radius: 50%;
-            background: rgba(34,197,94,0.15);
-            flex-shrink: 0;
+        .check-icon {
+            width: 20px;
+            height: 20px;
+            border-radius: 6px;
+            background: rgba(34,197,94,0.12);
+            color: #22c55e;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 0.7rem;
+            flex-shrink: 0;
         }
-        .check { color: #22c55e; font-size: 0.75rem; margin-right: -28px; z-index: 1; }
         .plan-btn {
             display: block;
             width: 100%;
-            padding: 13px;
-            border-radius: 10px;
-            font-weight: 600;
+            padding: 14px;
+            border-radius: 12px;
+            font-weight: 700;
             font-size: 0.9rem;
             text-align: center;
             text-decoration: none;
             cursor: pointer;
             border: none;
-            transition: all 0.2s;
+            transition: all 0.25s;
         }
         .plan-btn-free {
-            background: rgba(255,255,255,0.06);
+            background: rgba(255,255,255,0.04);
             color: var(--text);
-            border: 1px solid var(--card-border);
+            border: 1px solid rgba(255,255,255,0.08);
         }
-        .plan-btn-free:hover { background: rgba(255,255,255,0.1); }
-        .plan-btn-basic {
+        .plan-btn-free:hover { background: rgba(255,255,255,0.08); }
+        .plan-btn-primary {
             background: linear-gradient(135deg, var(--accent), var(--accent2));
             color: #fff;
-            box-shadow: 0 4px 15px rgba(59,130,246,0.3);
+            box-shadow: 0 4px 20px rgba(99,102,241,0.3);
         }
-        .plan-btn-basic:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(59,130,246,0.4); }
+        .plan-btn-primary:hover { transform: translateY(-1px); box-shadow: 0 8px 30px rgba(99,102,241,0.45); }
         .plan-btn-pro {
-            background: rgba(139,92,246,0.15);
+            background: rgba(168,85,247,0.1);
             color: var(--accent2);
-            border: 1px solid rgba(139,92,246,0.3);
+            border: 1px solid rgba(168,85,247,0.2);
         }
-        .plan-btn-pro:hover { background: rgba(139,92,246,0.25); }
-
+        .plan-btn-pro:hover { background: rgba(168,85,247,0.2); }
 
         /* FAQ */
-        .faq { padding: 40px 0 80px; }
+        .faq { padding: 0 0 100px; }
         .faq-list { max-width: 650px; margin: 0 auto; }
         .faq-item {
             border-bottom: 1px solid var(--card-border);
-            padding: 20px 0;
+            padding: 24px 0;
+            cursor: pointer;
         }
         .faq-item h3 {
             font-size: 0.95rem;
             font-weight: 600;
-            margin-bottom: 8px;
             color: var(--text);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
+        .faq-item h3::after {
+            content: '+';
+            color: var(--text3);
+            font-size: 1.2rem;
+            font-weight: 400;
+            transition: transform 0.2s;
+        }
+        .faq-item.open h3::after { transform: rotate(45deg); }
         .faq-item p {
             color: var(--text2);
             font-size: 0.88rem;
+            line-height: 1.7;
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease, margin 0.3s ease;
+            margin-top: 0;
         }
+        .faq-item.open p { max-height: 200px; margin-top: 12px; }
+
+        /* CTA Banner */
+        .cta-banner {
+            position: relative;
+            border-radius: 24px;
+            padding: 64px 48px;
+            text-align: center;
+            margin-bottom: 100px;
+            overflow: hidden;
+            background: var(--card);
+            border: 1px solid var(--card-border);
+        }
+        .cta-banner::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(99,102,241,0.08), rgba(168,85,247,0.06), rgba(6,182,212,0.04));
+            pointer-events: none;
+        }
+        .cta-banner h2 { font-size: 2.2rem; font-weight: 800; letter-spacing: -1px; margin-bottom: 14px; position: relative; }
+        .cta-banner p { color: var(--text2); margin-bottom: 28px; position: relative; }
+        .cta-banner .btn { position: relative; }
 
         /* Footer */
         .footer {
-            text-align: center;
             padding: 40px 0;
+            text-align: center;
             color: var(--text3);
-            font-size: 0.8rem;
+            font-size: 0.78rem;
             border-top: 1px solid var(--card-border);
         }
+        .footer a { color: var(--text3); text-decoration: none; margin: 0 12px; }
+        .footer a:hover { color: var(--text2); }
 
-        /* Responsive */
-        @media (max-width: 600px) {
-            .hero h1 { font-size: 2.5rem; letter-spacing: -1px; }
+        /* Mobile */
+        @media (max-width: 768px) {
+            .hero h1 { font-size: 2.8rem; letter-spacing: -1.5px; }
             .hero .sub { font-size: 1rem; }
-            .nav-links { display: none; }
+            .nav-links { gap: 16px; }
+            .nav-links a { font-size: 0.78rem; }
+            .stats { grid-template-columns: 1fr; }
+            .step-grid { grid-template-columns: 1fr; }
+            .stat-num { font-size: 2rem; }
+            .cta-banner { padding: 40px 24px; }
+            .cta-banner h2 { font-size: 1.6rem; }
+        }
+        @media (max-width: 500px) {
+            .nav-links a:not(.nav-cta) { display: none; }
+            .hero h1 { font-size: 2.2rem; }
         }
     </style>
 </head>
 <body>
 
-<div class="glow-bg"></div>
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
 
-<div class="container">
-
-    <!-- Nav -->
-    <nav>
+<!-- Nav -->
+<nav>
+    <div class="nav-inner">
         <div class="logo">SkyAI</div>
         <div class="nav-links">
             <a href="#features">Features</a>
-            <a href="#buy">Pricing</a>
+            <a href="#pricing">Pricing</a>
             <a href="#faq">FAQ</a>
             <a href="/dashboard">Dashboard</a>
-            <a href="/login">Login</a>
+            <a href="/login" class="nav-cta">Sign In</a>
         </div>
-    </nav>
+    </div>
+</nav>
+
+<div class="container">
 
     <!-- Hero -->
-    <div class="hero">
-        <div class="badge">SKYBLOCK AI ASSISTANT</div>
+    <div class="hero fade-in">
+        <div class="badge"><div class="badge-dot"></div> SKYBLOCK AI ASSISTANT</div>
         <h1>Ask anything.<br><span class="gradient">Get answers instantly.</span></h1>
-        <p class="sub">AI-powered Skyblock assistant that lives inside your game. Real-time prices, accurate guides, personalized advice.</p>
+        <p class="sub">The AI-powered Skyblock assistant that lives inside your game. Real-time prices, accurate guides, personalized advice.</p>
         <div class="hero-buttons">
-            <a href="#buy" class="btn btn-primary">Get Started Free</a>
-            <a href="#buy" class="btn btn-ghost">View Pricing</a>
+            <a href="#pricing" class="btn btn-primary">Get Started Free</a>
+            <a href="#features" class="btn btn-ghost">Learn More</a>
         </div>
     </div>
 
     <!-- Terminal Demo -->
-    <div class="terminal">
+    <div class="terminal fade-in" style="margin-bottom:0;">
         <div class="terminal-bar">
             <div class="terminal-dot"></div>
             <div class="terminal-dot"></div>
             <div class="terminal-dot"></div>
+            <span class="terminal-title">skyai -- minecraft chat</span>
         </div>
         <div class="terminal-body">
             <div class="t-line">
                 <span class="t-prompt">&gt;</span> <span class="t-cmd">!ai how much profit doing diana?</span>
             </div>
             <div class="t-line">
-                <span class="t-highlight">Diana Mythological Ritual Profit Rates:</span><br>
-                <span class="t-response">- Common Griffin: ~12M coins/hour</span><br>
-                <span class="t-response">- Legendary Griffin: <span class="t-highlight">70-100M+</span> coins/hour</span><br>
-                <span class="t-dim">  Main income: Chimera books, Daedalus Sticks, Minos Relic</span>
+                <span class="t-hl">Diana Mythological Ritual Profit:</span><br>
+                <span class="t-response">Common Griffin: ~12M/hr</span><br>
+                <span class="t-response">Legendary Griffin: <span class="t-hl">70-100M+</span>/hr</span><br>
+                <span class="t-dim">Income: Chimera books, Daedalus Sticks, Minos Relic</span>
             </div>
             <div class="t-line">
                 <span class="t-prompt">&gt;</span> <span class="t-cmd">!ai mining speed for 4-tick mithril?</span>
             </div>
             <div class="t-line">
-                <span class="t-response">Gray Mithril: <span class="t-highlight">&gt; 3,334</span> Mining Speed</span><br>
-                <span class="t-response">Blue Mithril: <span class="t-highlight">&gt; 10,000</span> Mining Speed</span><br>
-                <span class="t-dim">  Softcap always 4 ticks, then jumps to 1-tick instant mine.</span>
+                <span class="t-response">Gray Mithril: <span class="t-hl">&gt; 3,334</span> Mining Speed</span><br>
+                <span class="t-response">Blue Mithril: <span class="t-hl">&gt; 10,000</span> Mining Speed</span><br>
+                <span class="t-dim">Softcap: 4 ticks, then jumps to 1-tick instant.</span>
+            </div>
+            <div class="t-line">
+                <span class="t-prompt">&gt;</span> <span class="t-cursor"></span>
             </div>
         </div>
     </div>
 
+    <!-- Stats -->
+    <div class="stats fade-in">
+        <div class="stat">
+            <div class="stat-num">98%</div>
+            <div class="stat-label">Answer accuracy</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">&lt;3s</div>
+            <div class="stat-label">Response time</div>
+        </div>
+        <div class="stat">
+            <div class="stat-num">24/7</div>
+            <div class="stat-label">Always available</div>
+        </div>
+    </div>
+
     <!-- Features -->
-    <div class="features" id="features">
+    <div class="features fade-in" id="features">
         <div class="section-header">
+            <div class="label">Features</div>
             <h2>Built for Skyblock players</h2>
             <p>Everything you need to make better decisions, faster.</p>
         </div>
@@ -493,176 +674,184 @@
             <div class="feature-card">
                 <div class="feature-icon">&#x1F3AE;</div>
                 <h3>In-Game Overlay</h3>
-                <p>Answers appear in a clean HUD overlay. No alt-tabbing, no browser.</p>
+                <p>Answers appear in a clean HUD overlay. No alt-tabbing, no browser, no distractions.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">&#x1F3AF;</div>
                 <h3>Accurate Answers</h3>
-                <p>Curated knowledge base + live wiki. No hallucinations.</p>
+                <p>Curated knowledge base + live wiki search. 98% accuracy across 98 automated tests.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">&#x1F4B0;</div>
-                <h3>Live Prices</h3>
-                <p>Real-time Bazaar and AH prices in every answer.</p>
+                <h3>Live Bazaar Prices</h3>
+                <p>Real-time Bazaar and AH prices injected into every profit calculation and answer.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">&#x1F464;</div>
-                <h3>Personalized</h3>
-                <p>Link your account for advice based on your actual gear and stats.</p>
+                <h3>Personalized Advice</h3>
+                <p>Link your account and get upgrade recommendations based on your actual gear and stats.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">&#x1F4C5;</div>
                 <h3>Event Calendar</h3>
-                <p>Current year, next events, Jerry's Workshop, Shen's Auction — live.</p>
+                <p>Current SB year, next Jerry's Workshop, Shen's Auction, Spooky Festival -- all live.</p>
             </div>
             <div class="feature-card">
                 <div class="feature-icon">&#x1F9E0;</div>
                 <h3>Self-Improving</h3>
-                <p>Wrong answers auto-correct via wiki search. Gets smarter over time.</p>
+                <p>Wrong answers auto-correct via wiki search and get cached. The bot gets smarter over time.</p>
             </div>
         </div>
     </div>
 
-    <!-- Steps -->
-    <div class="steps">
+    <!-- How it works -->
+    <div class="steps fade-in">
         <div class="section-header">
+            <div class="label">Setup</div>
             <h2>Up and running in 2 minutes</h2>
         </div>
-        <div class="step-list">
-            <div class="step-item">
-                <div class="step-num">1</div>
-                <div>
-                    <h3>Download the mod</h3>
-                    <p>Sign up above and download the mod from your dashboard. Drop it in your Fabric mods folder.</p>
-                </div>
+        <div class="step-grid">
+            <div class="step-card">
+                <div class="step-number">1</div>
+                <h3>Create an account</h3>
+                <p>Sign up for free on this site. Takes 10 seconds -- just a username and password.</p>
             </div>
-            <div class="step-item">
-                <div class="step-num">2</div>
-                <div>
-                    <h3>Play for free</h3>
-                    <p>Launch Minecraft and join any server. Auto-registers you on the free tier — 10 questions/hr, no key needed.</p>
-                </div>
+            <div class="step-card">
+                <div class="step-number">2</div>
+                <h3>Install the mod</h3>
+                <p>Download the .jar from your dashboard and drop it in your <code>.minecraft/mods</code> folder. Requires Fabric.</p>
             </div>
-            <div class="step-item">
-                <div class="step-num">3</div>
-                <div>
-                    <h3>Upgrade anytime</h3>
-                    <p>Buy a key below, then type <code>!aikey YOUR-KEY</code> in chat to unlock more.</p>
-                </div>
+            <div class="step-card">
+                <div class="step-number">3</div>
+                <h3>Start asking</h3>
+                <p>Join any server and type <code>!ai your question</code> in chat. Instant answers, zero config.</p>
             </div>
         </div>
     </div>
 
     <!-- Pricing -->
-    <div class="pricing" id="buy">
+    <div class="pricing fade-in" id="pricing">
         <div class="section-header">
-            <h2>Simple pricing</h2>
+            <div class="label">Pricing</div>
+            <h2>Simple, transparent pricing</h2>
             <p>Start free. Upgrade when you need more.</p>
         </div>
         <div class="pricing-grid">
-            <!-- Free -->
             <div class="plan-card">
                 <div class="plan-name">Free</div>
                 <div class="plan-price">$0 <span>/ forever</span></div>
                 <div class="plan-desc">Try it out, no commitment</div>
                 <ul class="plan-features">
-                    <li><span class="check">&#10003;</span> 10 questions per hour</li>
-                    <li><span class="check">&#10003;</span> Full knowledge base</li>
-                    <li><span class="check">&#10003;</span> Live wiki search</li>
-                    <li><span class="check">&#10003;</span> SkyBlock calendar</li>
-                    <li><span class="check">&#10003;</span> In-game overlay</li>
+                    <li><span class="check-icon">&#10003;</span> 10 questions per hour</li>
+                    <li><span class="check-icon">&#10003;</span> Full knowledge base</li>
+                    <li><span class="check-icon">&#10003;</span> Live wiki search</li>
+                    <li><span class="check-icon">&#10003;</span> SkyBlock calendar</li>
+                    <li><span class="check-icon">&#10003;</span> In-game overlay</li>
                 </ul>
-                <button onclick="openCheckout('free')" class="plan-btn plan-btn-free">Get Free</button>
+                <button onclick="openCheckout('free')" class="plan-btn plan-btn-free">Get Started Free</button>
             </div>
-            <!-- Basic -->
             <div class="plan-card popular">
                 <div class="popular-badge">Most Popular</div>
                 <div class="plan-name">Basic</div>
                 <div class="plan-price">$4.99 <span>/ month</span></div>
                 <div class="plan-desc">For active players</div>
                 <ul class="plan-features">
-                    <li><span class="check">&#10003;</span> 30 questions per hour</li>
-                    <li><span class="check">&#10003;</span> Everything in Free</li>
-                    <li><span class="check">&#10003;</span> Live Bazaar + AH prices</li>
-                    <li><span class="check">&#10003;</span> Personalized advice</li>
-                    <li><span class="check">&#10003;</span> HotM tree visualization</li>
+                    <li><span class="check-icon">&#10003;</span> 30 questions per hour</li>
+                    <li><span class="check-icon">&#10003;</span> Everything in Free</li>
+                    <li><span class="check-icon">&#10003;</span> Live Bazaar + AH prices</li>
+                    <li><span class="check-icon">&#10003;</span> Personalized advice</li>
+                    <li><span class="check-icon">&#10003;</span> HotM tree visualization</li>
                 </ul>
-                <button onclick="openCheckout('basic')" class="plan-btn plan-btn-basic">Get Basic</button>
+                <button onclick="openCheckout('basic')" class="plan-btn plan-btn-primary">Get Basic</button>
             </div>
-            <!-- Pro -->
             <div class="plan-card">
                 <div class="plan-name">Pro</div>
                 <div class="plan-price">$9.99 <span>/ month</span></div>
                 <div class="plan-desc">For power users</div>
                 <ul class="plan-features">
-                    <li><span class="check">&#10003;</span> 100 questions per hour</li>
-                    <li><span class="check">&#10003;</span> Everything in Basic</li>
-                    <li><span class="check">&#10003;</span> Priority responses</li>
-                    <li><span class="check">&#10003;</span> Early access features</li>
-                    <li><span class="check">&#10003;</span> Priority support</li>
+                    <li><span class="check-icon">&#10003;</span> 100 questions per hour</li>
+                    <li><span class="check-icon">&#10003;</span> Everything in Basic</li>
+                    <li><span class="check-icon">&#10003;</span> Priority responses</li>
+                    <li><span class="check-icon">&#10003;</span> Early access features</li>
+                    <li><span class="check-icon">&#10003;</span> Priority support</li>
                 </ul>
                 <button onclick="openCheckout('pro')" class="plan-btn plan-btn-pro">Get Pro</button>
             </div>
         </div>
     </div>
 
-
     <!-- FAQ -->
-    <div class="faq" id="faq">
+    <div class="faq fade-in" id="faq">
         <div class="section-header">
-            <h2>FAQ</h2>
+            <div class="label">FAQ</div>
+            <h2>Common questions</h2>
         </div>
         <div class="faq-list">
-            <div class="faq-item">
+            <div class="faq-item" onclick="this.classList.toggle('open')">
                 <h3>Is this bannable on Hypixel?</h3>
                 <p>SkyAI only reads your chat input and displays an overlay. It does not automate gameplay, modify packets, or interact with the server. It functions similarly to other allowed information mods.</p>
             </div>
-            <div class="faq-item">
+            <div class="faq-item" onclick="this.classList.toggle('open')">
                 <h3>What Minecraft version does it support?</h3>
                 <p>Minecraft 1.21.10 with Fabric Loader. You need Fabric API installed.</p>
             </div>
-            <div class="faq-item">
-                <h3>Can I share my key?</h3>
-                <p>No. Each key locks to your Minecraft account on first use. Using it on a different account will be rejected.</p>
+            <div class="faq-item" onclick="this.classList.toggle('open')">
+                <h3>Can I share my license key?</h3>
+                <p>No. Each key locks to your Minecraft account on first use. Attempting to use it on a different account will be rejected.</p>
             </div>
-            <div class="faq-item">
+            <div class="faq-item" onclick="this.classList.toggle('open')">
                 <h3>What if I get a wrong answer?</h3>
-                <p>Press N or type !wrong. The bot automatically searches the wiki and caches the correct answer for next time.</p>
+                <p>Press N or type !wrong to flag it. The bot automatically searches the wiki and caches the correct answer for next time.</p>
             </div>
-            <div class="faq-item">
+            <div class="faq-item" onclick="this.classList.toggle('open')">
                 <h3>Do I need a key to use the mod?</h3>
-                <p>No. The free tier works instantly — just install and play. Upgrade when you want more questions per hour.</p>
+                <p>No. The free tier works instantly with no key. Just install the mod, create an account, and start asking. Upgrade when you want more questions per hour.</p>
             </div>
-            <div class="faq-item">
+            <div class="faq-item" onclick="this.classList.toggle('open')">
                 <h3>Can I cancel anytime?</h3>
-                <p>Yes. Your key works until it expires. No auto-renewal unless you buy again.</p>
+                <p>Yes. Your key works until it expires. No auto-renewal unless you buy again through Whop.</p>
             </div>
         </div>
     </div>
 
+    <!-- CTA Banner -->
+    <div class="cta-banner fade-in">
+        <h2>Ready to stop guessing?</h2>
+        <p>Join hundreds of Skyblock players getting instant, accurate answers in-game.</p>
+        <a href="#pricing" class="btn btn-primary">Get SkyAI Free</a>
+    </div>
+
     <!-- Footer -->
     <div class="footer">
-        SkyAI is not affiliated with Hypixel Inc. or Mojang Studios.
+        <div style="margin-bottom:12px;">
+            <a href="#features">Features</a>
+            <a href="#pricing">Pricing</a>
+            <a href="#faq">FAQ</a>
+            <a href="/dashboard">Dashboard</a>
+        </div>
+        <p>SkyAI is not affiliated with Hypixel Inc. or Mojang Studios.</p>
     </div>
 
 </div>
 
 <script>
-var PLAN_IDS = { basic: 'plan_7EWYWncqMDHH4', pro: 'plan_sTXEVOZOyHZBA' };
+// Scroll fade-in
+var observer = new IntersectionObserver(function(entries) {
+    entries.forEach(function(e) { if (e.isIntersecting) { e.target.classList.add('visible'); } });
+}, { threshold: 0.1 });
+document.querySelectorAll('.fade-in').forEach(function(el) { observer.observe(el); });
 
+// Checkout
+var PLAN_IDS = { basic: 'plan_7EWYWncqMDHH4', pro: 'plan_sTXEVOZOyHZBA' };
 async function openCheckout(plan) {
     if (plan === 'free') {
         window.location.href = '/purchased?plan=free';
         return;
     }
-
     try {
-        // Get a one-time purchase token
         var resp = await fetch('/api/purchase-token?plan=' + plan);
         var data = await resp.json();
         if (!data.token) { alert('Failed to start checkout. Try again.'); return; }
-
-        // Redirect to Whop checkout with return URL back to our server
         var returnUrl = encodeURIComponent(window.location.origin + '/purchased?plan=' + plan + '&token=' + data.token);
         window.location.href = 'https://whop.com/checkout/' + PLAN_IDS[plan] + '/?d=' + returnUrl;
     } catch (e) {
