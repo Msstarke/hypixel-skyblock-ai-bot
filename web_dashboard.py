@@ -776,29 +776,24 @@ def purchased():
 
 @app.route("/dashboard")
 def dashboard():
-    """View your license info. Requires login."""
+    """View your license info. Auto-creates free key if none exists."""
     mc_username = _get_web_user()
     if not mc_username:
-        return redirect("/login")
+        return redirect("/login?next=/dashboard")
 
-    from licenses import _con
+    from html import escape as _esc
+    from licenses import _con, generate_key
+
     row = _con.execute(
         "SELECT license_key, plan, created_at, expires_at FROM licenses WHERE mc_username = ? AND active = 1 ORDER BY CASE plan WHEN 'unlimited' THEN 4 WHEN 'pro' THEN 3 WHEN 'basic' THEN 2 ELSE 1 END DESC LIMIT 1",
-        (mc_username,),
+        (_esc(mc_username),),
     ).fetchone()
 
     if not row:
-        from html import escape as _esc
-        return f"""{_page_head("SkyAI — Dashboard")}<body>
-        {_page_nav("dashboard")}
-        <div class="page" style="text-align:center;">
-            <h1 style="font-size:2rem;margin-bottom:12px;">Welcome, <span class="gradient">{_esc(mc_username)}</span></h1>
-            <p class="sub">You don't have a license yet. Get started for free.</p>
-            <div style="max-width:300px;margin:0 auto;">
-                <a href="/purchased?plan=free" class="btn btn-primary">Get Free License</a>
-                <a href="/#pricing" class="btn btn-ghost">View Plans</a>
-            </div>
-        </div></body></html>""", 200, {"Content-Type": "text/html"}
+        key = generate_key(plan="free", expires_days=None)
+        _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, key))
+        _con.commit()
+        return _render_dashboard(mc_username, key, "free")
 
     return _render_dashboard(mc_username, row["license_key"], row["plan"])
 
