@@ -392,6 +392,19 @@ def api_license_unbind():
     return jsonify({"ok": ok})
 
 
+@app.route("/api/admin/reset-password", methods=["POST"])
+def api_admin_reset_password():
+    """Reset a user's password. Requires admin password."""
+    if not _check_admin():
+        return jsonify({"error": "Unauthorized"}), 401
+    data = request.get_json(silent=True) or {}
+    username = data.get("username", "")
+    new_password = data.get("password", "")
+    from accounts import reset_password
+    ok = reset_password(username, new_password)
+    return jsonify({"ok": ok})
+
+
 @app.route("/api/admin/promote", methods=["POST"])
 def api_admin_promote():
     """Promote a user to admin. Requires admin password."""
