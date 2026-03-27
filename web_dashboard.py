@@ -326,6 +326,8 @@ def api_feedback_list():
 @app.route("/api/questions")
 def api_questions():
     """JSON: recent questions asked to the bot."""
+    if not _check_admin():
+        return jsonify({"error": "Unauthorized"}), 401
     from feedback import get_questions
     limit = min(int(request.args.get("limit", 50)), 200)
     offset = int(request.args.get("offset", 0))
