@@ -502,11 +502,12 @@ def index():
         from html import escape as _esc
         from accounts import is_admin as _is_admin
         admin_link = '<a href="/admin">Admin</a>' if _is_admin(user) else ""
-        new_nav = f"""<a href="/dashboard">Dashboard</a>
-            {admin_link}
-            <a href="/logout" class="nav-cta" style="color:#ef4444 !important;border-color:rgba(239,68,68,0.25) !important;background:rgba(239,68,68,0.08) !important;">{_esc(user)}</a>"""
+        new_nav = f"""{admin_link}
+            <a href="/dashboard">Dashboard</a>
+            <a href="/logout" class="nav-cta" style="color:#ef4444 !important;border-color:rgba(239,68,68,0.2) !important;background:rgba(239,68,68,0.08) !important;">{_esc(user)}</a>"""
+        # Replace the sign-in link with user nav
         html = html.replace(
-            '<a href="/dashboard">Dashboard</a>\n            <a href="/login" class="nav-cta">Sign In</a>',
+            '<a href="/login" class="nav-cta">Sign In</a>',
             new_nav
         )
     return html, 200, {"Content-Type": "text/html"}
