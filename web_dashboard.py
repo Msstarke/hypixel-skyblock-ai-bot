@@ -723,6 +723,22 @@ def api_mod_version():
     return jsonify({"version": version, "message": message})
 
 
+@app.route("/download")
+def web_download():
+    """Download mod jar — requires web login."""
+    mc_username = _get_web_user()
+    if not mc_username:
+        return redirect("/login?next=/download")
+    from flask import send_from_directory
+    if not MOD_DIR.exists():
+        return jsonify({"error": "No mod builds available"}), 404
+    jars = list(MOD_DIR.glob("*.jar"))
+    if not jars:
+        return jsonify({"error": "No mod jar found"}), 404
+    return send_from_directory(str(MOD_DIR), jars[0].name, as_attachment=True,
+                               download_name="hypixelai-mod.jar")
+
+
 @app.route("/api/mod/download")
 def api_mod_download():
     """Serves the latest mod jar. Requires session token or admin password."""
