@@ -463,37 +463,93 @@ def _rate_limit_ip(limit=5, window=3600):
     return True
 
 
-_PAGE_STYLE = """
-<style>
+_PAGE_CSS = """
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { font-family: 'Inter', -apple-system, sans-serif; background: #060611; color: #e2e8f0; min-height: 100vh; display: flex; align-items: center; justify-content: center; }
-    .card { background: #10102a; border: 1px solid #1a1a3a; border-radius: 20px; padding: 40px; max-width: 480px; width: 90%; text-align: center; }
-    h1 { font-size: 1.6rem; font-weight: 800; margin-bottom: 8px; }
-    h1 .gradient { background: linear-gradient(135deg, #3b82f6, #8b5cf6); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .sub { color: #94a3b8; font-size: 0.9rem; margin-bottom: 28px; }
-    .plan-badge { display: inline-block; padding: 4px 14px; border-radius: 100px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 20px; }
-    .plan-free { background: rgba(34,197,94,0.15); color: #22c55e; }
-    .plan-basic { background: rgba(59,130,246,0.15); color: #3b82f6; }
-    .plan-pro { background: rgba(139,92,246,0.15); color: #8b5cf6; }
-    input { width: 100%; padding: 14px 18px; background: #0c0c1d; border: 1px solid #1a1a3a; border-radius: 10px; color: #e2e8f0; font-size: 0.95rem; outline: none; margin-bottom: 12px; }
-    input:focus { border-color: #3b82f6; }
-    input::placeholder { color: #4a5568; }
-    .btn { display: block; width: 100%; padding: 14px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; text-decoration: none; text-align: center; }
-    .btn-primary { background: linear-gradient(135deg, #3b82f6, #8b5cf6); color: #fff; box-shadow: 0 4px 15px rgba(59,130,246,0.3); }
-    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 25px rgba(59,130,246,0.4); }
-    .btn-ghost { background: rgba(255,255,255,0.06); color: #e2e8f0; border: 1px solid #1a1a3a; margin-top: 10px; }
-    .btn-ghost:hover { background: rgba(255,255,255,0.1); }
-    .key-box { background: #0c0c1d; border: 1px solid #1a1a3a; border-radius: 10px; padding: 16px; margin: 20px 0; font-family: monospace; font-size: 0.95rem; color: #f59e0b; word-break: break-all; letter-spacing: 0.5px; user-select: all; }
-    .info { color: #64748b; font-size: 0.82rem; margin-top: 16px; line-height: 1.6; }
-    .info code { background: rgba(59,130,246,0.1); color: #3b82f6; padding: 2px 6px; border-radius: 4px; font-size: 0.8rem; }
-    .error { color: #ef4444; font-size: 0.88rem; margin-bottom: 16px; }
-    .success { color: #22c55e; }
-    .step { text-align: left; background: #0c0c1d; border: 1px solid #1a1a3a; border-radius: 10px; padding: 16px; margin: 16px 0; }
-    .step-item { display: flex; gap: 12px; padding: 8px 0; color: #94a3b8; font-size: 0.88rem; }
-    .step-num { background: rgba(59,130,246,0.15); color: #3b82f6; width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; flex-shrink: 0; }
-</style>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    body { font-family: 'Inter', -apple-system, sans-serif; background: #000; color: #e2e8f0; min-height: 100vh; }
+    a { color: #6366f1; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .topnav { position: sticky; top: 0; z-index: 100; padding: 14px 24px; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; }
+    .topnav-logo { font-size: 1.2rem; font-weight: 800; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
+    .topnav-links { display: flex; gap: 20px; align-items: center; }
+    .topnav-links a { color: #4a5268; font-size: 0.82rem; font-weight: 500; text-decoration: none; }
+    .topnav-links a:hover { color: #e2e8f0; text-decoration: none; }
+    .topnav-user { display: flex; align-items: center; gap: 10px; }
+    .topnav-avatar { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
+    .topnav-name { font-size: 0.82rem; font-weight: 600; color: #e2e8f0; }
+    .page { max-width: 600px; margin: 0 auto; padding: 60px 24px; }
+    .page-wide { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+    .page-center { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 56px); }
+    .card { background: #0a0a18; border: 1px solid #16162a; border-radius: 20px; padding: 40px; max-width: 420px; width: 100%; text-align: center; }
+    h1 { font-size: 1.5rem; font-weight: 800; margin-bottom: 8px; }
+    .gradient { background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .sub { color: #8892a8; font-size: 0.88rem; margin-bottom: 24px; }
+    .plan-badge { display: inline-block; padding: 5px 16px; border-radius: 100px; font-size: 0.72rem; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 20px; }
+    .plan-free { background: rgba(34,197,94,0.12); color: #22c55e; }
+    .plan-basic { background: rgba(99,102,241,0.12); color: #6366f1; }
+    .plan-pro { background: rgba(168,85,247,0.12); color: #a855f7; }
+    .plan-unlimited { background: rgba(245,158,11,0.12); color: #f59e0b; }
+    input, select { width: 100%; padding: 13px 16px; background: #08081a; border: 1px solid #16162a; border-radius: 10px; color: #e2e8f0; font-size: 0.9rem; font-family: inherit; outline: none; margin-bottom: 10px; transition: border-color 0.2s; }
+    input:focus, select:focus { border-color: #6366f1; }
+    input::placeholder { color: #3a3a5a; }
+    .btn { display: block; width: 100%; padding: 13px; border: none; border-radius: 10px; font-weight: 700; font-size: 0.9rem; cursor: pointer; transition: all 0.2s; text-decoration: none; text-align: center; }
+    .btn:hover { text-decoration: none; }
+    .btn-primary { background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; box-shadow: 0 4px 20px rgba(99,102,241,0.3); }
+    .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 30px rgba(99,102,241,0.45); }
+    .btn-ghost { background: rgba(255,255,255,0.04); color: #8892a8; border: 1px solid #16162a; margin-top: 10px; }
+    .btn-ghost:hover { background: rgba(255,255,255,0.07); color: #e2e8f0; }
+    .btn-sm { display: inline-block; width: auto; padding: 6px 14px; font-size: 0.78rem; border-radius: 8px; }
+    .key-box { background: #08081a; border: 1px solid #16162a; border-radius: 12px; padding: 18px; margin: 20px 0; font-family: 'JetBrains Mono', monospace; font-size: 0.9rem; color: #f59e0b; word-break: break-all; letter-spacing: 0.5px; user-select: all; position: relative; }
+    .info { color: #4a5268; font-size: 0.8rem; margin-top: 16px; line-height: 1.7; }
+    .info code { background: rgba(99,102,241,0.1); color: #6366f1; padding: 2px 7px; border-radius: 5px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }
+    .error { color: #ef4444; font-size: 0.85rem; margin-bottom: 16px; background: rgba(239,68,68,0.08); padding: 10px 16px; border-radius: 8px; border: 1px solid rgba(239,68,68,0.15); }
+    .dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .dash-card { background: #0a0a18; border: 1px solid #16162a; border-radius: 16px; padding: 24px; }
+    .dash-card h3 { font-size: 0.82rem; color: #4a5268; font-weight: 600; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px; }
+    .dash-card .value { font-size: 1.8rem; font-weight: 800; letter-spacing: -1px; }
+    .steps-list { text-align: left; background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 20px; margin: 16px 0; }
+    .step-item { display: flex; gap: 14px; padding: 10px 0; color: #8892a8; font-size: 0.85rem; line-height: 1.5; }
+    .step-num { background: rgba(99,102,241,0.12); color: #6366f1; min-width: 26px; height: 26px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.75rem; flex-shrink: 0; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    th { text-align: left; padding: 10px 12px; color: #4a5268; font-weight: 600; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid #16162a; }
+    td { padding: 10px 12px; border-bottom: 1px solid #0d0d22; }
 """
+
+
+def _page_head(title="SkyAI"):
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>{title}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <style>{_PAGE_CSS}</style></head>"""
+
+
+def _page_nav(active=""):
+    user = _get_web_user()
+    from accounts import is_admin as _is_admin
+    admin_link = '<a href="/admin">Admin</a>' if user and _is_admin(user) else ""
+    if user:
+        right = f"""<div class="topnav-user">
+            {admin_link}
+            <a href="/dashboard">Dashboard</a>
+            <div class="topnav-avatar">{user[0].upper()}</div>
+            <span class="topnav-name">{user}</span>
+            <a href="/logout" style="color:#ef4444;">Logout</a>
+        </div>"""
+    else:
+        right = '<div class="topnav-links"><a href="/login">Sign In</a><a href="/register" style="padding:7px 16px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:8px;color:#6366f1;font-weight:600;">Sign Up</a></div>'
+    return f"""<nav class="topnav">
+        <a href="/" class="topnav-logo">SkyAI</a>
+        <div class="topnav-links" style="flex:1;justify-content:center;">
+            <a href="/#features">Features</a>
+            <a href="/#pricing">Pricing</a>
+            <a href="/#faq">FAQ</a>
+        </div>
+        {right}
+    </nav>"""
+
+
+# Legacy alias
+_PAGE_STYLE = f'<style>{_PAGE_CSS}</style><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">'
 
 
 import secrets as _secrets
