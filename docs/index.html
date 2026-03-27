@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkyAI — Hypixel Skyblock AI Assistant</title>
-    <script async defer src="https://js.whop.com/static/checkout/loader.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
     <style>
@@ -391,47 +390,6 @@
         }
         .plan-btn-pro:hover { background: rgba(139,92,246,0.25); }
 
-        /* Checkout modal */
-        .modal-overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px);
-            z-index: 1000;
-            align-items: center;
-            justify-content: center;
-        }
-        .modal-overlay.active { display: flex; }
-        .modal-box {
-            background: #fff;
-            border-radius: 20px;
-            max-width: 460px;
-            width: 92%;
-            max-height: 90vh;
-            overflow-y: auto;
-            position: relative;
-            box-shadow: 0 25px 60px rgba(0,0,0,0.5);
-        }
-        .modal-close {
-            position: absolute;
-            top: 14px;
-            right: 16px;
-            background: rgba(0,0,0,0.06);
-            border: none;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            font-size: 1.1rem;
-            cursor: pointer;
-            color: #666;
-            z-index: 10;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: background 0.2s;
-        }
-        .modal-close:hover { background: rgba(0,0,0,0.12); }
 
         /* FAQ */
         .faq { padding: 40px 0 80px; }
@@ -648,26 +606,6 @@
         </div>
     </div>
 
-    <!-- Checkout Modal -->
-    <div class="modal-overlay" id="modal-overlay" onclick="closeCheckout(event)">
-        <div class="modal-box">
-            <button class="modal-close" onclick="closeCheckout()">&times;</button>
-            <div id="checkout-basic" style="display:none;">
-                <div
-                    data-whop-checkout-plan-id="plan_7EWYWncqMDHH4"
-                    data-whop-checkout-theme="light"
-                    style="min-height: 400px;"
-                ></div>
-            </div>
-            <div id="checkout-pro" style="display:none;">
-                <div
-                    data-whop-checkout-plan-id="plan_sTXEVOZOyHZBA"
-                    data-whop-checkout-theme="light"
-                    style="min-height: 400px;"
-                ></div>
-            </div>
-        </div>
-    </div>
 
     <!-- FAQ -->
     <div class="faq" id="faq">
@@ -710,38 +648,27 @@
 </div>
 
 <script>
+var PLAN_IDS = { basic: 'plan_7EWYWncqMDHH4', pro: 'plan_sTXEVOZOyHZBA' };
+
 async function openCheckout(plan) {
     if (plan === 'free') {
         window.location.href = '/purchased?plan=free';
         return;
     }
 
-    // Get a one-time purchase token from the server
     try {
-        const resp = await fetch('/api/purchase-token?plan=' + plan);
-        const data = await resp.json();
+        // Get a one-time purchase token
+        var resp = await fetch('/api/purchase-token?plan=' + plan);
+        var data = await resp.json();
         if (!data.token) { alert('Failed to start checkout. Try again.'); return; }
 
-        // Update the return URL with the token
-        const returnUrl = 'https://worker-production-f916.up.railway.app/purchased?plan=' + plan + '&token=' + data.token;
-        const container = document.getElementById('checkout-' + plan);
-        const embed = container.querySelector('[data-whop-checkout-plan-id]');
-        embed.setAttribute('data-whop-checkout-return-url', returnUrl);
-
-        document.getElementById('checkout-basic').style.display = plan === 'basic' ? 'block' : 'none';
-        document.getElementById('checkout-pro').style.display = plan === 'pro' ? 'block' : 'none';
-        document.getElementById('modal-overlay').classList.add('active');
+        // Redirect to Whop checkout with return URL back to our server
+        var returnUrl = encodeURIComponent(window.location.origin + '/purchased?plan=' + plan + '&token=' + data.token);
+        window.location.href = 'https://whop.com/checkout/' + PLAN_IDS[plan] + '/?d=' + returnUrl;
     } catch (e) {
         alert('Failed to start checkout. Try again.');
     }
 }
-function closeCheckout(e) {
-    if (e && e.target !== e.currentTarget) return;
-    document.getElementById('modal-overlay').classList.remove('active');
-}
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') closeCheckout();
-});
 </script>
 
 </body>
