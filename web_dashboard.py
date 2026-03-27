@@ -994,16 +994,15 @@ def admin_action():
         expires = None if plan == "unlimited" else 30
         from licenses import generate_keys
         keys = generate_keys(count, plan, expires)
-        # Show keys on a simple page
         key_list = "<br>".join(keys)
-        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>Generated Keys</title>{_PAGE_STYLE}</head><body>
-        <div class="card">
+        return f"""{_page_head("Generated Keys")}<body>
+        {_page_nav()}
+        <div class="page-center"><div class="card">
             <h1><span class="gradient">Keys Generated</span></h1>
             <p class="sub">{count} {plan} keys</p>
-            <div class="key-box" style="text-align:left;font-size:0.8rem;line-height:2;">{key_list}</div>
+            <div class="key-box" style="text-align:left;font-size:0.78rem;line-height:2.2;">{key_list}</div>
             <a href="/admin" class="btn btn-ghost">Back to Admin</a>
-        </div></body></html>""", 200, {"Content-Type": "text/html"}
+        </div></div></body></html>""", 200, {"Content-Type": "text/html"}
 
     elif action == "deactivate":
         key = request.form.get("key", "")
