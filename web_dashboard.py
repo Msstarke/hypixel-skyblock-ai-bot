@@ -349,7 +349,7 @@ def api_health():
 ADMIN_PASSWORD = os.getenv("DASHBOARD_PASSWORD", "")
 
 def _check_admin():
-    pwd = request.args.get("pwd", "") or request.headers.get("X-Admin-Password", "")
+    pwd = request.headers.get("X-Admin-Password", "")
     return pwd == ADMIN_PASSWORD and ADMIN_PASSWORD != ""
 
 
