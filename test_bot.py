@@ -18,7 +18,7 @@ import time
 import urllib.request
 import urllib.error
 
-RAILWAY_BASE = "https://worker-production-f916.up.railway.app"
+RAILWAY_BASE = "https://sky-ai.uk"
 LOCAL_BASE   = "http://localhost:5000"
 RAILWAY_URL  = RAILWAY_BASE + "/api/ask"
 LOCAL_URL    = LOCAL_BASE + "/api/ask"
