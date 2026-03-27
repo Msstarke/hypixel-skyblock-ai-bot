@@ -744,61 +744,57 @@ def api_purchase_token():
 
 @app.route("/purchased")
 def purchased():
-    """Post-checkout page. Requires login. Generates key for the user's account."""
+    """Post-checkout page. Requires login. Generates key for free tier or links Whop key."""
     mc_username = _get_web_user()
     if not mc_username:
-        # Save where they were going so we can redirect after login
         plan = request.args.get("plan", "free")
-        token = request.args.get("token", "")
-        return redirect(f"/login?next=/purchased?plan={plan}&token={token}")
+        return redirect(f"/login?next=/purchased?plan={plan}")
 
     plan = request.args.get("plan", "free")
-    token = request.args.get("token", "")
-
     if plan not in ("free", "basic", "pro"):
         plan = "free"
 
-    # Paid plans require a valid purchase token
-    if plan in ("basic", "pro"):
-        if not token or token not in _purchase_tokens:
-            return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-            <title>SkyAI — Error</title><style>{_PAGE_CSS}</style></head><body>
-            {_page_nav()}
-            <div class="page-center"><div class="card">
-                <h1><span class="gradient">Error</span></h1>
-                <p class="error">Invalid or expired purchase link. Please buy through the website.</p>
-                <a href="/" class="btn btn-primary">Go to SkyAI</a>
-            </div></div></body></html>""", 403, {"Content-Type": "text/html"}
-        token_plan, _ = _purchase_tokens[token]
-        if token_plan != plan:
-            return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-            <title>SkyAI — Error</title><style>{_PAGE_CSS}</style></head><body>
-            {_page_nav()}
-            <div class="page-center"><div class="card">
-                <h1><span class="gradient">Error</span></h1>
-                <p class="error">Purchase token does not match this plan.</p>
-                <a href="/" class="btn btn-primary">Go to SkyAI</a>
-            </div></div></body></html>""", 403, {"Content-Type": "text/html"}
-        # Consume the token
-        del _purchase_tokens[token]
-
-    # Generate or find existing key for this user
     from licenses import generate_key, _con
 
-    existing = _con.execute(
-        "SELECT license_key FROM licenses WHERE mc_username = ? AND plan = ? AND active = 1",
-        (mc_username, plan),
+    if plan == "free":
+        # Free tier — generate directly
+        existing = _con.execute(
+            "SELECT license_key FROM licenses WHERE mc_username = ? AND plan = 'free' AND active = 1",
+            (mc_username,),
+        ).fetchone()
+
+        if existing:
+            key = existing["license_key"]
+        else:
+            key = generate_key(plan="free", expires_days=None)
+            _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, key))
+            _con.commit()
+
+        return _render_dashboard(mc_username, key, "free")
+
+    # Paid plans — check if Whop webhook already created a key, link it to this user
+    # Look for unlinked Whop keys
+    whop_key = _con.execute(
+        "SELECT wm.license_key, wm.plan FROM whop_memberships wm WHERE wm.mc_username IS NULL AND wm.status = 'active' ORDER BY wm.created_at DESC LIMIT 1"
     ).fetchone()
 
-    if existing:
-        key = existing["license_key"]
-    else:
-        expires = None if plan == "free" else 30
-        key = generate_key(plan=plan, expires_days=expires)
-        _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, key))
+    if whop_key and whop_key["license_key"]:
+        # Link the Whop-generated key to this user
+        _con.execute("UPDATE whop_memberships SET mc_username = ? WHERE license_key = ?", (mc_username, whop_key["license_key"]))
+        _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, whop_key["license_key"]))
         _con.commit()
+        return _render_dashboard(mc_username, whop_key["license_key"], whop_key["plan"])
 
-    return _render_dashboard(mc_username, key, plan)
+    # No Whop key yet — show a waiting message
+    return f"""{_page_head("SkyAI — Processing")}<body>
+    {_page_nav()}
+    <div class="page-center"><div class="card">
+        <h1><span class="gradient">Processing Payment</span></h1>
+        <p class="sub">Your payment is being processed. This usually takes a few seconds.</p>
+        <p class="info">If you just completed checkout on Whop, your key will appear on your dashboard shortly.</p>
+        <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+        <a href="/#pricing" class="btn btn-ghost">View Plans</a>
+    </div></div></body></html>""", 200, {"Content-Type": "text/html"}
 
 
 
