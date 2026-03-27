@@ -577,7 +577,14 @@ def api_purchase_token():
 
 @app.route("/purchased")
 def purchased():
-    """Post-checkout page. User enters MC username to get their key."""
+    """Post-checkout page. Requires login. Generates key for the user's account."""
+    mc_username = _get_web_user()
+    if not mc_username:
+        # Save where they were going so we can redirect after login
+        plan = request.args.get("plan", "free")
+        token = request.args.get("token", "")
+        return redirect(f"/login?next=/purchased?plan={plan}&token={token}")
+
     plan = request.args.get("plan", "free")
     token = request.args.get("token", "")
 
@@ -594,7 +601,6 @@ def purchased():
                 <p class="error">Invalid or expired purchase link. Please buy through the website.</p>
                 <a href="/" class="btn btn-primary">Go to SkyAI</a>
             </div></body></html>""", 403, {"Content-Type": "text/html"}
-        # Verify token matches the plan
         token_plan, _ = _purchase_tokens[token]
         if token_plan != plan:
             return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
@@ -604,25 +610,26 @@ def purchased():
                 <p class="error">Purchase token does not match this plan.</p>
                 <a href="/" class="btn btn-primary">Go to SkyAI</a>
             </div></body></html>""", 403, {"Content-Type": "text/html"}
+        # Consume the token
+        del _purchase_tokens[token]
 
-    plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro"}
-    plan_class = f"plan-{plan}"
+    # Generate or find existing key for this user
+    from licenses import generate_key, _con
 
-    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>SkyAI — Activate</title>{_PAGE_STYLE}</head><body>
-    <div class="card">
-        <h1>Welcome to <span class="gradient">SkyAI</span></h1>
-        <p class="sub">Enter your Minecraft username to activate your license.</p>
-        <span class="plan-badge {plan_class}">{plan_names[plan]} Plan</span>
-        <form method="POST" action="/activate-purchase">
-            <input type="hidden" name="plan" value="{plan}">
-            <input type="hidden" name="token" value="{token}">
-            <input type="text" name="mc_username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
-            <button type="submit" class="btn btn-primary">Activate License</button>
-        </form>
-        <p class="info">Your username is used to bind the license to your Minecraft account.</p>
-    </div>
-    </body></html>""", 200, {"Content-Type": "text/html"}
+    existing = _con.execute(
+        "SELECT license_key FROM licenses WHERE mc_username = ? AND plan = ? AND active = 1",
+        (mc_username, plan),
+    ).fetchone()
+
+    if existing:
+        key = existing["license_key"]
+    else:
+        expires = None if plan == "free" else 30
+        key = generate_key(plan=plan, expires_days=expires)
+        _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, key))
+        _con.commit()
+
+    return _render_dashboard(mc_username, key, plan)
 
 
 @app.route("/activate-purchase", methods=["POST"])
