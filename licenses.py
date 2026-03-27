@@ -253,3 +253,94 @@ def cleanup_old_logs(days: int = 7):
     cutoff = int(time.time()) - (days * 86400)
     _con.execute("DELETE FROM request_log WHERE created_at < ?", (cutoff,))
     _con.commit()
+
+
+# ── Whop membership management ───────────────────────────────────────────
+
+# Map Whop plan IDs to our plan names
+WHOP_PLAN_MAP = {
+    "plan_7EWYWncqMDHH4": "basic",
+    "plan_sTXEVOZOyHZBA": "pro",
+}
+
+
+def whop_activate_membership(membership_id: str, user_email: str, plan_id: str) -> dict:
+    """Handle a Whop membership activation. Generates a key and stores the mapping."""
+    plan = WHOP_PLAN_MAP.get(plan_id, "basic")
+    now = int(time.time())
+
+    # Check if we already have this membership
+    existing = _con.execute(
+        "SELECT license_key, mc_username FROM whop_memberships WHERE whop_membership_id = ?",
+        (membership_id,),
+    ).fetchone()
+
+    if existing and existing["license_key"]:
+        # Re-activate existing key
+        _con.execute(
+            "UPDATE licenses SET active = 1, expires_at = ? WHERE license_key = ?",
+            (now + 30 * 86400, existing["license_key"]),
+        )
+        _con.execute(
+            "UPDATE whop_memberships SET status = 'active', updated_at = ? WHERE whop_membership_id = ?",
+            (now, membership_id),
+        )
+        _con.commit()
+        return {"ok": True, "key": existing["license_key"], "plan": plan, "action": "reactivated"}
+
+    # Generate new key
+    key = generate_key(plan=plan, expires_days=30)
+
+    # Store the Whop membership mapping
+    _con.execute(
+        "INSERT OR REPLACE INTO whop_memberships (whop_membership_id, whop_user_email, plan, license_key, status, created_at, updated_at) VALUES (?, ?, ?, ?, 'active', ?, ?)",
+        (membership_id, user_email, plan, key, now, now),
+    )
+    _con.commit()
+    return {"ok": True, "key": key, "plan": plan, "action": "created"}
+
+
+def whop_deactivate_membership(membership_id: str) -> dict:
+    """Handle a Whop membership deactivation (cancellation/expiry)."""
+    now = int(time.time())
+    row = _con.execute(
+        "SELECT license_key FROM whop_memberships WHERE whop_membership_id = ?",
+        (membership_id,),
+    ).fetchone()
+
+    if not row:
+        return {"ok": False, "error": "Membership not found"}
+
+    # Deactivate the license key
+    if row["license_key"]:
+        _con.execute("UPDATE licenses SET active = 0 WHERE license_key = ?", (row["license_key"],))
+
+    _con.execute(
+        "UPDATE whop_memberships SET status = 'cancelled', updated_at = ? WHERE whop_membership_id = ?",
+        (now, membership_id),
+    )
+    _con.commit()
+    return {"ok": True, "action": "deactivated"}
+
+
+def whop_renew_membership(membership_id: str) -> dict:
+    """Extend a membership by 30 days (on successful payment)."""
+    now = int(time.time())
+    row = _con.execute(
+        "SELECT license_key FROM whop_memberships WHERE whop_membership_id = ?",
+        (membership_id,),
+    ).fetchone()
+
+    if not row or not row["license_key"]:
+        return {"ok": False, "error": "Membership not found"}
+
+    _con.execute(
+        "UPDATE licenses SET active = 1, expires_at = ? WHERE license_key = ?",
+        (now + 30 * 86400, row["license_key"]),
+    )
+    _con.execute(
+        "UPDATE whop_memberships SET status = 'active', updated_at = ? WHERE whop_membership_id = ?",
+        (now, membership_id),
+    )
+    _con.commit()
+    return {"ok": True, "action": "renewed"}
