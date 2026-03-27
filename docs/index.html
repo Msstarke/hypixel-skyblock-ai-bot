@@ -481,7 +481,8 @@
             <a href="#features">Features</a>
             <a href="#buy">Pricing</a>
             <a href="#faq">FAQ</a>
-            <a href="#buy">Download</a>
+            <a href="/dashboard">Dashboard</a>
+            <a href="/login">Login</a>
         </div>
     </nav>
 
@@ -654,7 +655,6 @@
             <div id="checkout-basic" style="display:none;">
                 <div
                     data-whop-checkout-plan-id="plan_7EWYWncqMDHH4"
-                    data-whop-checkout-return-url="https://worker-production-f916.up.railway.app/purchased?plan=basic"
                     data-whop-checkout-theme="light"
                     style="min-height: 400px;"
                 ></div>
@@ -662,7 +662,6 @@
             <div id="checkout-pro" style="display:none;">
                 <div
                     data-whop-checkout-plan-id="plan_sTXEVOZOyHZBA"
-                    data-whop-checkout-return-url="https://worker-production-f916.up.railway.app/purchased?plan=pro"
                     data-whop-checkout-theme="light"
                     style="min-height: 400px;"
                 ></div>
@@ -711,15 +710,30 @@
 </div>
 
 <script>
-function openCheckout(plan) {
+async function openCheckout(plan) {
     if (plan === 'free') {
-        // Free tier — go straight to activation (will route through Whop once free plan ID is set)
         window.location.href = '/purchased?plan=free';
         return;
     }
-    document.getElementById('checkout-basic').style.display = plan === 'basic' ? 'block' : 'none';
-    document.getElementById('checkout-pro').style.display = plan === 'pro' ? 'block' : 'none';
-    document.getElementById('modal-overlay').classList.add('active');
+
+    // Get a one-time purchase token from the server
+    try {
+        const resp = await fetch('/api/purchase-token?plan=' + plan);
+        const data = await resp.json();
+        if (!data.token) { alert('Failed to start checkout. Try again.'); return; }
+
+        // Update the return URL with the token
+        const returnUrl = 'https://worker-production-f916.up.railway.app/purchased?plan=' + plan + '&token=' + data.token;
+        const container = document.getElementById('checkout-' + plan);
+        const embed = container.querySelector('[data-whop-checkout-plan-id]');
+        embed.setAttribute('data-whop-checkout-return-url', returnUrl);
+
+        document.getElementById('checkout-basic').style.display = plan === 'basic' ? 'block' : 'none';
+        document.getElementById('checkout-pro').style.display = plan === 'pro' ? 'block' : 'none';
+        document.getElementById('modal-overlay').classList.add('active');
+    } catch (e) {
+        alert('Failed to start checkout. Try again.');
+    }
 }
 function closeCheckout(e) {
     if (e && e.target !== e.currentTarget) return;
