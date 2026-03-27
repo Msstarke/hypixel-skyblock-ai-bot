@@ -905,13 +905,10 @@ def admin_panel():
         usr = escape(str(q.get("username", "")))
         q_rows += f"<tr><td>{usr}</td><td>{qu}</td></tr>"
 
-    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>SkyAI — Admin</title>{_ADMIN_STYLE}</head><body style="display:block;padding:24px;">
-    <div style="max-width:1000px;margin:0 auto;">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
-            <h1><span class="gradient">SkyAI Admin</span></h1>
-            <div><a href="/dashboard" style="color:#94a3b8;margin-right:16px;">Dashboard</a><a href="/" style="color:#94a3b8;margin-right:16px;">Site</a><a href="/logout" style="color:#ef4444;">Logout</a></div>
-        </div>
+    return f"""{_page_head("SkyAI — Admin")}<body>
+    {_page_nav("admin")}
+    <div class="page-wide">
+        <h1 style="font-size:2rem;margin-bottom:32px;"><span class="gradient">Admin Panel</span></h1>
 
         <!-- Stats -->
         <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:32px;">
