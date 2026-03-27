@@ -18,8 +18,14 @@ import time
 import urllib.request
 import urllib.error
 
-RAILWAY_URL = "https://worker-production-f916.up.railway.app/api/ask"
-LOCAL_URL   = "http://localhost:5000/api/ask"
+RAILWAY_BASE = "https://worker-production-f916.up.railway.app"
+LOCAL_BASE   = "http://localhost:5000"
+RAILWAY_URL  = RAILWAY_BASE + "/api/ask"
+LOCAL_URL    = LOCAL_BASE + "/api/ask"
+
+# Test license key — generated with 'unlimited' plan, no expiry
+TEST_LICENSE_KEY = "SKYAI-E2692A451692D7101ABAEBCB"
+_session_token = None
 
 # ---------------------------------------------------------------------------
 # Test cases
