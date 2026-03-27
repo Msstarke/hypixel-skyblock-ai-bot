@@ -938,47 +938,43 @@ def admin_panel():
     lic_rows = ""
     for l in licenses:
         exp = "Never" if not l.get("expires_at") else datetime.datetime.fromtimestamp(l["expires_at"]).strftime("%Y-%m-%d")
-        status = "Active" if l.get("active") else "Inactive"
-        s_color = "#22c55e" if l.get("active") else "#ef4444"
+        active = l.get("active")
+        badge = '<span class="ap-badge ap-badge-active">Active</span>' if active else '<span class="ap-badge ap-badge-inactive">Inactive</span>'
         lic_rows += f"""<tr>
-            <td style="font-family:monospace;font-size:0.75rem;">{escape(str(l.get('license_key','')))}</td>
+            <td><span class="ap-key">{escape(str(l.get('license_key','')))}</span></td>
             <td>{escape(str(l.get('mc_username','') or '—'))}</td>
             <td>{escape(str(l.get('plan','')))}</td>
-            <td style="color:{s_color}">{status}</td>
-            <td>{exp}</td>
-            <td>
-                <form method="POST" action="/admin/action" style="display:inline">
-                    <input type="hidden" name="key" value="{escape(str(l.get('license_key','')))}">
-                    <button name="action" value="{'deactivate' if l.get('active') else 'reactivate'}" class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem;">{'Deactivate' if l.get('active') else 'Reactivate'}</button>
-                    <button name="action" value="unbind" class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Unbind</button>
-                </form>
-            </td></tr>"""
+            <td>{badge}</td>
+            <td style="color:#4a5268;">{exp}</td>
+            <td><form method="POST" action="/admin/action" style="display:inline;white-space:nowrap;">
+                <input type="hidden" name="key" value="{escape(str(l.get('license_key','')))}">
+                <button name="action" value="{'deactivate' if active else 'reactivate'}" class="ap-btn{' ap-btn-danger' if active else ''}">{'Deactivate' if active else 'Activate'}</button>
+                <button name="action" value="unbind" class="ap-btn">Unbind</button>
+            </form></td></tr>"""
 
     # Build accounts table
     acc_rows = ""
     for a in accounts:
-        admin_badge = '<span style="color:#f59e0b;">Admin</span>' if a.get("is_admin") else "User"
+        role = '<span class="ap-badge ap-badge-admin">Admin</span>' if a.get("is_admin") else '<span class="ap-badge ap-badge-user">User</span>'
         acc_rows += f"""<tr>
-            <td>{escape(str(a.get('mc_username','')))}</td>
-            <td>{admin_badge}</td>
-            <td>{datetime.datetime.fromtimestamp(a.get('created_at',0)).strftime("%Y-%m-%d")}</td>
-            <td>
-                {"" if a.get("is_admin") else '<form method="POST" action="/admin/action" style="display:inline"><input type="hidden" name="username" value="' + escape(str(a.get("mc_username",""))) + '"><button name="action" value="make_admin" class="btn btn-ghost" style="padding:4px 10px;font-size:0.75rem;">Make Admin</button></form>'}
-            </td></tr>"""
+            <td style="font-weight:600;">{escape(str(a.get('mc_username','')))}</td>
+            <td>{role}</td>
+            <td style="color:#4a5268;">{datetime.datetime.fromtimestamp(a.get('created_at',0)).strftime("%Y-%m-%d")}</td>
+            <td>{"" if a.get("is_admin") else '<form method="POST" action="/admin/action" style="display:inline"><input type="hidden" name="username" value="' + escape(str(a.get("mc_username",""))) + '"><button name="action" value="make_admin" class="ap-btn">Make Admin</button></form>'}</td></tr>"""
 
     # Build wrong answers table
     wrong_rows = ""
     for w in wrong[:10]:
         q = escape(str(w.get("question", ""))[:80])
-        r = escape(str(w.get("response", ""))[:100])
-        wrong_rows += f"<tr><td>{q}</td><td style='font-size:0.75rem;'>{r}</td></tr>"
+        r = escape(str(w.get("response", ""))[:120])
+        wrong_rows += f"<tr><td>{q}</td><td style='color:#4a5268;'>{r}</td></tr>"
 
     # Build questions table
     q_rows = ""
     for q in questions[:10]:
         qu = escape(str(q.get("question", ""))[:80])
         usr = escape(str(q.get("username", "")))
-        q_rows += f"<tr><td>{usr}</td><td>{qu}</td></tr>"
+        q_rows += f"<tr><td style='font-weight:600;'>{usr}</td><td>{qu}</td></tr>"
 
     return f"""{_page_head("SkyAI — Admin")}
     <style>
