@@ -779,10 +779,22 @@ def dashboard():
     from html import escape as _esc
     from licenses import _con, generate_key
 
+    # Check for existing license linked to this user
     row = _con.execute(
         "SELECT license_key, plan, created_at, expires_at FROM licenses WHERE mc_username = ? AND active = 1 ORDER BY CASE plan WHEN 'unlimited' THEN 4 WHEN 'pro' THEN 3 WHEN 'basic' THEN 2 ELSE 1 END DESC LIMIT 1",
-        (_esc(mc_username),),
+        (mc_username,),
     ).fetchone()
+
+    # If user only has free, check if there's an unlinked paid key from Whop webhook
+    if not row or row["plan"] == "free":
+        unlinked = _con.execute(
+            "SELECT wm.license_key, wm.plan FROM whop_memberships wm WHERE wm.mc_username IS NULL AND wm.status = 'active' ORDER BY wm.created_at DESC LIMIT 1"
+        ).fetchone()
+        if unlinked and unlinked["license_key"]:
+            _con.execute("UPDATE whop_memberships SET mc_username = ? WHERE license_key = ?", (mc_username, unlinked["license_key"]))
+            _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, unlinked["license_key"]))
+            _con.commit()
+            return _render_dashboard(mc_username, unlinked["license_key"], unlinked["plan"])
 
     if not row:
         key = generate_key(plan="free", expires_days=None)
