@@ -632,64 +632,6 @@ def purchased():
     return _render_dashboard(mc_username, key, plan)
 
 
-@app.route("/activate-purchase", methods=["POST"])
-def activate_purchase():
-    """Generate a key for the purchased plan and show the dashboard."""
-    plan = request.form.get("plan", "free")
-    token = request.form.get("token", "")
-    mc_username = request.form.get("mc_username", "").strip()
-
-    if plan not in ("free", "basic", "pro"):
-        plan = "free"
-
-    # Paid plans require and consume a valid token
-    if plan in ("basic", "pro"):
-        if not token or token not in _purchase_tokens:
-            return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-            <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
-            <div class="card">
-                <h1><span class="gradient">SkyAI</span></h1>
-                <p class="error">Invalid or expired purchase token.</p>
-                <a href="/" class="btn btn-primary">Go to SkyAI</a>
-            </div></body></html>""", 403, {"Content-Type": "text/html"}
-        # Consume the token — can only be used once
-        del _purchase_tokens[token]
-    if not mc_username or len(mc_username) < 3 or len(mc_username) > 16:
-        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
-        <div class="card">
-            <h1><span class="gradient">SkyAI</span></h1>
-            <p class="error">Invalid username. Must be 3-16 characters.</p>
-            <a href="/purchased?plan={plan}" class="btn btn-primary">Try Again</a>
-        </div></body></html>""", 400, {"Content-Type": "text/html"}
-
-    # Rate limit
-    if not _rate_limit_ip(limit=5, window=3600):
-        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
-        <div class="card">
-            <h1><span class="gradient">SkyAI</span></h1>
-            <p class="error">Too many activations. Try again later.</p>
-        </div></body></html>""", 429, {"Content-Type": "text/html"}
-
-    from licenses import generate_key, _con
-
-    # Check if user already has a key for this plan
-    existing = _con.execute(
-        "SELECT license_key FROM licenses WHERE mc_username = ? AND plan = ? AND active = 1",
-        (mc_username, plan),
-    ).fetchone()
-
-    if existing:
-        key = existing["license_key"]
-    else:
-        expires = None if plan == "free" else 30
-        key = generate_key(plan=plan, expires_days=expires)
-        # Pre-bind username (UUID binding happens in-game)
-        _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, key))
-        _con.commit()
-
-    return _render_dashboard(mc_username, key, plan)
 
 
 @app.route("/dashboard")
