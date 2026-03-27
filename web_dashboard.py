@@ -724,26 +724,6 @@ def web_logout():
     resp.delete_cookie("skyai_session")
     return resp
 
-def _cleanup_tokens():
-    """Remove expired tokens (older than 1 hour)."""
-    now = int(time.time())
-    expired = [t for t, (_, ts) in _purchase_tokens.items() if now - ts > 3600]
-    for t in expired:
-        del _purchase_tokens[t]
-
-
-@app.route("/api/purchase-token")
-def api_purchase_token():
-    """Generate a one-time token for a paid plan. Called by landing page JS before checkout."""
-    plan = request.args.get("plan", "")
-    if plan not in ("basic", "pro"):
-        return jsonify({"error": "Invalid plan"}), 400
-    _cleanup_tokens()
-    token = _secrets.token_urlsafe(24)
-    _purchase_tokens[token] = (plan, int(time.time()))
-    return jsonify({"token": token, "plan": plan})
-
-
 @app.route("/purchased")
 def purchased():
     """Post-checkout page. Requires login. Generates key for free tier or links Whop key."""
