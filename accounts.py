@@ -119,3 +119,22 @@ def logout(token: str):
     """Delete a session."""
     _con.execute("DELETE FROM web_sessions WHERE token = ?", (token,))
     _con.commit()
+
+
+def is_admin(mc_username: str) -> bool:
+    """Check if user is an admin."""
+    row = _con.execute("SELECT is_admin FROM accounts WHERE mc_username = ?", (mc_username,)).fetchone()
+    return bool(row and row["is_admin"])
+
+
+def make_admin(mc_username: str) -> bool:
+    """Promote user to admin."""
+    cur = _con.execute("UPDATE accounts SET is_admin = 1 WHERE mc_username = ?", (mc_username,))
+    _con.commit()
+    return cur.rowcount > 0
+
+
+def list_accounts(limit: int = 100) -> list[dict]:
+    """List all accounts."""
+    rows = _con.execute("SELECT id, mc_username, is_admin, created_at FROM accounts ORDER BY created_at DESC LIMIT ?", (limit,)).fetchall()
+    return [dict(r) for r in rows]
