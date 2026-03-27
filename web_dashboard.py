@@ -534,10 +534,24 @@ def purchased():
 def activate_purchase():
     """Generate a key for the purchased plan and show the dashboard."""
     plan = request.form.get("plan", "free")
+    token = request.form.get("token", "")
     mc_username = request.form.get("mc_username", "").strip()
 
     if plan not in ("free", "basic", "pro"):
         plan = "free"
+
+    # Paid plans require and consume a valid token
+    if plan in ("basic", "pro"):
+        if not token or token not in _purchase_tokens:
+            return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+            <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
+            <div class="card">
+                <h1><span class="gradient">SkyAI</span></h1>
+                <p class="error">Invalid or expired purchase token.</p>
+                <a href="/" class="btn btn-primary">Go to SkyAI</a>
+            </div></body></html>""", 403, {"Content-Type": "text/html"}
+        # Consume the token — can only be used once
+        del _purchase_tokens[token]
     if not mc_username or len(mc_username) < 3 or len(mc_username) > 16:
         return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
         <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
