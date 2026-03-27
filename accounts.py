@@ -23,9 +23,15 @@ def _connect() -> sqlite3.Connection:
             id           INTEGER PRIMARY KEY AUTOINCREMENT,
             mc_username  TEXT NOT NULL UNIQUE COLLATE NOCASE,
             password_hash TEXT NOT NULL,
+            is_admin     INTEGER NOT NULL DEFAULT 0,
             created_at   INTEGER NOT NULL
         )
     """)
+    # Safe column addition for existing DBs
+    try:
+        con.execute("ALTER TABLE accounts ADD COLUMN is_admin INTEGER NOT NULL DEFAULT 0")
+    except sqlite3.OperationalError:
+        pass
 
     con.execute("""
         CREATE TABLE IF NOT EXISTS web_sessions (
