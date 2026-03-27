@@ -1096,12 +1096,12 @@ def admin_action():
         key_list = "<br>".join(keys)
         return f"""{_page_head("Generated Keys")}<body>
         {_page_nav()}
-        <div class="page-center"><div class="card">
-            <h1><span class="gradient">Keys Generated</span></h1>
-            <p class="sub">{count} {plan} keys</p>
-            <div class="key-box" style="text-align:left;font-size:0.78rem;line-height:2.2;">{key_list}</div>
-            <a href="/admin" class="btn btn-ghost">Back to Admin</a>
-        </div></div></body></html>""", 200, {"Content-Type": "text/html"}
+        <div style="max-width:500px;margin:60px auto;padding:0 24px;text-align:center;">
+            <h1 style="margin-bottom:8px;"><span class="gradient">Keys Generated</span></h1>
+            <p style="color:#4a5268;font-size:0.85rem;margin-bottom:20px;">{count} {plan} keys</p>
+            <div style="background:#0a0a18;border:1px solid #16162a;border-radius:12px;padding:18px;text-align:left;font-family:'JetBrains Mono',monospace;font-size:0.78rem;color:#f59e0b;line-height:2.2;word-break:break-all;">{key_list}</div>
+            <a href="/admin" class="btn btn-ghost" style="margin-top:16px;">Back to Admin</a>
+        </div></body></html>""", 200, {"Content-Type": "text/html"}
 
     elif action == "deactivate":
         key = request.form.get("key", "")
