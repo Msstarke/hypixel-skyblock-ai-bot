@@ -591,6 +591,7 @@ def _page_head(title="SkyAI"):
 def _page_nav(active=""):
     user = _get_web_user()
     from accounts import is_admin as _is_admin
+    from html import escape as _esc
     admin_link = '<a href="/admin">Admin</a>' if user and _is_admin(user) else ""
     if user:
         right = f"""<div class="topnav-user">
