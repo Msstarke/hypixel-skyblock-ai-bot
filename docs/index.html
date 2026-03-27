@@ -714,7 +714,7 @@
 function openCheckout(plan) {
     if (plan === 'free') {
         // Free tier — go straight to activation (will route through Whop once free plan ID is set)
-        window.location.href = 'https://worker-production-f916.up.railway.app/purchased?plan=free';
+        window.location.href = '/purchased?plan=free';
         return;
     }
     document.getElementById('checkout-basic').style.display = plan === 'basic' ? 'block' : 'none';
