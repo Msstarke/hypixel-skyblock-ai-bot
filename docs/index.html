@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>SkyAI — Hypixel Skyblock AI Assistant</title>
+    <script async defer src="https://js.whop.com/static/checkout/loader.js"></script>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -134,6 +135,123 @@
         .step-text h3 { color: #fff; margin-bottom: 4px; }
         .step-text p { color: #8888aa; font-size: 0.95rem; }
 
+        /* Pricing */
+        .pricing {
+            padding: 60px 0;
+        }
+        .pricing h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            color: #fff;
+        }
+        .pricing-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+        @media (max-width: 768px) {
+            .pricing-grid { grid-template-columns: 1fr; }
+        }
+        .plan {
+            background: #111128;
+            border: 1px solid #222244;
+            border-radius: 12px;
+            padding: 28px;
+            text-align: center;
+        }
+        .plan.featured {
+            border-color: #00d4ff66;
+            box-shadow: 0 0 30px rgba(0, 212, 255, 0.1);
+        }
+        .plan h3 {
+            color: #00d4ff;
+            font-size: 1.3rem;
+            margin-bottom: 8px;
+        }
+        .plan .price {
+            font-size: 2rem;
+            font-weight: 800;
+            color: #fff;
+            margin-bottom: 4px;
+        }
+        .plan .period {
+            color: #6666aa;
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+        }
+        .plan ul {
+            list-style: none;
+            text-align: left;
+            margin-bottom: 24px;
+        }
+        .plan ul li {
+            color: #8888aa;
+            padding: 6px 0;
+            font-size: 0.9rem;
+        }
+        .plan ul li::before {
+            content: "- ";
+            color: #00d4ff;
+        }
+        .plan .btn {
+            display: inline-block;
+            padding: 12px 28px;
+            border-radius: 8px;
+            font-weight: 700;
+            font-size: 0.95rem;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .plan .btn:hover {
+            transform: translateY(-2px);
+        }
+        .btn-free {
+            background: #222244;
+            color: #e0e0e0;
+        }
+        .btn-basic {
+            background: linear-gradient(135deg, #00d4ff, #7b61ff);
+            color: #fff;
+        }
+        .btn-pro {
+            background: linear-gradient(135deg, #7b61ff, #ff61b6);
+            color: #fff;
+        }
+
+        /* Checkout modal */
+        .checkout-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.8);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+        .checkout-overlay.active { display: flex; }
+        .checkout-box {
+            background: #fff;
+            border-radius: 16px;
+            padding: 0;
+            max-width: 480px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            position: relative;
+        }
+        .checkout-close {
+            position: absolute;
+            top: 12px;
+            right: 16px;
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #666;
+            z-index: 10;
+        }
+
         /* FAQ */
         .faq {
             padding: 60px 0;
@@ -158,6 +276,12 @@
             color: #444;
             font-size: 0.85rem;
         }
+
+        .download-link {
+            color: #00d4ff;
+            text-decoration: none;
+        }
+        .download-link:hover { text-decoration: underline; }
     </style>
 </head>
 <body>
@@ -169,7 +293,7 @@
         <h1>SkyAI</h1>
         <p class="tagline">AI assistant for Hypixel Skyblock — right inside your game.</p>
         <a href="#buy" class="cta">Get SkyAI</a>
-        <span class="price-tag">Starting at $4.99/month</span>
+        <span class="price-tag">Free to try — upgrade for more</span>
     </div>
 
     <!-- Demo -->
@@ -228,22 +352,22 @@
             <div class="step">
                 <div class="step-num">1</div>
                 <div class="step-text">
-                    <h3>Buy a license</h3>
-                    <p>Purchase a SkyAI subscription and receive your license key instantly.</p>
+                    <h3>Download the mod</h3>
+                    <p>Grab the <a href="https://github.com/Msstarke/hypixel-skyblock-ai-bot/releases/latest" class="download-link">.jar from GitHub</a> and drop it in your Fabric mods folder. Requires Fabric Loader + Fabric API for 1.21.11.</p>
                 </div>
             </div>
             <div class="step">
                 <div class="step-num">2</div>
                 <div class="step-text">
-                    <h3>Install the mod</h3>
-                    <p>Drop the .jar into your Fabric mods folder. Requires Fabric Loader + Fabric API for 1.21.11.</p>
+                    <h3>Play for free</h3>
+                    <p>Launch Minecraft and join any server. The mod auto-registers you on the free tier — 10 questions/hr, no key needed.</p>
                 </div>
             </div>
             <div class="step">
                 <div class="step-num">3</div>
                 <div class="step-text">
-                    <h3>Activate in-game</h3>
-                    <p>Type <code>!aikey YOUR-KEY-HERE</code> in chat. Done — your key saves automatically.</p>
+                    <h3>Upgrade anytime</h3>
+                    <p>Want more? Buy a Basic or Pro key below, then type <code>!aikey YOUR-KEY</code> in chat to unlock higher limits.</p>
                 </div>
             </div>
             <div class="step">
@@ -257,31 +381,66 @@
     </div>
 
     <!-- Pricing -->
-    <div class="features" id="buy">
+    <div class="pricing" id="buy">
         <h2>Pricing</h2>
-        <div class="feature-grid" style="grid-template-columns: repeat(2, 1fr);">
-            <div class="feature" style="border-color: #00d4ff44;">
-                <h3>Basic — $4.99/mo</h3>
-                <p>
-                    30 questions per hour<br>
-                    Full knowledge base access<br>
-                    Live prices + wiki search<br>
-                    Personalized advice (!link)<br>
-                    HotM tree visualization
-                </p>
-                <br>
-                <a href="SELLIX_LINK_HERE" class="hero cta" style="padding: 10px 24px; font-size: 0.9rem;">Buy Basic</a>
+        <div class="pricing-grid">
+            <div class="plan">
+                <h3>Free</h3>
+                <div class="price">$0</div>
+                <div class="period">forever</div>
+                <ul>
+                    <li>10 questions per hour</li>
+                    <li>Full knowledge base</li>
+                    <li>Live wiki search</li>
+                    <li>SkyBlock calendar</li>
+                </ul>
+                <a href="https://github.com/Msstarke/hypixel-skyblock-ai-bot/releases/latest" class="btn btn-free">Download</a>
             </div>
-            <div class="feature" style="border-color: #7b61ff44;">
-                <h3>Pro — $9.99/mo</h3>
-                <p>
-                    100 questions per hour<br>
-                    Everything in Basic<br>
-                    Priority response times<br>
-                    Early access to new features
-                </p>
-                <br>
-                <a href="SELLIX_LINK_HERE" class="hero cta" style="padding: 10px 24px; font-size: 0.9rem; background: linear-gradient(135deg, #7b61ff, #ff61b6);">Buy Pro</a>
+            <div class="plan featured">
+                <h3>Basic</h3>
+                <div class="price">$4.99</div>
+                <div class="period">per month</div>
+                <ul>
+                    <li>30 questions per hour</li>
+                    <li>Everything in Free</li>
+                    <li>Live Bazaar + AH prices</li>
+                    <li>Personalized advice (!link)</li>
+                    <li>HotM tree visualization</li>
+                </ul>
+                <button onclick="openCheckout('basic')" class="btn btn-basic">Buy Basic</button>
+            </div>
+            <div class="plan">
+                <h3>Pro</h3>
+                <div class="price">$9.99</div>
+                <div class="period">per month</div>
+                <ul>
+                    <li>100 questions per hour</li>
+                    <li>Everything in Basic</li>
+                    <li>Priority response times</li>
+                    <li>Early access to new features</li>
+                </ul>
+                <button onclick="openCheckout('pro')" class="btn btn-pro">Buy Pro</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Checkout Modal -->
+    <div class="checkout-overlay" id="checkout-overlay" onclick="closeCheckout(event)">
+        <div class="checkout-box">
+            <button class="checkout-close" onclick="closeCheckout()">&times;</button>
+            <div id="checkout-basic" style="display:none;">
+                <div
+                    data-whop-checkout-plan-id="plan_7EWYWncqMDHH4"
+                    data-whop-checkout-theme="light"
+                    style="min-height: 400px;"
+                ></div>
+            </div>
+            <div id="checkout-pro" style="display:none;">
+                <div
+                    data-whop-checkout-plan-id="plan_sTXEVOZOyHZBA"
+                    data-whop-checkout-theme="light"
+                    style="min-height: 400px;"
+                ></div>
             </div>
         </div>
     </div>
@@ -309,6 +468,10 @@
             <h3>Can I cancel anytime?</h3>
             <p>Yes. Your key works until it expires. No auto-renewal unless you buy again.</p>
         </div>
+        <div class="faq-item">
+            <h3>Do I need a key to use the mod?</h3>
+            <p>No! The free tier works instantly with no key. Just install the mod and start asking. Upgrade if you want more questions per hour.</p>
+        </div>
     </div>
 
     <div class="footer">
@@ -316,6 +479,23 @@
     </div>
 
 </div>
+
+<script>
+function openCheckout(plan) {
+    document.getElementById('checkout-basic').style.display = plan === 'basic' ? 'block' : 'none';
+    document.getElementById('checkout-pro').style.display = plan === 'pro' ? 'block' : 'none';
+    document.getElementById('checkout-overlay').classList.add('active');
+}
+
+function closeCheckout(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('checkout-overlay').classList.remove('active');
+}
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeCheckout();
+});
+</script>
 
 </body>
 </html>
