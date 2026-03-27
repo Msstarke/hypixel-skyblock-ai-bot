@@ -758,20 +758,8 @@ def purchased():
 
         return _render_dashboard(mc_username, key, "free")
 
-    # Paid plans — check if Whop webhook already created a key, link it to this user
-    # Look for unlinked Whop keys
-    whop_key = _con.execute(
-        "SELECT wm.license_key, wm.plan FROM whop_memberships wm WHERE wm.mc_username IS NULL AND wm.status = 'active' ORDER BY wm.created_at DESC LIMIT 1"
-    ).fetchone()
-
-    if whop_key and whop_key["license_key"]:
-        # Link the Whop-generated key to this user
-        _con.execute("UPDATE whop_memberships SET mc_username = ? WHERE license_key = ?", (mc_username, whop_key["license_key"]))
-        _con.execute("UPDATE licenses SET mc_username = ? WHERE license_key = ?", (mc_username, whop_key["license_key"]))
-        _con.commit()
-        return _render_dashboard(mc_username, whop_key["license_key"], whop_key["plan"])
-
-    # No Whop key yet — show a waiting message
+    # Paid plans — the Whop webhook handles key creation and linking.
+    # Just redirect to dashboard with a message.
     return f"""{_page_head("SkyAI — Processing")}<body>
     {_page_nav()}
     <div class="page-center"><div class="card">
