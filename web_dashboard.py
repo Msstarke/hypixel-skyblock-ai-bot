@@ -694,34 +694,29 @@ def activate_purchase():
 
 @app.route("/dashboard")
 def dashboard():
-    """View your license info. Pass ?username=XXX to look up."""
-    mc_username = request.args.get("username", "").strip()
+    """View your license info. Requires login."""
+    mc_username = _get_web_user()
     if not mc_username:
-        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>SkyAI — Dashboard</title>{_PAGE_STYLE}</head><body>
-        <div class="card">
-            <h1><span class="gradient">SkyAI</span> Dashboard</h1>
-            <p class="sub">Enter your Minecraft username to view your license.</p>
-            <form method="GET" action="/dashboard">
-                <input type="text" name="username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
-                <button type="submit" class="btn btn-primary">View License</button>
-            </form>
-        </div></body></html>""", 200, {"Content-Type": "text/html"}
+        return redirect("/login")
 
     from licenses import _con
+    # Get the best plan (paid > free)
     row = _con.execute(
-        "SELECT license_key, plan, created_at, expires_at FROM licenses WHERE mc_username = ? AND active = 1 ORDER BY created_at DESC LIMIT 1",
+        "SELECT license_key, plan, created_at, expires_at FROM licenses WHERE mc_username = ? AND active = 1 ORDER BY CASE plan WHEN 'unlimited' THEN 4 WHEN 'pro' THEN 3 WHEN 'basic' THEN 2 ELSE 1 END DESC LIMIT 1",
         (mc_username,),
     ).fetchone()
 
     if not row:
+        # No license yet — show option to get one
         return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
         <title>SkyAI — Dashboard</title>{_PAGE_STYLE}</head><body>
         <div class="card">
             <h1><span class="gradient">SkyAI</span></h1>
-            <p class="error">No license found for "{mc_username}"</p>
-            <a href="/dashboard" class="btn btn-ghost">Try Again</a>
-            <a href="https://msstarke.github.io/hypixel-skyblock-ai-bot/#buy" class="btn btn-primary" style="margin-top:10px;">Get SkyAI</a>
+            <p class="sub">Welcome, <strong>{mc_username}</strong>!</p>
+            <p class="sub">You don't have a license yet.</p>
+            <a href="/purchased?plan=free" class="btn btn-primary">Get Free License</a>
+            <a href="/#buy" class="btn btn-ghost">View Plans</a>
+            <p class="info" style="margin-top:20px;"><a href="/logout" style="color:#ef4444;">Sign Out</a></p>
         </div></body></html>""", 200, {"Content-Type": "text/html"}
 
     return _render_dashboard(mc_username, row["license_key"], row["plan"])
