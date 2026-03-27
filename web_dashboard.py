@@ -476,14 +476,16 @@ def _login_required_page():
 @app.route("/login", methods=["GET", "POST"])
 def web_login():
     """Login page."""
+    from html import escape
     error = ""
+    next_url = request.args.get("next", request.form.get("next", "/dashboard"))
     if request.method == "POST":
         mc_username = request.form.get("mc_username", "").strip()
         password = request.form.get("password", "")
         from accounts import login
         result = login(mc_username, password)
         if result["ok"]:
-            resp = make_response(redirect("/dashboard"))
+            resp = make_response(redirect(next_url))
             resp.set_cookie("skyai_session", result["token"], max_age=7*86400, httponly=True, samesite="Lax")
             return resp
         error = result["error"]
@@ -493,13 +495,14 @@ def web_login():
     <div class="card">
         <h1><span class="gradient">SkyAI</span></h1>
         <p class="sub">Sign in to your account</p>
-        {"<p class='error'>" + error + "</p>" if error else ""}
+        {"<p class='error'>" + escape(error) + "</p>" if error else ""}
         <form method="POST">
+            <input type="hidden" name="next" value="{escape(next_url)}">
             <input type="text" name="mc_username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
             <input type="password" name="password" placeholder="Password" required>
             <button type="submit" class="btn btn-primary">Sign In</button>
         </form>
-        <a href="/register" class="btn btn-ghost">Create Account</a>
+        <a href="/register?next={escape(next_url)}" class="btn btn-ghost">Create Account</a>
     </div>
     </body></html>""", 200, {"Content-Type": "text/html"}
 
@@ -507,7 +510,9 @@ def web_login():
 @app.route("/register", methods=["GET", "POST"])
 def web_register():
     """Register page."""
+    from html import escape
     error = ""
+    next_url = request.args.get("next", request.form.get("next", "/dashboard"))
     if request.method == "POST":
         mc_username = request.form.get("mc_username", "").strip()
         password = request.form.get("password", "")
@@ -519,10 +524,9 @@ def web_register():
             from accounts import register, login
             result = register(mc_username, password)
             if result["ok"]:
-                # Auto-login after register
                 login_result = login(mc_username, password)
                 if login_result["ok"]:
-                    resp = make_response(redirect("/dashboard"))
+                    resp = make_response(redirect(next_url))
                     resp.set_cookie("skyai_session", login_result["token"], max_age=7*86400, httponly=True, samesite="Lax")
                     return resp
             error = result.get("error", "Registration failed")
@@ -532,14 +536,15 @@ def web_register():
     <div class="card">
         <h1><span class="gradient">SkyAI</span></h1>
         <p class="sub">Create your SkyAI account</p>
-        {"<p class='error'>" + error + "</p>" if error else ""}
+        {"<p class='error'>" + escape(error) + "</p>" if error else ""}
         <form method="POST">
+            <input type="hidden" name="next" value="{escape(next_url)}">
             <input type="text" name="mc_username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
             <input type="password" name="password" placeholder="Password" required>
             <input type="password" name="confirm" placeholder="Confirm Password" required>
             <button type="submit" class="btn btn-primary">Create Account</button>
         </form>
-        <a href="/login" class="btn btn-ghost">Already have an account? Sign In</a>
+        <a href="/login?next={escape(next_url)}" class="btn btn-ghost">Already have an account? Sign In</a>
     </div>
     </body></html>""", 200, {"Content-Type": "text/html"}
 
