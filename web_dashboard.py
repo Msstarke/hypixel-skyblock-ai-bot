@@ -753,23 +753,21 @@ def dashboard():
         return redirect("/login")
 
     from licenses import _con
-    # Get the best plan (paid > free)
     row = _con.execute(
         "SELECT license_key, plan, created_at, expires_at FROM licenses WHERE mc_username = ? AND active = 1 ORDER BY CASE plan WHEN 'unlimited' THEN 4 WHEN 'pro' THEN 3 WHEN 'basic' THEN 2 ELSE 1 END DESC LIMIT 1",
         (mc_username,),
     ).fetchone()
 
     if not row:
-        # No license yet — show option to get one
-        return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-        <title>SkyAI — Dashboard</title>{_PAGE_STYLE}</head><body>
-        <div class="card">
-            <h1><span class="gradient">SkyAI</span></h1>
-            <p class="sub">Welcome, <strong>{mc_username}</strong>!</p>
-            <p class="sub">You don't have a license yet.</p>
-            <a href="/purchased?plan=free" class="btn btn-primary">Get Free License</a>
-            <a href="/#buy" class="btn btn-ghost">View Plans</a>
-            <p class="info" style="margin-top:20px;"><a href="/logout" style="color:#ef4444;">Sign Out</a></p>
+        return f"""{_page_head("SkyAI — Dashboard")}<body>
+        {_page_nav("dashboard")}
+        <div class="page" style="text-align:center;">
+            <h1 style="font-size:2rem;margin-bottom:12px;">Welcome, <span class="gradient">{mc_username}</span></h1>
+            <p class="sub">You don't have a license yet. Get started for free.</p>
+            <div style="max-width:300px;margin:0 auto;">
+                <a href="/purchased?plan=free" class="btn btn-primary">Get Free License</a>
+                <a href="/#pricing" class="btn btn-ghost">View Plans</a>
+            </div>
         </div></body></html>""", 200, {"Content-Type": "text/html"}
 
     return _render_dashboard(mc_username, row["license_key"], row["plan"])
@@ -778,34 +776,54 @@ def dashboard():
 def _render_dashboard(mc_username, key, plan):
     """Render the dashboard page with key + download."""
     plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro", "unlimited": "Unlimited"}
-    plan_class = f"plan-{plan}" if plan in ("free", "basic", "pro") else "plan-pro"
+    plan_class = f"plan-{plan}" if plan in ("free", "basic", "pro", "unlimited") else "plan-free"
     limits = {"free": "10", "basic": "30", "pro": "100", "unlimited": "Unlimited"}
+    upgrade_text = f'<a href="/#pricing" class="btn btn-ghost btn-sm" style="margin-top:0;">Upgrade Plan</a>' if plan in ("free",) else ""
 
-    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>SkyAI — Your License</title>{_PAGE_STYLE}</head><body>
-    <div class="card">
-        <h1><span class="gradient">SkyAI</span></h1>
-        <span class="plan-badge {plan_class}">{plan_names.get(plan, plan)} Plan</span>
-        <p class="sub">Welcome, <strong>{mc_username}</strong>! Here's your license.</p>
+    return f"""{_page_head("SkyAI — Dashboard")}<body>
+    {_page_nav("dashboard")}
+    <div class="page" style="max-width:700px;">
 
-        <div class="key-box">{key}</div>
-
-        <a href="/download" class="btn btn-primary">Download Mod</a>
-        <a href="/#buy" class="btn btn-ghost">Upgrade Plan</a>
-
-        <div class="step">
-            <div class="step-item"><div class="step-num">1</div><span>Download the mod above and put it in <code>.minecraft/mods/</code></span></div>
-            <div class="step-item"><div class="step-num">2</div><span>You need <strong>Fabric Loader</strong> + <strong>Fabric API</strong> for 1.21.10</span></div>
-            <div class="step-item"><div class="step-num">3</div><span>Launch Minecraft, join any server</span></div>
-            <div class="step-item"><div class="step-num">4</div><span>Type in chat: <code>!aikey {key}</code></span></div>
-            <div class="step-item"><div class="step-num">5</div><span>Done! Ask anything with <code>!ai your question</code></span></div>
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:32px;">
+            <div>
+                <h1 style="font-size:1.8rem;margin-bottom:4px;">Welcome back, <span class="gradient">{mc_username}</span></h1>
+                <p style="color:#4a5268;font-size:0.85rem;">Manage your SkyAI license and download the mod.</p>
+            </div>
+            <span class="plan-badge {plan_class}">{plan_names.get(plan, plan)}</span>
         </div>
 
-        <p class="info">
-            Plan: <strong>{plan_names.get(plan, plan)}</strong> — {limits.get(plan, "?")} questions/hr<br>
-            {"Upgrade anytime at <a href='/#buy' style='color:#3b82f6;'>pricing page</a>" if plan == "free" else "Manage your subscription on <a href='https://whop.com/orders' style='color:#3b82f6;'>Whop</a>"}
-            <br><br><a href="/logout" style="color:#ef4444;">Sign Out</a>
-        </p>
+        <div class="dash-grid">
+            <div class="dash-card">
+                <h3>Plan</h3>
+                <div class="value gradient">{plan_names.get(plan, plan)}</div>
+            </div>
+            <div class="dash-card">
+                <h3>Rate Limit</h3>
+                <div class="value">{limits.get(plan, "?")}<span style="font-size:0.8rem;color:#4a5268;font-weight:500;"> /hr</span></div>
+            </div>
+        </div>
+
+        <div class="dash-card" style="margin-bottom:16px;">
+            <h3>Your License Key</h3>
+            <div class="key-box" style="margin:12px 0 0;">{key}</div>
+        </div>
+
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:24px;">
+            <a href="/download" class="btn btn-primary" style="margin:0;">Download Mod</a>
+            {upgrade_text if upgrade_text else '<a href="https://whop.com/orders" class="btn btn-ghost" style="margin:0;">Manage Subscription</a>'}
+        </div>
+
+        <div class="dash-card">
+            <h3>Setup Guide</h3>
+            <div class="steps-list" style="background:none;border:none;padding:0;margin:8px 0 0;">
+                <div class="step-item"><div class="step-num">1</div><span>Download the mod and put it in <code>.minecraft/mods/</code></span></div>
+                <div class="step-item"><div class="step-num">2</div><span>Install <strong>Fabric Loader</strong> + <strong>Fabric API</strong> for MC 1.21.10</span></div>
+                <div class="step-item"><div class="step-num">3</div><span>Launch Minecraft and join any server</span></div>
+                <div class="step-item"><div class="step-num">4</div><span>Type in chat: <code>!aikey {key}</code></span></div>
+                <div class="step-item"><div class="step-num">5</div><span>Ask anything with <code>!ai your question</code></span></div>
+            </div>
+        </div>
+
     </div>
     </body></html>""", 200, {"Content-Type": "text/html"}
 
