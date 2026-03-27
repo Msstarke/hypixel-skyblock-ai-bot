@@ -630,6 +630,13 @@ def _get_web_user():
     return get_session_user(token)
 
 
+def _safe_next_url(url):
+    """Validate a redirect URL to prevent open redirects. Must start with / and not //."""
+    if not url or not url.startswith("/") or url.startswith("//"):
+        return "/dashboard"
+    return url
+
+
 def _login_required_page():
     """Returns HTML redirect to login page."""
     return redirect("/login")
