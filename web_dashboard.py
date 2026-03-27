@@ -52,9 +52,46 @@ async def _extract_hotm_data(ai_handler, mc_username, linked_ign):
 
 # --- In-game API endpoint ---
 
+@app.route("/api/activate", methods=["POST"])
+def api_activate():
+    """Activate a license key — binds it to a Minecraft UUID and returns a session token."""
+    data = request.get_json(silent=True)
+    if not data:
+        return jsonify({"error": "Missing JSON body"}), 400
+
+    license_key = data.get("license_key", "").strip()
+    mc_uuid = data.get("mc_uuid", "").strip()
+    mc_username = data.get("username", "").strip()
+
+    if not license_key or not mc_uuid:
+        return jsonify({"error": "Missing license_key or mc_uuid"}), 400
+
+    from licenses import validate_key
+    result = validate_key(license_key, mc_uuid, mc_username)
+    if result["ok"]:
+        return jsonify({"ok": True, "session": result["session"], "plan": result["plan"]})
+    else:
+        return jsonify({"ok": False, "error": result["error"]}), 403
+
+
+def _auth_session(data: dict) -> tuple:
+    """Validate session token from request data. Returns (license_info, error_response)."""
+    session = data.get("session", "").strip()
+    if not session:
+        return None, (jsonify({"error": "Missing session token. Use !aikey to activate."}), 401)
+
+    from licenses import validate_session
+    info = validate_session(session)
+    if info is None:
+        return None, (jsonify({"error": "Session expired or invalid. Use !aikey to re-activate."}), 401)
+    if isinstance(info, dict) and info.get("rate_limited"):
+        return None, (jsonify({"error": f"Rate limit reached ({info['limit']}/hr on {info['plan']} plan). Try again later."}), 429)
+    return info, None
+
+
 @app.route("/api/ask", methods=["POST"])
 def api_ask():
-    """API endpoint for in-game mod. Accepts JSON: {question, api_key, username?}"""
+    """API endpoint for in-game mod. Requires session token from /api/activate."""
     if not _live_ai_handler:
         return jsonify({"error": "AI handler not ready"}), 503
 
@@ -62,11 +99,18 @@ def api_ask():
     if not data or "question" not in data:
         return jsonify({"error": "Missing 'question' field"}), 400
 
-    # Authenticate with API key
-    if INGAME_API_KEY:
-        provided_key = data.get("api_key", "")
-        if provided_key != INGAME_API_KEY:
-            return jsonify({"error": "Invalid API key"}), 401
+    # Session-based auth (new system)
+    session = data.get("session", "").strip()
+    if session:
+        license_info, err = _auth_session(data)
+        if err:
+            return err
+    else:
+        # Legacy auth: global API key (for backwards compat / testing)
+        if INGAME_API_KEY:
+            provided_key = data.get("api_key", "")
+            if provided_key != INGAME_API_KEY:
+                return jsonify({"error": "Invalid API key"}), 401
 
     question = data["question"].strip()
     if not question:
