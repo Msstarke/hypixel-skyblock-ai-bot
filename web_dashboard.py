@@ -597,8 +597,8 @@ def _page_nav(active=""):
         right = f"""<div class="topnav-user">
             {admin_link}
             <a href="/dashboard">Dashboard</a>
-            <div class="topnav-avatar">{user[0].upper()}</div>
-            <span class="topnav-name">{user}</span>
+            <div class="topnav-avatar">{_esc(user)[0].upper()}</div>
+            <span class="topnav-name">{_esc(user)}</span>
             <a href="/logout" style="color:#ef4444;">Logout</a>
         </div>"""
     else:
