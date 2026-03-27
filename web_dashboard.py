@@ -804,149 +804,97 @@ def _render_dashboard(mc_username, key, plan):
     mc_username = _esc(mc_username)
     key = _esc(key)
     plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro", "unlimited": "Unlimited"}
-    plan_class = f"plan-{plan}" if plan in ("free", "basic", "pro", "unlimited") else "plan-free"
     limits = {"free": "10", "basic": "30", "pro": "100", "unlimited": "Unlimited"}
     plan_colors = {"free": "#22c55e", "basic": "#6366f1", "pro": "#a855f7", "unlimited": "#f59e0b"}
     color = plan_colors.get(plan, "#6366f1")
     is_free = plan == "free"
-    is_admin_user = _is_admin(mc_username)
 
     return f"""{_page_head("SkyAI — Dashboard")}
     <style>
-        .db-layout {{ display: grid; grid-template-columns: 220px 1fr; min-height: calc(100vh - 56px); }}
-        .db-sidebar {{ background: #06060f; border-right: 1px solid #12122a; padding: 32px 0; }}
-        .db-sidebar-section {{ padding: 0 16px; margin-bottom: 24px; }}
-        .db-sidebar-label {{ font-size: 0.65rem; font-weight: 700; color: #3a3a5a; text-transform: uppercase; letter-spacing: 1.5px; padding: 0 12px; margin-bottom: 8px; }}
-        .db-sidebar a {{ display: flex; align-items: center; gap: 10px; padding: 9px 12px; border-radius: 8px; color: #6a6a8a; font-size: 0.84rem; font-weight: 500; text-decoration: none; transition: all 0.15s; }}
-        .db-sidebar a:hover {{ background: rgba(99,102,241,0.06); color: #c4c4e4; text-decoration: none; }}
-        .db-sidebar a.active {{ background: rgba(99,102,241,0.1); color: #e2e8f0; font-weight: 600; }}
-        .db-sidebar-icon {{ font-size: 1rem; width: 20px; text-align: center; }}
-        .db-sidebar-user {{ padding: 16px; margin: 0 16px; background: #0a0a18; border: 1px solid #16162a; border-radius: 12px; margin-bottom: 24px; }}
-        .db-sidebar-user-name {{ font-weight: 700; font-size: 0.9rem; margin-bottom: 2px; }}
-        .db-sidebar-user-plan {{ display: inline-flex; align-items: center; gap: 6px; font-size: 0.72rem; font-weight: 600; color: {color}; }}
-        .db-sidebar-user-dot {{ width: 6px; height: 6px; border-radius: 50%; background: {color}; box-shadow: 0 0 8px {color}88; }}
+        .d {{ max-width: 640px; margin: 0 auto; padding: 40px 24px 80px; }}
+        .d-header {{ margin-bottom: 32px; }}
+        .d-header h1 {{ font-size: 1.4rem; font-weight: 800; margin-bottom: 4px; }}
+        .d-header p {{ color: #4a5268; font-size: 0.84rem; }}
+        .d-plan {{ display: inline-flex; align-items: center; gap: 8px; padding: 8px 16px; background: #0a0a18; border: 1px solid #16162a; border-radius: 10px; margin-bottom: 28px; }}
+        .d-plan-dot {{ width: 8px; height: 8px; border-radius: 50%; background: {color}; box-shadow: 0 0 10px {color}66; }}
+        .d-plan-text {{ font-weight: 700; font-size: 0.85rem; color: {color}; }}
+        .d-plan-limit {{ color: #4a5268; font-size: 0.78rem; font-weight: 500; margin-left: 4px; }}
 
-        .db-main {{ padding: 32px 40px; max-width: 780px; }}
-        .db-main h1 {{ font-size: 1.5rem; font-weight: 800; margin-bottom: 6px; }}
-        .db-main .db-sub {{ color: #4a5268; font-size: 0.84rem; margin-bottom: 32px; }}
+        .d-key {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 24px; margin-bottom: 16px; position: relative; overflow: hidden; }}
+        .d-key::before {{ content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, {color}, transparent 80%); }}
+        .d-key-label {{ font-size: 0.72rem; font-weight: 700; color: #3a3a5a; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }}
+        .d-key-val {{ font-family: 'JetBrains Mono', monospace; font-size: 0.92rem; color: #f59e0b; padding: 12px 14px; background: #06061a; border: 1px solid #12122a; border-radius: 8px; cursor: pointer; user-select: all; word-break: break-all; transition: border-color 0.15s; }}
+        .d-key-val:hover {{ border-color: #f59e0b33; }}
+        .d-key-sub {{ display: flex; justify-content: space-between; align-items: center; margin-top: 10px; }}
+        .d-key-hint {{ color: #3a3a5a; font-size: 0.72rem; }}
+        .d-key-cmd {{ font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; color: #6366f1; background: rgba(99,102,241,0.06); padding: 4px 10px; border-radius: 6px; }}
 
-        .db-cards {{ display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; margin-bottom: 28px; }}
-        .db-stat {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 20px; }}
-        .db-stat-label {{ font-size: 0.7rem; font-weight: 600; color: #3a3a5a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }}
-        .db-stat-value {{ font-size: 1.4rem; font-weight: 800; letter-spacing: -0.5px; }}
+        .d-btns {{ display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 24px; }}
+        .d-btn {{ display: flex; align-items: center; justify-content: center; gap: 8px; padding: 14px; border-radius: 12px; font-weight: 600; font-size: 0.86rem; text-decoration: none; transition: all 0.2s; }}
+        .d-btn:hover {{ text-decoration: none; transform: translateY(-1px); }}
+        .d-btn-dl {{ background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; box-shadow: 0 4px 20px rgba(99,102,241,0.25); }}
+        .d-btn-dl:hover {{ box-shadow: 0 6px 30px rgba(99,102,241,0.4); }}
+        .d-btn-alt {{ background: #0a0a18; border: 1px solid #16162a; color: #8892a8; }}
+        .d-btn-alt:hover {{ background: #0e0e22; color: #e2e8f0; }}
 
-        .db-key-section {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; padding: 24px; margin-bottom: 20px; position: relative; overflow: hidden; }}
-        .db-key-section::before {{ content: ''; position: absolute; top: 0; left: 0; right: 0; height: 2px; background: linear-gradient(90deg, {color}, {color}44, transparent); }}
-        .db-key-section h3 {{ font-size: 0.78rem; font-weight: 700; color: #4a5268; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 12px; }}
-        .db-key-val {{ font-family: 'JetBrains Mono', monospace; font-size: 0.92rem; color: #f59e0b; letter-spacing: 0.5px; word-break: break-all; user-select: all; cursor: pointer; padding: 14px 16px; background: #08081a; border: 1px solid #12122a; border-radius: 10px; transition: border-color 0.2s; }}
-        .db-key-val:hover {{ border-color: #f59e0b44; }}
-        .db-key-hint {{ color: #3a3a5a; font-size: 0.72rem; margin-top: 10px; }}
-        .db-key-cmd {{ display: inline-block; margin-top: 8px; background: rgba(99,102,241,0.08); color: #818cf8; padding: 6px 12px; border-radius: 6px; font-family: 'JetBrains Mono', monospace; font-size: 0.78rem; }}
+        .d-guide {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; overflow: hidden; margin-bottom: 20px; }}
+        .d-guide-title {{ padding: 14px 20px; border-bottom: 1px solid #10102a; font-size: 0.8rem; font-weight: 700; color: #8892a8; }}
+        .d-step {{ display: flex; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #0a0a1a; font-size: 0.82rem; color: #6a6a8a; line-height: 1.5; }}
+        .d-step:last-child {{ border-bottom: none; }}
+        .d-step-n {{ min-width: 22px; height: 22px; border-radius: 6px; background: rgba(99,102,241,0.08); color: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.7rem; flex-shrink: 0; margin-top: 1px; }}
+        .d-step code {{ background: rgba(99,102,241,0.06); color: #818cf8; padding: 1px 6px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }}
 
-        .db-actions {{ display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }}
-        .db-act {{ display: flex; align-items: center; justify-content: center; gap: 10px; padding: 15px; background: #0a0a18; border: 1px solid #16162a; border-radius: 12px; text-decoration: none; color: #c4c4e4; font-weight: 600; font-size: 0.86rem; transition: all 0.2s; }}
-        .db-act:hover {{ background: #0e0e22; border-color: #22224a; text-decoration: none; transform: translateY(-1px); }}
-        .db-act-primary {{ background: linear-gradient(135deg, #6366f1, #a855f7); color: #fff; border: none; box-shadow: 0 4px 20px rgba(99,102,241,0.25); }}
-        .db-act-primary:hover {{ box-shadow: 0 6px 30px rgba(99,102,241,0.4); }}
+        .d-upgrade {{ background: linear-gradient(135deg, rgba(99,102,241,0.04), rgba(168,85,247,0.02)); border: 1px solid rgba(99,102,241,0.08); border-radius: 14px; padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }}
+        .d-upgrade-text {{ font-size: 0.84rem; color: #6a6a8a; }}
+        .d-upgrade-text strong {{ color: #e2e8f0; display: block; margin-bottom: 2px; }}
 
-        .db-setup {{ background: #0a0a18; border: 1px solid #16162a; border-radius: 14px; overflow: hidden; }}
-        .db-setup-title {{ padding: 16px 24px; border-bottom: 1px solid #12122a; font-weight: 700; font-size: 0.82rem; }}
-        .db-setup-list {{ padding: 4px 24px; }}
-        .db-s {{ display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid #0a0a1e; align-items: flex-start; }}
-        .db-s:last-child {{ border-bottom: none; }}
-        .db-sn {{ min-width: 26px; height: 26px; border-radius: 8px; background: rgba(99,102,241,0.08); color: #6366f1; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.72rem; flex-shrink: 0; }}
-        .db-st {{ color: #6a6a8a; font-size: 0.82rem; line-height: 1.6; }}
-        .db-st code {{ background: rgba(99,102,241,0.06); color: #818cf8; padding: 2px 7px; border-radius: 4px; font-family: 'JetBrains Mono', monospace; font-size: 0.75rem; }}
-        .db-st strong {{ color: #c4c4e4; }}
-
-        .db-upgrade {{ margin-top: 20px; background: linear-gradient(135deg, rgba(99,102,241,0.05), rgba(168,85,247,0.03)); border: 1px solid rgba(99,102,241,0.1); border-radius: 14px; padding: 22px; display: flex; justify-content: space-between; align-items: center; gap: 16px; }}
-        .db-upgrade h4 {{ font-size: 0.9rem; font-weight: 700; margin-bottom: 3px; }}
-        .db-upgrade p {{ color: #4a5268; font-size: 0.78rem; }}
-
-        @media (max-width: 768px) {{
-            .db-layout {{ grid-template-columns: 1fr; }}
-            .db-sidebar {{ display: none; }}
-            .db-main {{ padding: 24px 16px; }}
-            .db-cards {{ grid-template-columns: 1fr; }}
-            .db-actions {{ grid-template-columns: 1fr; }}
-            .db-upgrade {{ flex-direction: column; text-align: center; }}
-        }}
+        @media (max-width: 500px) {{ .d-btns {{ grid-template-columns: 1fr; }} .d-upgrade {{ flex-direction: column; text-align: center; }} }}
     </style>
     <body>
     {_page_nav("dashboard")}
-    <div class="db-layout">
-        <div class="db-sidebar">
-            <div class="db-sidebar-user">
-                <div class="db-sidebar-user-name">{mc_username}</div>
-                <div class="db-sidebar-user-plan"><span class="db-sidebar-user-dot"></span> {plan_names.get(plan, plan)} Plan</div>
-            </div>
-            <div class="db-sidebar-section">
-                <div class="db-sidebar-label">Account</div>
-                <a href="/dashboard" class="active"><span class="db-sidebar-icon">&#9776;</span> Overview</a>
-                <a href="/download"><span class="db-sidebar-icon">&#8595;</span> Download Mod</a>
-                <a href="{'/#pricing' if is_free else 'https://whop.com/orders'}"><span class="db-sidebar-icon">{'&#9889;' if is_free else '&#9881;'}</span> {'Upgrade' if is_free else 'Manage Plan'}</a>
-            </div>
-            <div class="db-sidebar-section">
-                <div class="db-sidebar-label">Links</div>
-                <a href="/"><span class="db-sidebar-icon">&#127968;</span> Homepage</a>
-                <a href="/#faq"><span class="db-sidebar-icon">&#63;</span> FAQ</a>
-            </div>
-            {"<div class='db-sidebar-section'><div class='db-sidebar-label'>Admin</div><a href='/admin'><span class='db-sidebar-icon'>&#9881;</span> Admin Panel</a></div>" if is_admin_user else ""}
-            <div class="db-sidebar-section" style="margin-top:auto;">
-                <a href="/logout" style="color:#ef4444;"><span class="db-sidebar-icon">&#10140;</span> Sign Out</a>
+    <div class="d">
+        <div class="d-header">
+            <h1>Hey, <span class="gradient">{mc_username}</span></h1>
+            <p>Your SkyAI dashboard</p>
+        </div>
+
+        <div class="d-plan">
+            <span class="d-plan-dot"></span>
+            <span class="d-plan-text">{plan_names.get(plan, plan)}</span>
+            <span class="d-plan-limit">&middot; {limits.get(plan, "?")} questions/hr</span>
+        </div>
+
+        <div class="d-key">
+            <div class="d-key-label">Your License Key</div>
+            <div class="d-key-val" id="lk">{key}</div>
+            <div class="d-key-sub">
+                <span class="d-key-hint" id="kh">Click key to copy</span>
+                <span class="d-key-cmd">!aikey {key}</span>
             </div>
         </div>
-        <div class="db-main">
-            <h1>Overview</h1>
-            <p class="db-sub">Your SkyAI account at a glance.</p>
 
-            <div class="db-cards">
-                <div class="db-stat">
-                    <div class="db-stat-label">Plan</div>
-                    <div class="db-stat-value" style="color:{color};">{plan_names.get(plan, plan)}</div>
-                </div>
-                <div class="db-stat">
-                    <div class="db-stat-label">Rate Limit</div>
-                    <div class="db-stat-value">{limits.get(plan, "?")}<span style="font-size:0.7rem;color:#3a3a5a;font-weight:500;">/hr</span></div>
-                </div>
-                <div class="db-stat">
-                    <div class="db-stat-label">Status</div>
-                    <div class="db-stat-value" style="color:#22c55e;">Active</div>
-                </div>
-            </div>
-
-            <div class="db-key-section">
-                <h3>License Key</h3>
-                <div class="db-key-val" id="license-key">{key}</div>
-                <div class="db-key-hint" id="key-hint">Click to copy</div>
-                <div class="db-key-cmd">!aikey {key}</div>
-            </div>
-
-            <div class="db-actions">
-                <a href="/download" class="db-act db-act-primary">&#8595; Download Mod</a>
-                <a href="{'/#pricing' if is_free else 'https://whop.com/orders'}" class="db-act">{'&#9889; Upgrade Plan' if is_free else '&#9881; Manage Subscription'}</a>
-            </div>
-
-            <div class="db-setup">
-                <div class="db-setup-title">Quick Start Guide</div>
-                <div class="db-setup-list">
-                    <div class="db-s"><div class="db-sn">1</div><div class="db-st">Download the mod and place the <code>.jar</code> file in your <code>.minecraft/mods</code> folder</div></div>
-                    <div class="db-s"><div class="db-sn">2</div><div class="db-st">Install <strong>Fabric Loader</strong> and <strong>Fabric API</strong> for Minecraft 1.21.10</div></div>
-                    <div class="db-s"><div class="db-sn">3</div><div class="db-st">Launch Minecraft, join any server, type: <code>!aikey {key}</code></div></div>
-                    <div class="db-s"><div class="db-sn">4</div><div class="db-st">Ask anything: <code>!ai what's the best money method</code></div></div>
-                </div>
-            </div>
-
-            {"<div class='db-upgrade'><div><h4>Want more questions?</h4><p>Upgrade to Basic (30/hr) or Pro (100/hr).</p></div><a href='/#pricing' class='btn btn-primary' style='width:auto;padding:11px 22px;margin:0;white-space:nowrap;font-size:0.82rem;'>View Plans</a></div>" if is_free else ""}
+        <div class="d-btns">
+            <a href="/download" class="d-btn d-btn-dl">Download Mod</a>
+            <a href="{'/#pricing' if is_free else 'https://whop.com/orders'}" class="d-btn d-btn-alt">{'Upgrade Plan' if is_free else 'Manage Plan'}</a>
         </div>
+
+        <div class="d-guide">
+            <div class="d-guide-title">Quick Start</div>
+            <div class="d-step"><div class="d-step-n">1</div><div>Put the <code>.jar</code> in <code>.minecraft/mods</code></div></div>
+            <div class="d-step"><div class="d-step-n">2</div><div>Need <strong>Fabric Loader</strong> + <strong>Fabric API</strong> for MC 1.21.10</div></div>
+            <div class="d-step"><div class="d-step-n">3</div><div>In-game, type: <code>!aikey {key}</code></div></div>
+            <div class="d-step"><div class="d-step-n">4</div><div>Ask anything: <code>!ai best money method</code></div></div>
+        </div>
+
+        {"<div class='d-upgrade'><div class='d-upgrade-text'><strong>Want more?</strong>Upgrade to Basic (30/hr) or Pro (100/hr)</div><a href='/#pricing' class='d-btn d-btn-dl' style='width:auto;padding:10px 20px;font-size:0.82rem;'>Upgrade</a></div>" if is_free else ""}
     </div>
 
     <script>
-    document.getElementById('license-key').addEventListener('click', function() {{
+    document.getElementById('lk').addEventListener('click', function() {{
         navigator.clipboard.writeText(this.textContent.trim());
-        var h = document.getElementById('key-hint');
+        var h = document.getElementById('kh');
         h.innerHTML = '<span style="color:#22c55e;">Copied!</span>';
-        setTimeout(function() {{ h.textContent = 'Click to copy'; }}, 2000);
+        setTimeout(function() {{ h.textContent = 'Click key to copy'; }}, 2000);
     }});
     </script>
     </body></html>""", 200, {"Content-Type": "text/html"}
