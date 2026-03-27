@@ -57,13 +57,9 @@ public class HypixelAIClient implements ClientModInitializer {
         // Check for updates in background
         new Thread(() -> HypixelAIUpdater.checkForUpdate(), "HypixelAI-Updater").start();
 
-        // Auto-activate license on startup if we have a key
-        if (!HypixelAIConfig.getLicenseKey().isEmpty()) {
-            new Thread(() -> activateLicense(HypixelAIConfig.getLicenseKey(), true), "HypixelAI-Auth").start();
-        }
-
         // Show update message when player joins a world
         final boolean[] notified = {false};
+        final boolean[] autoRegistered = {false};
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Handle feedback keybinds
             if (client.player != null && SkyAIOverlay.hasPendingFeedback()) {
@@ -73,6 +69,20 @@ public class HypixelAIClient implements ClientModInitializer {
                 if (keyWrong.wasPressed()) {
                     handleFeedback("down");
                 }
+            }
+
+            // Auto-register/activate when player joins world
+            if (!autoRegistered[0] && client.player != null) {
+                autoRegistered[0] = true;
+                new Thread(() -> {
+                    if (!HypixelAIConfig.getLicenseKey().isEmpty()) {
+                        // Has a key — just re-activate session
+                        activateLicense(HypixelAIConfig.getLicenseKey(), true);
+                    } else {
+                        // No key — auto-register for free tier
+                        autoRegister();
+                    }
+                }, "HypixelAI-Auth").start();
             }
 
             if (!notified[0] && client.player != null && HypixelAIUpdater.isUpdatePending()) {
@@ -218,6 +228,52 @@ public class HypixelAIClient implements ClientModInitializer {
         }
     }
 
+    private void autoRegister() {
+        try {
+            String uuid = getUUID();
+            String username = getUsername();
+            if (uuid.isEmpty()) return;
+
+            String payload = "{\"mc_uuid\":" + jsonEscape(uuid)
+                    + ",\"username\":" + jsonEscape(username) + "}";
+
+            URL url = URI.create(HypixelAIConfig.getBaseUrl() + "/api/register").toURL();
+            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod("POST");
+            conn.setRequestProperty("Content-Type", "application/json; charset=UTF-8");
+            conn.setDoOutput(true);
+            conn.setConnectTimeout(5000);
+            conn.setReadTimeout(10000);
+
+            try (OutputStream os = conn.getOutputStream()) {
+                os.write(payload.getBytes(StandardCharsets.UTF_8));
+            }
+
+            int code = conn.getResponseCode();
+            String body = readStream(code == 200 ? conn.getInputStream() : conn.getErrorStream());
+            conn.disconnect();
+
+            if (code == 200) {
+                String session = parseStringField(body, "\"session\"", 0);
+                String plan = parseStringField(body, "\"plan\"", 0);
+                String key = parseStringField(body, "\"license_key\"", 0);
+
+                HypixelAIConfig.setLicenseKey(key);
+                HypixelAIConfig.setSessionToken(session);
+
+                sendChat(prefix().append(Text.literal("Free tier activated! ").formatted(SUCCESS))
+                        .append(Text.literal("(10 questions/hr)").formatted(MUTED)));
+                sendChat(prefix().append(Text.literal("Upgrade with ").formatted(BODY))
+                        .append(Text.literal("!aikey <key>").formatted(HIGHLIGHT))
+                        .append(Text.literal(" for unlimited access.").formatted(BODY)));
+
+                HypixelAIMod.LOGGER.info("[HypixelAI] Free tier auto-registered (plan={})", plan);
+            }
+        } catch (Exception e) {
+            HypixelAIMod.LOGGER.warn("[HypixelAI] Auto-register failed: {}", e.getMessage());
+        }
+    }
+
 
     // ── Question handling ────────────────────────────────────────────────
 
@@ -229,9 +285,7 @@ public class HypixelAIClient implements ClientModInitializer {
 
         // Check if activated
         if (!HypixelAIConfig.hasSession()) {
-            sendChat(prefix().append(Text.literal("No license active. Use ").formatted(ERROR))
-                    .append(Text.literal("!aikey <key>").formatted(HIGHLIGHT))
-                    .append(Text.literal(" to activate.").formatted(ERROR)));
+            sendChat(prefix().append(Text.literal("Still connecting... try again in a moment.").formatted(Formatting.YELLOW)));
             return;
         }
 
@@ -473,10 +527,13 @@ public class HypixelAIClient implements ClientModInitializer {
                 "Commands:",
                 "",
                 "- !ai <question>  \u2014  Ask anything about Skyblock",
-                "- !aikey <key>  \u2014  Activate your license",
+                "- !aikey <key>  \u2014  Upgrade to paid plan",
                 "- !link <ign>  \u2014  Link your account",
                 "- !unlink  \u2014  Remove linked account",
                 "- !correct / !wrong  \u2014  Rate the AI response",
+                "",
+                "Free tier: 10 questions/hr",
+                "Basic ($4.99/mo): 30/hr | Pro ($9.99/mo): 100/hr",
                 "",
                 "Examples:",
                 "",
