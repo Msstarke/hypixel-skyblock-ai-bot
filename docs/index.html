@@ -848,15 +848,9 @@ async function openCheckout(plan) {
         window.location.href = '/purchased?plan=free';
         return;
     }
-    try {
-        var resp = await fetch('/api/purchase-token?plan=' + plan);
-        var data = await resp.json();
-        if (!data.token) { alert('Failed to start checkout. Try again.'); return; }
-        var returnUrl = encodeURIComponent(window.location.origin + '/purchased?plan=' + plan + '&token=' + data.token);
-        window.location.href = 'https://whop.com/checkout/' + PLAN_IDS[plan] + '/?d=' + returnUrl;
-    } catch (e) {
-        alert('Failed to start checkout. Try again.');
-    }
+    // Redirect to Whop checkout — after payment, Whop webhook auto-generates the key
+    // User comes back to dashboard to see it
+    window.location.href = 'https://whop.com/checkout/' + PLAN_IDS[plan] + '/';
 }
 </script>
 

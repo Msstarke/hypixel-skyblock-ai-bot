@@ -13,7 +13,7 @@ import java.nio.file.Path;
  */
 public class HypixelAIConfig {
 
-    private static final String API_BASE = "https://worker-production-f916.up.railway.app";
+    private static final String API_BASE = "https://sky-ai.uk";
 
     private static String licenseKey = "";
     private static String sessionToken = "";
