@@ -455,12 +455,60 @@ _PAGE_STYLE = """
 """
 
 
+import secrets as _secrets
+
+# One-time purchase tokens: {token: (plan, created_at)}
+_purchase_tokens = {}
+
+def _cleanup_tokens():
+    """Remove expired tokens (older than 1 hour)."""
+    now = int(time.time())
+    expired = [t for t, (_, ts) in _purchase_tokens.items() if now - ts > 3600]
+    for t in expired:
+        del _purchase_tokens[t]
+
+
+@app.route("/api/purchase-token")
+def api_purchase_token():
+    """Generate a one-time token for a paid plan. Called by landing page JS before checkout."""
+    plan = request.args.get("plan", "")
+    if plan not in ("basic", "pro"):
+        return jsonify({"error": "Invalid plan"}), 400
+    _cleanup_tokens()
+    token = _secrets.token_urlsafe(24)
+    _purchase_tokens[token] = (plan, int(time.time()))
+    return jsonify({"token": token, "plan": plan})
+
+
 @app.route("/purchased")
 def purchased():
     """Post-checkout page. User enters MC username to get their key."""
     plan = request.args.get("plan", "free")
+    token = request.args.get("token", "")
+
     if plan not in ("free", "basic", "pro"):
         plan = "free"
+
+    # Paid plans require a valid purchase token
+    if plan in ("basic", "pro"):
+        if not token or token not in _purchase_tokens:
+            return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+            <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
+            <div class="card">
+                <h1><span class="gradient">SkyAI</span></h1>
+                <p class="error">Invalid or expired purchase link. Please buy through the website.</p>
+                <a href="/" class="btn btn-primary">Go to SkyAI</a>
+            </div></body></html>""", 403, {"Content-Type": "text/html"}
+        # Verify token matches the plan
+        token_plan, _ = _purchase_tokens[token]
+        if token_plan != plan:
+            return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+            <title>SkyAI — Error</title>{_PAGE_STYLE}</head><body>
+            <div class="card">
+                <h1><span class="gradient">SkyAI</span></h1>
+                <p class="error">Purchase token does not match this plan.</p>
+                <a href="/" class="btn btn-primary">Go to SkyAI</a>
+            </div></body></html>""", 403, {"Content-Type": "text/html"}
 
     plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro"}
     plan_class = f"plan-{plan}"
@@ -473,6 +521,7 @@ def purchased():
         <span class="plan-badge {plan_class}">{plan_names[plan]} Plan</span>
         <form method="POST" action="/activate-purchase">
             <input type="hidden" name="plan" value="{plan}">
+            <input type="hidden" name="token" value="{token}">
             <input type="text" name="mc_username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
             <button type="submit" class="btn btn-primary">Activate License</button>
         </form>
