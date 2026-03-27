@@ -538,14 +538,8 @@ _PAGE_CSS = """
     body { font-family: 'Inter', -apple-system, sans-serif; background: #000; color: #e2e8f0; min-height: 100vh; }
     a { color: #6366f1; text-decoration: none; }
     a:hover { text-decoration: underline; }
-    .topnav { position: sticky; top: 0; z-index: 100; padding: 14px 24px; background: rgba(0,0,0,0.8); backdrop-filter: blur(20px); border-bottom: 1px solid rgba(255,255,255,0.04); display: flex; justify-content: space-between; align-items: center; }
-    .topnav-logo { font-size: 1.2rem; font-weight: 800; background: linear-gradient(135deg, #6366f1, #a855f7); -webkit-background-clip: text; -webkit-text-fill-color: transparent; text-decoration: none; }
-    .topnav-links { display: flex; gap: 20px; align-items: center; }
-    .topnav-links a { color: #4a5268; font-size: 0.82rem; font-weight: 500; text-decoration: none; }
-    .topnav-links a:hover { color: #e2e8f0; text-decoration: none; }
-    .topnav-user { display: flex; align-items: center; gap: 10px; }
-    .topnav-avatar { width: 28px; height: 28px; border-radius: 8px; background: linear-gradient(135deg, #6366f1, #a855f7); display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 700; }
-    .topnav-name { font-size: 0.82rem; font-weight: 600; color: #e2e8f0; }
+    .nav-cta { padding: 8px 18px !important; background: rgba(99,102,241,0.12) !important; border: 1px solid rgba(99,102,241,0.25) !important; border-radius: 8px !important; color: #6366f1 !important; font-weight: 600 !important; font-size: 0.85rem !important; text-decoration: none !important; transition: all 0.2s !important; }
+    .nav-cta:hover { background: rgba(99,102,241,0.2) !important; border-color: rgba(99,102,241,0.4) !important; }
     .page { max-width: 600px; margin: 0 auto; padding: 60px 24px; }
     .page-wide { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
     .page-center { display: flex; align-items: center; justify-content: center; min-height: calc(100vh - 56px); }
