@@ -684,7 +684,7 @@ def _render_dashboard(mc_username, key, plan):
 
         <div class="step">
             <div class="step-item"><div class="step-num">1</div><span>Download the mod above and put it in <code>.minecraft/mods/</code></span></div>
-            <div class="step-item"><div class="step-num">2</div><span>You need <strong>Fabric Loader</strong> + <strong>Fabric API</strong> for 1.21.11</span></div>
+            <div class="step-item"><div class="step-num">2</div><span>You need <strong>Fabric Loader</strong> + <strong>Fabric API</strong> for 1.21.10</span></div>
             <div class="step-item"><div class="step-num">3</div><span>Launch Minecraft, join any server</span></div>
             <div class="step-item"><div class="step-num">4</div><span>Type in chat: <code>!aikey {key}</code></span></div>
             <div class="step-item"><div class="step-num">5</div><span>Done! Ask anything with <code>!ai your question</code></span></div>
