@@ -460,6 +460,101 @@ import secrets as _secrets
 # One-time purchase tokens: {token: (plan, created_at)}
 _purchase_tokens = {}
 
+
+def _get_web_user():
+    """Get logged-in username from cookie. Returns None if not logged in."""
+    from accounts import get_session_user
+    token = request.cookies.get("skyai_session", "")
+    return get_session_user(token)
+
+
+def _login_required_page():
+    """Returns HTML redirect to login page."""
+    return redirect("/login")
+
+
+@app.route("/login", methods=["GET", "POST"])
+def web_login():
+    """Login page."""
+    error = ""
+    if request.method == "POST":
+        mc_username = request.form.get("mc_username", "").strip()
+        password = request.form.get("password", "")
+        from accounts import login
+        result = login(mc_username, password)
+        if result["ok"]:
+            resp = make_response(redirect("/dashboard"))
+            resp.set_cookie("skyai_session", result["token"], max_age=7*86400, httponly=True, samesite="Lax")
+            return resp
+        error = result["error"]
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>SkyAI — Login</title>{_PAGE_STYLE}</head><body>
+    <div class="card">
+        <h1><span class="gradient">SkyAI</span></h1>
+        <p class="sub">Sign in to your account</p>
+        {"<p class='error'>" + error + "</p>" if error else ""}
+        <form method="POST">
+            <input type="text" name="mc_username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
+            <input type="password" name="password" placeholder="Password" required>
+            <button type="submit" class="btn btn-primary">Sign In</button>
+        </form>
+        <a href="/register" class="btn btn-ghost">Create Account</a>
+    </div>
+    </body></html>""", 200, {"Content-Type": "text/html"}
+
+
+@app.route("/register", methods=["GET", "POST"])
+def web_register():
+    """Register page."""
+    error = ""
+    if request.method == "POST":
+        mc_username = request.form.get("mc_username", "").strip()
+        password = request.form.get("password", "")
+        confirm = request.form.get("confirm", "")
+
+        if password != confirm:
+            error = "Passwords don't match"
+        else:
+            from accounts import register, login
+            result = register(mc_username, password)
+            if result["ok"]:
+                # Auto-login after register
+                login_result = login(mc_username, password)
+                if login_result["ok"]:
+                    resp = make_response(redirect("/dashboard"))
+                    resp.set_cookie("skyai_session", login_result["token"], max_age=7*86400, httponly=True, samesite="Lax")
+                    return resp
+            error = result.get("error", "Registration failed")
+
+    return f"""<!DOCTYPE html><html><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>SkyAI — Register</title>{_PAGE_STYLE}</head><body>
+    <div class="card">
+        <h1><span class="gradient">SkyAI</span></h1>
+        <p class="sub">Create your SkyAI account</p>
+        {"<p class='error'>" + error + "</p>" if error else ""}
+        <form method="POST">
+            <input type="text" name="mc_username" placeholder="Minecraft Username" required autocomplete="off" autofocus>
+            <input type="password" name="password" placeholder="Password" required>
+            <input type="password" name="confirm" placeholder="Confirm Password" required>
+            <button type="submit" class="btn btn-primary">Create Account</button>
+        </form>
+        <a href="/login" class="btn btn-ghost">Already have an account? Sign In</a>
+    </div>
+    </body></html>""", 200, {"Content-Type": "text/html"}
+
+
+@app.route("/logout")
+def web_logout():
+    """Log out."""
+    from accounts import logout
+    token = request.cookies.get("skyai_session", "")
+    if token:
+        logout(token)
+    resp = make_response(redirect("/"))
+    resp.delete_cookie("skyai_session")
+    return resp
+
 def _cleanup_tokens():
     """Remove expired tokens (older than 1 hour)."""
     now = int(time.time())
