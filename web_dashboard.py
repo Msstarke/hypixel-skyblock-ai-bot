@@ -597,21 +597,18 @@ def _page_nav(active=""):
     user = _get_web_user()
     from accounts import is_admin as _is_admin
     from html import escape as _esc
-    admin_link = '<a href="/admin">Admin</a>' if user and _is_admin(user) else ""
     if user:
-        right = f"""<div class="topnav-user">
-            {admin_link}
+        admin_link = '<a href="/admin">Admin</a>' if _is_admin(user) else ""
+        right = f"""{admin_link}
             <a href="/dashboard">Dashboard</a>
-            <div class="topnav-avatar">{_esc(user)[0].upper()}</div>
-            <span class="topnav-name">{_esc(user)}</span>
-            <a href="/logout" style="color:#ef4444;">Logout</a>
-        </div>"""
+            <a href="/logout" class="nav-cta" style="background:rgba(239,68,68,0.08) !important;border-color:rgba(239,68,68,0.2) !important;color:#ef4444 !important;">Logout</a>"""
     else:
-        right = '<div class="topnav-links"><a href="/login">Sign In</a><a href="/register" style="padding:7px 16px;background:rgba(99,102,241,0.12);border:1px solid rgba(99,102,241,0.25);border-radius:8px;color:#6366f1;font-weight:600;">Sign Up</a></div>'
-    return f"""<nav class="topnav">
-        <a href="/" class="topnav-logo">SkyAI</a>
-        <div class="topnav-links" style="flex:1;justify-content:center;">
-            <a href="/#features">Features</a>
+        right = '<a href="/login">Sign In</a><a href="/register" class="nav-cta">Sign Up</a>'
+    return f"""<nav style="position:sticky;top:0;z-index:100;padding:16px 0;background:rgba(0,0,0,0.7);backdrop-filter:blur(20px);border-bottom:1px solid rgba(255,255,255,0.04);">
+        <div style="max-width:1100px;margin:0 auto;padding:0 24px;display:flex;justify-content:space-between;align-items:center;">
+        <a href="/" style="font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,#6366f1,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;">SkyAI</a>
+        <div style="display:flex;gap:32px;align-items:center;">
+            <a href="/#features" style="color:#4a5268;text-decoration:none;font-size:0.85rem;font-weight:500;">Features</a>
             <a href="/#pricing">Pricing</a>
             <a href="/#faq">FAQ</a>
         </div>
