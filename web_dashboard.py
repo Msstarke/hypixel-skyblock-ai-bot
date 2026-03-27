@@ -843,12 +843,14 @@ def dashboard():
 
 def _render_dashboard(mc_username, key, plan):
     """Render the dashboard page with key + download."""
+    from accounts import is_admin as _is_admin
     plan_names = {"free": "Free", "basic": "Basic", "pro": "Pro", "unlimited": "Unlimited"}
     plan_class = f"plan-{plan}" if plan in ("free", "basic", "pro", "unlimited") else "plan-free"
     limits = {"free": "10", "basic": "30", "pro": "100", "unlimited": "Unlimited"}
     plan_colors = {"free": "#22c55e", "basic": "#6366f1", "pro": "#a855f7", "unlimited": "#f59e0b"}
     color = plan_colors.get(plan, "#6366f1")
     is_free = plan == "free"
+    is_admin_user = _is_admin(mc_username)
 
     return f"""{_page_head("SkyAI — Dashboard")}
     <style>
