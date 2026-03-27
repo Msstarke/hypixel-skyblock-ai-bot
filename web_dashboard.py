@@ -609,10 +609,13 @@ def _page_nav(active=""):
         <a href="/" style="font-size:1.3rem;font-weight:800;letter-spacing:-0.5px;background:linear-gradient(135deg,#6366f1,#a855f7);-webkit-background-clip:text;-webkit-text-fill-color:transparent;text-decoration:none;">SkyAI</a>
         <div style="display:flex;gap:32px;align-items:center;">
             <a href="/#features" style="color:#4a5268;text-decoration:none;font-size:0.85rem;font-weight:500;">Features</a>
-            <a href="/#pricing">Pricing</a>
-            <a href="/#faq">FAQ</a>
+            <a href="/#pricing" style="color:#4a5268;text-decoration:none;font-size:0.85rem;font-weight:500;">Pricing</a>
+            <a href="/#faq" style="color:#4a5268;text-decoration:none;font-size:0.85rem;font-weight:500;">FAQ</a>
         </div>
-        {right}
+        <div style="display:flex;gap:24px;align-items:center;">
+            {right}
+        </div>
+        </div>
     </nav>"""
 
 
