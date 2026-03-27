@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyAI — Hypixel Skyblock AI Assistant</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #0a0a1a;
+            color: #e0e0e0;
+            line-height: 1.6;
+        }
+        .container { max-width: 900px; margin: 0 auto; padding: 0 24px; }
+
+        /* Hero */
+        .hero {
+            text-align: center;
+            padding: 80px 0 60px;
+        }
+        .hero h1 {
+            font-size: 3.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #00d4ff, #7b61ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 16px;
+        }
+        .hero .tagline {
+            font-size: 1.3rem;
+            color: #8888aa;
+            margin-bottom: 32px;
+        }
+        .hero .cta {
+            display: inline-block;
+            padding: 16px 40px;
+            background: linear-gradient(135deg, #00d4ff, #7b61ff);
+            color: #fff;
+            font-size: 1.1rem;
+            font-weight: 700;
+            border-radius: 8px;
+            text-decoration: none;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .hero .cta:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(0, 212, 255, 0.3);
+        }
+        .price-tag {
+            display: block;
+            margin-top: 12px;
+            font-size: 0.9rem;
+            color: #6666aa;
+        }
+
+        /* Demo */
+        .demo {
+            background: #111128;
+            border: 1px solid #222244;
+            border-radius: 12px;
+            padding: 24px;
+            margin: 40px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+        }
+        .demo .prompt { color: #00d4ff; }
+        .demo .response { color: #aaa; margin-left: 16px; }
+        .demo .highlight { color: #ffa500; font-weight: bold; }
+
+        /* Features */
+        .features {
+            padding: 60px 0;
+        }
+        .features h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            color: #fff;
+        }
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+        .feature {
+            background: #111128;
+            border: 1px solid #222244;
+            border-radius: 12px;
+            padding: 24px;
+        }
+        .feature h3 {
+            color: #00d4ff;
+            font-size: 1.1rem;
+            margin-bottom: 8px;
+        }
+        .feature p {
+            color: #8888aa;
+            font-size: 0.95rem;
+        }
+
+        /* How it works */
+        .steps {
+            padding: 60px 0;
+        }
+        .steps h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            color: #fff;
+        }
+        .step-list {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+        .step-num {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #00d4ff, #7b61ff);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 800;
+            font-size: 1.2rem;
+            flex-shrink: 0;
+        }
+        .step-text h3 { color: #fff; margin-bottom: 4px; }
+        .step-text p { color: #8888aa; font-size: 0.95rem; }
+
+        /* FAQ */
+        .faq {
+            padding: 60px 0;
+        }
+        .faq h2 {
+            text-align: center;
+            font-size: 2rem;
+            margin-bottom: 40px;
+            color: #fff;
+        }
+        .faq-item {
+            border-bottom: 1px solid #222244;
+            padding: 20px 0;
+        }
+        .faq-item h3 { color: #00d4ff; margin-bottom: 8px; }
+        .faq-item p { color: #8888aa; }
+
+        /* Footer */
+        .footer {
+            text-align: center;
+            padding: 40px 0;
+            color: #444;
+            font-size: 0.85rem;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+
+    <!-- Hero -->
+    <div class="hero">
+        <h1>SkyAI</h1>
+        <p class="tagline">AI assistant for Hypixel Skyblock — right inside your game.</p>
+        <a href="#buy" class="cta">Get SkyAI</a>
+        <span class="price-tag">Starting at $4.99/month</span>
+    </div>
+
+    <!-- Demo -->
+    <div class="demo">
+        <p><span class="prompt">!ai</span> how much profit can I make doing Diana?</p>
+        <p class="response">
+            <span class="highlight">Diana Mythological Ritual Profit Rates:</span><br>
+            - Common Griffin: ~12M coins/hour<br>
+            - Legendary Griffin: 70-100M+ coins/hour<br>
+            - Main income: Chimera books, Daedalus Sticks, Minos Relic
+        </p>
+        <br>
+        <p><span class="prompt">!ai</span> what mining speed do I need to 4-tick mithril?</p>
+        <p class="response">
+            <span class="highlight">Gray Mithril:</span> > 3,334 Mining Speed<br>
+            <span class="highlight">Blue Mithril:</span> > 10,000 Mining Speed<br>
+            Softcap is always 4 ticks, then jumps to 1-tick instant mine.
+        </p>
+    </div>
+
+    <!-- Features -->
+    <div class="features">
+        <h2>What you get</h2>
+        <div class="feature-grid">
+            <div class="feature">
+                <h3>In-Game Overlay</h3>
+                <p>Ask questions without leaving Minecraft. Answers appear in a clean HUD overlay — no alt-tabbing.</p>
+            </div>
+            <div class="feature">
+                <h3>Accurate Answers</h3>
+                <p>Backed by a curated knowledge base and live wiki data. No hallucinations — if it doesn't know, it says so.</p>
+            </div>
+            <div class="feature">
+                <h3>Live Prices</h3>
+                <p>Real-time Bazaar and AH prices injected into every answer. Profit calculations use actual market data.</p>
+            </div>
+            <div class="feature">
+                <h3>Personalized Advice</h3>
+                <p>Link your account with !link and get recommendations based on YOUR gear, skills, and progression.</p>
+            </div>
+            <div class="feature">
+                <h3>SkyBlock Calendar</h3>
+                <p>Knows the current SkyBlock year, next events, Jerry's Workshop timing, Shen's Auction — all calculated live.</p>
+            </div>
+            <div class="feature">
+                <h3>Self-Improving</h3>
+                <p>Every wrong answer gets auto-corrected via wiki search. The bot gets smarter over time.</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- How it works -->
+    <div class="steps">
+        <h2>How it works</h2>
+        <div class="step-list">
+            <div class="step">
+                <div class="step-num">1</div>
+                <div class="step-text">
+                    <h3>Buy a license</h3>
+                    <p>Purchase a SkyAI subscription and receive your license key instantly.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">2</div>
+                <div class="step-text">
+                    <h3>Install the mod</h3>
+                    <p>Drop the .jar into your Fabric mods folder. Requires Fabric Loader + Fabric API for 1.21.11.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">3</div>
+                <div class="step-text">
+                    <h3>Activate in-game</h3>
+                    <p>Type <code>!aikey YOUR-KEY-HERE</code> in chat. Done — your key saves automatically.</p>
+                </div>
+            </div>
+            <div class="step">
+                <div class="step-num">4</div>
+                <div class="step-text">
+                    <h3>Ask anything</h3>
+                    <p>Type <code>!ai what's the best money method</code> and get instant, accurate answers.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pricing -->
+    <div class="features" id="buy">
+        <h2>Pricing</h2>
+        <div class="feature-grid" style="grid-template-columns: repeat(2, 1fr);">
+            <div class="feature" style="border-color: #00d4ff44;">
+                <h3>Basic — $4.99/mo</h3>
+                <p>
+                    30 questions per hour<br>
+                    Full knowledge base access<br>
+                    Live prices + wiki search<br>
+                    Personalized advice (!link)<br>
+                    HotM tree visualization
+                </p>
+                <br>
+                <a href="SELLIX_LINK_HERE" class="hero cta" style="padding: 10px 24px; font-size: 0.9rem;">Buy Basic</a>
+            </div>
+            <div class="feature" style="border-color: #7b61ff44;">
+                <h3>Pro — $9.99/mo</h3>
+                <p>
+                    100 questions per hour<br>
+                    Everything in Basic<br>
+                    Priority response times<br>
+                    Early access to new features
+                </p>
+                <br>
+                <a href="SELLIX_LINK_HERE" class="hero cta" style="padding: 10px 24px; font-size: 0.9rem; background: linear-gradient(135deg, #7b61ff, #ff61b6);">Buy Pro</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- FAQ -->
+    <div class="faq">
+        <h2>FAQ</h2>
+        <div class="faq-item">
+            <h3>Is this bannable on Hypixel?</h3>
+            <p>SkyAI only reads your chat input and displays an overlay. It does not automate gameplay, modify packets, or interact with the server. It functions similarly to other allowed information mods.</p>
+        </div>
+        <div class="faq-item">
+            <h3>What Minecraft version does it support?</h3>
+            <p>Currently supports Minecraft 1.21.11 with Fabric Loader. You need Fabric API installed.</p>
+        </div>
+        <div class="faq-item">
+            <h3>Can I share my key?</h3>
+            <p>No. Each key locks to your Minecraft account on first use. Using it on a different account will fail.</p>
+        </div>
+        <div class="faq-item">
+            <h3>What if I get a wrong answer?</h3>
+            <p>Press N or type !wrong to flag it. The bot automatically searches the wiki and caches the correct answer for next time.</p>
+        </div>
+        <div class="faq-item">
+            <h3>Can I cancel anytime?</h3>
+            <p>Yes. Your key works until it expires. No auto-renewal unless you buy again.</p>
+        </div>
+    </div>
+
+    <div class="footer">
+        SkyAI is not affiliated with Hypixel Inc. or Mojang Studios.
+    </div>
+
+</div>
+
+</body>
+</html>
