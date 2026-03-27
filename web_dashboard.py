@@ -313,6 +313,8 @@ def api_feedback():
 @app.route("/api/feedback/list")
 def api_feedback_list():
     """JSON: feedback stats, downvoted responses, unanswered questions."""
+    if not _check_admin():
+        return jsonify({"error": "Unauthorized"}), 401
     from feedback import get_feedback_stats, get_bad_responses, get_unanswered
     return jsonify({
         "stats": get_feedback_stats(),
