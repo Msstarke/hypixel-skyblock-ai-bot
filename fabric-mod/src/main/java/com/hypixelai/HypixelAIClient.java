@@ -676,20 +676,6 @@ public class HypixelAIClient implements ClientModInitializer {
         if (client != null && client.getNetworkHandler() != null) {
             client.getNetworkHandler().sendChatMessage("/pc [WEATHER ALERT] Wind: " + speed + " mph " + dir + " | Gusts: " + gusts + " mph (Cat " + cat + ") | " + warning);
         }
-
-        // Also show locally
-        sendChat(Text.empty());
-        sendChat(prefix()
-                .append(Text.literal("WEATHER ALERT").formatted(ERROR, Formatting.BOLD)));
-        sendChat(Text.literal("  Wind: ").formatted(BODY)
-                .append(Text.literal(speed + " mph").formatted(ERROR, Formatting.BOLD))
-                .append(Text.literal(" " + dir).formatted(MUTED)));
-        sendChat(Text.literal("  Gusts: ").formatted(BODY)
-                .append(Text.literal(gusts + " mph").formatted(ERROR))
-                .append(Text.literal(" (Category " + cat + ")").formatted(Formatting.YELLOW)));
-        sendChat(Text.literal("  ").formatted(BODY)
-                .append(Text.literal(warning).formatted(Formatting.RED)));
-        sendChat(Text.empty());
     }
 
     private void showHelp() {
