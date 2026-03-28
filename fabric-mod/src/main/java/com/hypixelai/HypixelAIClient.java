@@ -155,6 +155,10 @@ public class HypixelAIClient implements ClientModInitializer {
                 handleFeedback("down");
                 return false;
             }
+            if (lower.equals("!wind")) {
+                handleWind();
+                return false;
+            }
             return true;
         });
 
@@ -521,6 +525,38 @@ public class HypixelAIClient implements ClientModInitializer {
 
         // Show in the HUD overlay
         SkyAIOverlay.show(question, lines, hotmPerks);
+    }
+
+    private void handleWind() {
+        int speed = 100 + new java.util.Random().nextInt(101); // 100-200
+        String[] directions = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
+        String dir = directions[new java.util.Random().nextInt(directions.length)];
+        String[] warnings = {
+            "SEEK SHELTER IMMEDIATELY",
+            "WARNING: Category 5 Hurricane detected",
+            "Your house is gone. Accept it.",
+            "Wind advisory: DO NOT go outside. Ever.",
+            "FEMA has been notified. They said good luck.",
+            "Trees are now projectiles. Stay indoors.",
+            "The cows are flying. This is not a drill.",
+            "Your roof called. It's in the next state.",
+            "Wind speed exceeds legal limits. Wind has been arrested.",
+            "God is blowing on your Minecraft world.",
+        };
+        String warning = warnings[new java.util.Random().nextInt(warnings.length)];
+
+        sendChat(Text.empty());
+        sendChat(prefix()
+                .append(Text.literal("WEATHER ALERT").formatted(ERROR, Formatting.BOLD)));
+        sendChat(Text.literal("  Wind: ").formatted(BODY)
+                .append(Text.literal(speed + " mph").formatted(ERROR, Formatting.BOLD))
+                .append(Text.literal(" " + dir).formatted(MUTED)));
+        sendChat(Text.literal("  Gusts: ").formatted(BODY)
+                .append(Text.literal((speed + 15 + new java.util.Random().nextInt(30)) + " mph").formatted(ERROR))
+                .append(Text.literal(" (Category " + (speed < 130 ? "4" : "5") + ")").formatted(Formatting.YELLOW)));
+        sendChat(Text.literal("  ").formatted(BODY)
+                .append(Text.literal(warning).formatted(Formatting.RED)));
+        sendChat(Text.empty());
     }
 
     private void showHelp() {
