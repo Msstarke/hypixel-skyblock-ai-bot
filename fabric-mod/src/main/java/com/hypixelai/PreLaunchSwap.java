@@ -6,8 +6,8 @@ import java.io.File;
 import java.nio.file.*;
 
 /**
- * Runs BEFORE Minecraft loads — swaps .jar.update to .jar before anything locks the file.
- * This is the only reliable way to auto-update on Windows.
+ * Runs BEFORE Minecraft loads — swaps .jar.update to .jar.
+ * Uses File.renameTo() which works better on Windows with locked files.
  */
 public class PreLaunchSwap implements PreLaunchEntrypoint {
 
@@ -15,52 +15,85 @@ public class PreLaunchSwap implements PreLaunchEntrypoint {
     public void onPreLaunch() {
         try {
             Path modsDir = findModsDir();
-            if (modsDir == null) return;
+            if (modsDir == null) {
+                System.out.println("[HypixelAI] Pre-launch: could not find mods dir");
+                return;
+            }
 
-            // 1. Delete any .disabled files from previous updates
+            // 1. Delete old .disabled files
             File[] disabled = modsDir.toFile().listFiles((dir, name) ->
                     name.startsWith("hypixelai") && name.contains("disabled"));
             if (disabled != null) {
                 for (File f : disabled) {
-                    f.delete();
+                    if (f.delete()) {
+                        System.out.println("[HypixelAI] Pre-launch: deleted " + f.getName());
+                    }
                 }
             }
 
             // 2. Check for pending update
-            Path updateFile = modsDir.resolve("hypixelai-mod.jar.update");
-            if (!Files.exists(updateFile) || Files.size(updateFile) < 10000) return;
+            File updateFile = new File(modsDir.toFile(), "hypixelai-mod.jar.update");
+            if (!updateFile.exists() || updateFile.length() < 10000) {
+                return;
+            }
 
-            System.out.println("[HypixelAI] Pre-launch: applying update...");
+            System.out.println("[HypixelAI] Pre-launch: found update (" + updateFile.length() + " bytes), applying...");
 
-            // 3. Find and delete/rename ALL old hypixelai jars
+            // 3. Remove ALL old hypixelai jars
             File[] oldJars = modsDir.toFile().listFiles((dir, name) ->
-                    name.startsWith("hypixelai") && name.endsWith(".jar") && !name.endsWith(".update"));
+                    name.startsWith("hypixelai") && name.endsWith(".jar") && !name.endsWith(".jar.update"));
             if (oldJars != null) {
                 for (File f : oldJars) {
-                    if (!f.delete()) {
-                        // Can't delete — rename to .disabled (will be cleaned next launch)
-                        f.renameTo(new File(f.getAbsolutePath() + ".disabled"));
+                    // Try delete first
+                    if (f.delete()) {
+                        System.out.println("[HypixelAI] Pre-launch: deleted " + f.getName());
+                    } else {
+                        // Can't delete — rename to .old (different extension so Fabric ignores it)
+                        File old = new File(f.getAbsolutePath() + ".old");
+                        if (f.renameTo(old)) {
+                            System.out.println("[HypixelAI] Pre-launch: renamed " + f.getName() + " -> " + old.getName());
+                        } else {
+                            System.out.println("[HypixelAI] Pre-launch: WARNING could not remove " + f.getName());
+                        }
                     }
-                    System.out.println("[HypixelAI] Pre-launch: removed " + f.getName());
                 }
             }
 
-            // 4. Rename .jar.update to .jar
-            Path target = modsDir.resolve("hypixelai-mod.jar");
-            Files.move(updateFile, target, StandardCopyOption.REPLACE_EXISTING);
-            System.out.println("[HypixelAI] Pre-launch: update applied! New jar: " + target.getFileName());
+            // 4. Rename .jar.update -> .jar
+            File target = new File(modsDir.toFile(), "hypixelai-mod.jar");
+            if (updateFile.renameTo(target)) {
+                System.out.println("[HypixelAI] Pre-launch: SUCCESS! Update applied -> " + target.getName());
+            } else {
+                // Try Files.move as fallback
+                try {
+                    Files.move(updateFile.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
+                    System.out.println("[HypixelAI] Pre-launch: SUCCESS (Files.move)! Update applied -> " + target.getName());
+                } catch (Exception ex) {
+                    System.out.println("[HypixelAI] Pre-launch: FAILED to apply update: " + ex.getMessage());
+                }
+            }
+
+            // 5. Clean up any .old files that we can now delete
+            File[] oldFiles = modsDir.toFile().listFiles((dir, name) ->
+                    name.startsWith("hypixelai") && name.endsWith(".old"));
+            if (oldFiles != null) {
+                for (File f : oldFiles) {
+                    f.delete(); // best effort
+                }
+            }
 
         } catch (Exception e) {
-            System.err.println("[HypixelAI] Pre-launch swap failed: " + e.getMessage());
+            System.err.println("[HypixelAI] Pre-launch error: " + e.getMessage());
+            e.printStackTrace();
         }
     }
 
     private static Path findModsDir() {
-        // Try standard locations
+        // Standard location
         Path mods = Path.of("mods");
         if (Files.isDirectory(mods)) return mods;
 
-        // Try from the class location
+        // From class location
         try {
             Path jar = Path.of(PreLaunchSwap.class.getProtectionDomain()
                     .getCodeSource().getLocation().toURI());

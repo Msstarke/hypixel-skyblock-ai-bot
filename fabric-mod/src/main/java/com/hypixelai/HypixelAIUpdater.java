@@ -13,7 +13,7 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "2.0.5";
+    public static final String MOD_VERSION = "2.1.0";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
     // Try Railway direct first (bypasses Cloudflare), then custom domain
@@ -121,19 +121,23 @@ public class HypixelAIUpdater {
                 return false;
             }
 
-            // Step 2: Need download URL — hit GitHub only now
+            // Step 2: Get download URL — try Railway first, then GitHub
+            String downloadUrl = "https://worker-production-f916.up.railway.app/api/mod/download";
+
+            // Try GitHub as backup for the direct jar link
             if (githubJson == null) {
                 githubJson = httpGet(RELEASES_API);
-                if (githubJson == null) {
-                    HypixelAIMod.LOGGER.warn("[HypixelAI] Could not reach GitHub for download URL");
-                    return false;
-                }
             }
-
-            String downloadUrl = findJarAssetUrl(githubJson);
-            if (downloadUrl == null) {
-                HypixelAIMod.LOGGER.warn("[HypixelAI] Release v{} has no jar asset", latestVersion);
-                return false;
+            if (githubJson != null) {
+                String ghUrl = findJarAssetUrl(githubJson);
+                if (ghUrl != null) {
+                    downloadUrl = ghUrl;
+                    HypixelAIMod.LOGGER.info("[HypixelAI] Using GitHub download URL");
+                } else {
+                    HypixelAIMod.LOGGER.info("[HypixelAI] Using Railway download URL");
+                }
+            } else {
+                HypixelAIMod.LOGGER.info("[HypixelAI] GitHub unavailable, using Railway download URL");
             }
 
             HypixelAIMod.LOGGER.info("[HypixelAI] Update available: v{} -> v{}", MOD_VERSION, latestVersion);
