@@ -1,1 +1,1 @@
-Improved auto-update swap
+NanoVG smooth rendering for UI

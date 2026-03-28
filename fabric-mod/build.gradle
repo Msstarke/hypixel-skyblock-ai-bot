@@ -10,12 +10,24 @@ repositories {
     mavenCentral()
 }
 
+// Must match the LWJGL version bundled with your Minecraft version
+def lwjglVersion = "3.3.4"
+
+configurations {
+    bundle
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings "net.fabricmc:yarn:${project.yarn_mappings}:v2"
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_version}"
 
+    // NanoVG — anti-aliased vector rendering for GUI
+    implementation "org.lwjgl:lwjgl-nanovg:${lwjglVersion}"
+    bundle "org.lwjgl:lwjgl-nanovg:${lwjglVersion}"
+    bundle "org.lwjgl:lwjgl-nanovg:${lwjglVersion}:natives-windows"
+    // For cross-platform, also add: natives-linux, natives-macos, natives-macos-arm64
 }
 
 processResources {
@@ -38,4 +50,9 @@ jar {
     from("LICENSE") {
         rename { "${it}_${project.base.archivesName.get()}" }
     }
+    // Bundle NanoVG classes and native libraries into the mod jar
+    from {
+        configurations.bundle.collect { zipTree(it) }
+    }
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
 }
