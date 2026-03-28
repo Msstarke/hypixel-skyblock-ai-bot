@@ -188,6 +188,30 @@ public class HypixelAIClient implements ClientModInitializer {
                 handleWind();
                 return false;
             }
+            if (lower.equals("!aiupdate")) {
+                sendChat(prefix().append(Text.literal("Checking for updates...").formatted(BODY)));
+                new Thread(() -> {
+                    boolean found = HypixelAIUpdater.checkForUpdate();
+                    if (found) {
+                        sendChat(prefix()
+                                .append(Text.literal("Update found! ").formatted(SUCCESS))
+                                .append(Text.literal("v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED))
+                                .append(Text.literal(" \u2192 ").formatted(MUTED))
+                                .append(Text.literal("v" + HypixelAIUpdater.getPendingVersion()).formatted(SUCCESS, Formatting.BOLD)));
+                        sendChat(prefix().append(Text.literal("Restart to apply.").formatted(BODY)));
+                    } else if (HypixelAIUpdater.isUpdatePending()) {
+                        sendChat(prefix()
+                                .append(Text.literal("Update already downloaded: ").formatted(BODY))
+                                .append(Text.literal("v" + HypixelAIUpdater.getPendingVersion()).formatted(SUCCESS)));
+                        sendChat(prefix().append(Text.literal("Restart to apply.").formatted(BODY)));
+                    } else {
+                        sendChat(prefix()
+                                .append(Text.literal("You're up to date! ").formatted(SUCCESS))
+                                .append(Text.literal("v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED)));
+                    }
+                }, "HypixelAI-ManualUpdate").start();
+                return false;
+            }
             return true;
         });
 
