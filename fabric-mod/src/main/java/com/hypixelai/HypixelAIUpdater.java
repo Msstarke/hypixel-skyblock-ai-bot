@@ -13,7 +13,7 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "2.2.4";
+    public static final String MOD_VERSION = "2.3.0";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
     // Try Railway direct first (bypasses Cloudflare), then custom domain
@@ -191,25 +191,32 @@ public class HypixelAIUpdater {
             Path updateFile = modsDir.resolve("hypixelai-mod.jar.update");
             if (!Files.exists(updateFile)) return;
 
-            // Rename old jars to .disabled
+            // Write a swap script — PreLaunch runs it BEFORE Fabric locks the jar next boot
+            String modsPath = modsDir.toAbsolutePath().toString();
+            String script = "@echo off\r\n"
+                    + "cd /d \"" + modsPath + "\"\r\n"
+                    + "if not exist \"hypixelai-mod.jar.update\" goto :done\r\n"
+                    + "for %%f in (hypixelai-mod*.jar) do del /f /q \"%%f\" 2>nul\r\n"
+                    + "ren \"hypixelai-mod.jar.update\" \"hypixelai-mod.jar\"\r\n"
+                    + ":done\r\n"
+                    + "del /f /q \"%~f0\" 2>nul\r\n";
+            Path scriptPath = modsDir.resolve("hypixelai-swap.cmd");
+            Files.writeString(scriptPath, script, java.nio.charset.StandardCharsets.UTF_8);
+
+            // Also try direct swap (works if JVM released the lock)
             try (DirectoryStream<Path> s = Files.newDirectoryStream(modsDir, "hypixelai-mod*.jar")) {
                 for (Path p : s) {
-                    String n = p.getFileName().toString();
-                    if (n.endsWith(".update")) continue;
-                    try {
-                        Files.move(p, p.resolveSibling(n + ".disabled"), StandardCopyOption.REPLACE_EXISTING);
-                    } catch (Exception ex) {
-                        // On Windows, jar may still be locked — startup cleanup will handle it
-                        try { Files.deleteIfExists(p); } catch (Exception ignored) {}
-                    }
+                    if (p.getFileName().toString().endsWith(".update")) continue;
+                    try { Files.deleteIfExists(p); } catch (Exception ignored) {}
                 }
             }
-
-            // Rename update file
             Path target = modsDir.resolve("hypixelai-mod.jar");
-            Files.move(updateFile, target, StandardCopyOption.REPLACE_EXISTING);
+            if (!Files.exists(target)) {
+                Files.move(updateFile, target, StandardCopyOption.REPLACE_EXISTING);
+                Files.deleteIfExists(scriptPath);
+            }
         } catch (Exception e) {
-            // Startup cleanup will retry
+            // PreLaunch + swap script will handle it next boot
         }
     }
 

@@ -52,71 +52,69 @@ public class PreLaunchSwap implements PreLaunchEntrypoint {
                 }
             }
 
-            // 2. Check for pending update — find ANY .update file
+            // 2. Check for pending update
             File updateFile = new File(modsDir.toFile(), "hypixelai-mod.jar.update");
             if (!updateFile.exists()) {
-                // Also check for versioned update files
                 File[] updateFiles = modsDir.toFile().listFiles((dir, name) ->
                         name.startsWith("hypixelai") && name.endsWith(".update"));
-                if (updateFiles != null && updateFiles.length > 0) {
-                    updateFile = updateFiles[0];
-                }
+                if (updateFiles != null && updateFiles.length > 0) updateFile = updateFiles[0];
             }
+
+            // 3. Check for swap script from previous shutdown hook
+            File swapScript = new File(modsDir.toFile(), "hypixelai-swap.cmd");
+            if (swapScript.exists() && updateFile.exists()) {
+                if (log != null) log.println("Running swap script before Fabric loads...");
+                try {
+                    // Run the swap script synchronously BEFORE Fabric locks anything
+                    Process p = new ProcessBuilder("cmd.exe", "/c", swapScript.getAbsolutePath())
+                            .directory(modsDir.toFile())
+                            .redirectErrorStream(true)
+                            .start();
+                    p.waitFor(10, java.util.concurrent.TimeUnit.SECONDS);
+                    if (log != null) log.println("Swap script finished, exit=" + p.exitValue());
+                } catch (Exception ex) {
+                    if (log != null) log.println("Swap script error: " + ex.getMessage());
+                }
+                // Refresh file state
+                updateFile = new File(modsDir.toFile(), "hypixelai-mod.jar.update");
+            }
+
             if (!updateFile.exists()) {
                 if (log != null) { log.println("No .jar.update found, nothing to do"); log.println(); log.close(); }
                 return;
             }
             if (updateFile.length() < 10000) {
-                if (log != null) { log.println("Update file too small: " + updateFile.length() + " bytes, skipping"); log.println(); log.close(); }
+                if (log != null) { log.println("Update too small: " + updateFile.length()); log.println(); log.close(); }
                 return;
             }
 
-            if (log != null) log.println("Update file: " + updateFile.length() + " bytes");
+            if (log != null) log.println("Update file: " + updateFile.length() + " bytes, trying direct swap...");
 
-            // 3. Remove ALL old hypixelai jars
+            // 4. Try direct swap (works if jar isn't locked yet)
             File[] oldJars = modsDir.toFile().listFiles((dir, name) ->
                     name.startsWith("hypixelai") && name.endsWith(".jar") && !name.endsWith(".jar.update"));
             if (oldJars != null) {
                 for (File f : oldJars) {
                     if (f.delete()) {
-                        String msg = "Deleted old jar: " + f.getName();
-                        System.out.println("[HypixelAI] Pre-launch: " + msg);
-                        if (log != null) log.println(msg);
+                        if (log != null) log.println("Deleted: " + f.getName());
                     } else {
-                        File old = new File(f.getAbsolutePath() + ".old");
-                        if (f.renameTo(old)) {
-                            String msg = "Renamed " + f.getName() + " -> " + old.getName();
-                            System.out.println("[HypixelAI] Pre-launch: " + msg);
-                            if (log != null) log.println(msg);
-                        } else {
-                            String msg = "FAILED to remove " + f.getName() + " (canWrite=" + f.canWrite() + ", exists=" + f.exists() + ")";
-                            System.out.println("[HypixelAI] Pre-launch: " + msg);
-                            if (log != null) log.println(msg);
-                        }
+                        if (log != null) log.println("Locked: " + f.getName());
                     }
                 }
             }
 
-            // 4. Rename .jar.update -> .jar
             File target = new File(modsDir.toFile(), "hypixelai-mod.jar");
-            if (updateFile.renameTo(target)) {
-                String msg = "SUCCESS! Renamed .jar.update -> " + target.getName();
-                System.out.println("[HypixelAI] Pre-launch: " + msg);
-                if (log != null) log.println(msg);
-            } else {
-                try {
-                    Files.move(updateFile.toPath(), target.toPath(), StandardCopyOption.REPLACE_EXISTING);
-                    String msg = "SUCCESS (Files.move)! Applied update";
-                    System.out.println("[HypixelAI] Pre-launch: " + msg);
-                    if (log != null) log.println(msg);
-                } catch (Exception ex) {
-                    String msg = "FAILED: " + ex.getClass().getSimpleName() + " - " + ex.getMessage();
-                    System.out.println("[HypixelAI] Pre-launch: " + msg);
-                    if (log != null) log.println(msg);
+            if (!target.exists()) {
+                if (updateFile.renameTo(target)) {
+                    if (log != null) log.println("SUCCESS! Update applied");
+                } else {
+                    if (log != null) log.println("Rename failed");
                 }
+            } else {
+                if (log != null) log.println("Old jar still locked, will retry via shutdown hook");
             }
 
-            if (log != null) { log.println("Swap complete"); log.println(); }
+            if (log != null) { log.println("PreLaunch done"); log.println(); }
 
         } catch (Exception e) {
             System.err.println("[HypixelAI] Pre-launch error: " + e.getMessage());

@@ -1,1 +1,1 @@
-NanoVG config GUI + cortisol bar + Right Shift keybind
+Fixed auto-update swap for Windows
