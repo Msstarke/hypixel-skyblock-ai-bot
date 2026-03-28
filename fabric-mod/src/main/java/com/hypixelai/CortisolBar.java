@@ -14,11 +14,11 @@ import net.minecraft.entity.player.PlayerEntity;
  */
 public class CortisolBar implements HudRenderCallback {
 
-    // Gauge dimensions
-    private static final int RADIUS = 30;
-    private static final int ARC_THICKNESS = 5;
-    private static final int NEEDLE_LEN = 24;
-    private static final int ARC_SEGMENTS = 40;
+    // Gauge dimensions — bigger and higher
+    private static final int RADIUS = 38;
+    private static final int ARC_THICKNESS = 6;
+    private static final int NEEDLE_LEN = 30;
+    private static final int ARC_SEGMENTS = 50;
 
     // Smooth animation
     private static float displayedHealth = 20f;
@@ -57,12 +57,9 @@ public class CortisolBar implements HudRenderCallback {
         int screenW = ctx.getScaledWindowWidth();
         int screenH = ctx.getScaledWindowHeight();
 
-        // Position: bottom-left, above hotbar where hearts would be
-        int centerX = screenW / 2 - 55;
-        int centerY = screenH - 36;
-
-        // === Cover vanilla hearts with pure black (matches void behind HUD) ===
-        ctx.fill(screenW / 2 - 92, screenH - 50, screenW / 2 - 10, screenH - 28, 0xFF000000);
+        // Position: raised up, above hotbar
+        int centerX = screenW / 2 - 50;
+        int centerY = screenH - 52;
 
         // === Draw colored arc segments ===
         for (int i = 0; i < ARC_SEGMENTS; i++) {

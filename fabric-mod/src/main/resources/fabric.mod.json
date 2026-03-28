@@ -13,7 +13,7 @@
         "main": ["com.hypixelai.HypixelAIMod"],
         "client": ["com.hypixelai.HypixelAIClient"]
     },
-    "mixins": [],
+    "mixins": ["hypixelai.mixins.json"],
     "depends": {
         "fabricloader": ">=0.16.0",
         "minecraft": ">=1.21",
