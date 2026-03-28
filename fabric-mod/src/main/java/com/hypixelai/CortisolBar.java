@@ -8,31 +8,29 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.entity.player.PlayerEntity;
 
 /**
- * Cortisol meter — replaces vanilla health hearts with a modern stress bar.
- * Inverted: 0 = calm (full HP), 20 = max stress (dying).
- * Wide bar with segments, gradient fill, label + value display.
+ * Cortisol meter — speedometer/gauge style semi-circle.
+ * Needle sweeps from left (0 = calm) to right (20 = dying).
+ * Arc goes green → yellow → orange → red.
  */
 public class CortisolBar implements HudRenderCallback {
 
-    // Bar dimensions — wider and thicker than vanilla hearts
-    private static final int BAR_WIDTH = 100;
-    private static final int BAR_HEIGHT = 8;
-    private static final int COVER_W = 100;  // Width to cover vanilla hearts
-    private static final int COVER_H = 12;   // Height to cover vanilla hearts
-
-    // Segment count for the segmented look
-    private static final int SEGMENTS = 20;
-
-    // Colors
-    private static final int BG_DARK = 0xFF080810;
-    private static final int BG_BORDER = 0xFF1a1a2e;
-    private static final int BG_INNER = 0xFF0c0c18;
-    private static final int LABEL_COLOR = 0xFFaaaacc;
-    private static final int LABEL_DIM = 0xFF555577;
-    private static final int SEG_GAP_COLOR = 0xFF0a0a14;
+    // Gauge dimensions
+    private static final int RADIUS = 30;
+    private static final int ARC_THICKNESS = 5;
+    private static final int NEEDLE_LEN = 24;
+    private static final int ARC_SEGMENTS = 40;
 
     // Smooth animation
     private static float displayedHealth = 20f;
+
+    // Colors
+    private static final int BG_COLOR = 0xCC080810;
+    private static final int TICK_COLOR = 0xFF333355;
+    private static final int LABEL_COLOR = 0xFFaaaacc;
+    private static final int LABEL_DIM = 0xFF555577;
+    private static final int NEEDLE_COLOR = 0xFFe2e2f0;
+    private static final int NEEDLE_SHADOW = 0xFF222244;
+    private static final int CENTER_DOT = 0xFF888899;
 
     public static void register() {
         HudRenderCallback.EVENT.register(new CortisolBar());
@@ -48,7 +46,7 @@ public class CortisolBar implements HudRenderCallback {
         float maxHealth = player.getMaxHealth();
 
         // Smooth animation
-        displayedHealth += (health - displayedHealth) * 0.12f;
+        displayedHealth += (health - displayedHealth) * 0.1f;
 
         // Cortisol: 0 = calm, 20 = dying
         float healthRatio = Math.max(0, Math.min(1, displayedHealth / Math.max(maxHealth, 1)));
@@ -59,130 +57,170 @@ public class CortisolBar implements HudRenderCallback {
         int screenW = ctx.getScaledWindowWidth();
         int screenH = ctx.getScaledWindowHeight();
 
-        // Position — same area as vanilla hearts
-        int baseX = screenW / 2 - 91;
-        int baseY = screenH - 40;
+        // Position: bottom-left, above hotbar where hearts would be
+        int centerX = screenW / 2 - 55;
+        int centerY = screenH - 36;
 
         // === Cover vanilla hearts ===
-        ctx.fill(baseX - 2, baseY - 12, baseX + COVER_W + 2, baseY + COVER_H + 2, BG_DARK);
+        ctx.fill(screenW / 2 - 92, screenH - 50, screenW / 2 - 10, screenH - 28, 0xFF080810);
 
-        // === Label row: "CORTISOL" left, "12.5 / 20" right ===
-        TextRenderer tr = client.textRenderer;
-        int labelY = baseY - 10;
+        // === Draw background circle area ===
+        fillArc(ctx, centerX, centerY, RADIUS + 3, ARC_THICKNESS + 6, 0, 1, BG_COLOR);
 
-        // Label color shifts with stress
-        int lColor = barRatio > 0.6f ? getStressColor(barRatio) : LABEL_COLOR;
-        ctx.drawText(tr, "CORTISOL", baseX, labelY, lColor, false);
+        // === Draw colored arc segments ===
+        for (int i = 0; i < ARC_SEGMENTS; i++) {
+            float segStart = (float) i / ARC_SEGMENTS;
+            float segEnd = (float) (i + 1) / ARC_SEGMENTS;
 
-        // Value
-        String val = String.format("%.1f", displayCortisol);
-        String max = " / 20";
-        int valColor = getStressColor(barRatio);
-        int valW = tr.getWidth(val);
-        int maxW = tr.getWidth(max);
-        ctx.drawText(tr, val, baseX + BAR_WIDTH - valW - maxW, labelY, valColor, false);
-        ctx.drawText(tr, max, baseX + BAR_WIDTH - maxW, labelY, LABEL_DIM, false);
-
-        // === Bar background ===
-        int barX = baseX;
-        int barY = baseY + 1;
-
-        // Outer border
-        ctx.fill(barX - 1, barY - 1, barX + BAR_WIDTH + 1, barY + BAR_HEIGHT + 1, BG_BORDER);
-        // Inner background
-        ctx.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT, BG_INNER);
-
-        // === Filled segments ===
-        int filledWidth = (int) (BAR_WIDTH * barRatio);
-        int segW = BAR_WIDTH / SEGMENTS; // 5px per segment
-
-        for (int s = 0; s < SEGMENTS; s++) {
-            int sx = barX + s * segW;
-            int sw = segW - 1; // 1px gap between segments
-            int segEnd = sx + sw;
-
-            if (sx >= barX + filledWidth) break; // Past the filled area
-
-            // Clamp to filled width
-            if (segEnd > barX + filledWidth) {
-                sw = (barX + filledWidth) - sx;
-                if (sw <= 0) break;
+            int color;
+            if (segStart <= barRatio) {
+                color = getStressColor(segStart);
+            } else {
+                color = 0xFF1a1a28; // unfilled segment (dark)
             }
-
-            // Color based on segment position
-            float segRatio = (float) s / SEGMENTS;
-            int color = getStressColor(segRatio);
-
-            // Main fill
-            ctx.fill(sx, barY, sx + sw, barY + BAR_HEIGHT, color);
-
-            // Top highlight (lighter)
-            int highlight = brighten(color, 40);
-            ctx.fill(sx, barY, sx + sw, barY + 1, highlight);
-
-            // Bottom shadow (darker)
-            int shadow = darken(color, 30);
-            ctx.fill(sx, barY + BAR_HEIGHT - 1, sx + sw, barY + BAR_HEIGHT, shadow);
+            fillArc(ctx, centerX, centerY, RADIUS, ARC_THICKNESS, segStart, segEnd, color);
         }
 
-        // === Pulsing red glow when high stress ===
+        // === Draw tick marks around the arc ===
+        for (int i = 0; i <= 10; i++) {
+            float t = (float) i / 10;
+            double angle = Math.PI + t * Math.PI; // 180° to 360°
+            int tickInner = RADIUS - ARC_THICKNESS - 2;
+            int tickOuter = RADIUS - ARC_THICKNESS - (i % 5 == 0 ? 5 : 3);
+
+            int tx1 = centerX + (int) (Math.cos(angle) * tickInner);
+            int ty1 = centerY + (int) (Math.sin(angle) * tickInner);
+            int tx2 = centerX + (int) (Math.cos(angle) * tickOuter);
+            int ty2 = centerY + (int) (Math.sin(angle) * tickOuter);
+
+            ctx.fill(Math.min(tx1, tx2), Math.min(ty1, ty2),
+                     Math.max(tx1, tx2) + 1, Math.max(ty1, ty2) + 1, TICK_COLOR);
+        }
+
+        // === Draw needle ===
+        // Needle angle: 0 ratio = left (180°), 1 ratio = right (360°/0°)
+        double needleAngle = Math.PI + barRatio * Math.PI;
+        int nx = centerX + (int) (Math.cos(needleAngle) * NEEDLE_LEN);
+        int ny = centerY + (int) (Math.sin(needleAngle) * NEEDLE_LEN);
+
+        // Draw needle as a line (shadow then main)
+        drawLine(ctx, centerX + 1, centerY + 1, nx + 1, ny + 1, NEEDLE_SHADOW);
+        int needleCol = barRatio > 0.7f ? getStressColor(barRatio) : NEEDLE_COLOR;
+        drawLine(ctx, centerX, centerY, nx, ny, needleCol);
+
+        // Center dot
+        ctx.fill(centerX - 2, centerY - 2, centerX + 3, centerY + 3, CENTER_DOT);
+        ctx.fill(centerX - 1, centerY - 1, centerX + 2, centerY + 2, 0xFF000000);
+
+        // === Text ===
+        TextRenderer tr = client.textRenderer;
+
+        // Cortisol value centered below gauge
+        String val = String.format("%.1f", displayCortisol);
+        int valW = tr.getWidth(val);
+        int valColor = getStressColor(barRatio);
+        ctx.drawText(tr, val, centerX - valW / 2, centerY + 3, valColor, false);
+
+        // "0" on left, "20" on right
+        ctx.drawText(tr, "0", centerX - RADIUS - 2, centerY - 4, LABEL_DIM, false);
+        ctx.drawText(tr, "20", centerX + RADIUS - 6, centerY - 4, LABEL_DIM, false);
+
+        // "CORTISOL" label above
+        String label = "CORTISOL";
+        int lblW = tr.getWidth(label);
+        int lblColor = barRatio > 0.6f ? getStressColor(barRatio) : LABEL_COLOR;
+        ctx.drawText(tr, label, centerX - lblW / 2, centerY - RADIUS - 10, lblColor, false);
+
+        // === Pulsing glow when high stress ===
         if (barRatio > 0.7f) {
             long t = System.currentTimeMillis() % 1000;
-            float pulse = (float) (Math.sin(t / 1000.0 * Math.PI * 2) * 0.3 + 0.3);
-            int alpha = (int) (pulse * 200 * barRatio);
+            float pulse = (float) (Math.sin(t / 1000.0 * Math.PI * 2) * 0.2 + 0.2);
+            int alpha = (int) (pulse * 180 * barRatio);
             int glow = (Math.min(alpha, 255) << 24) | 0x00FF2020;
-            ctx.fill(barX - 2, barY - 2, barX + BAR_WIDTH + 2, barY + BAR_HEIGHT + 2, glow);
-        }
-
-        // === Segment divider lines (on top of everything for crisp look) ===
-        for (int s = 1; s < SEGMENTS; s++) {
-            int lx = barX + s * segW - 1;
-            ctx.fill(lx, barY, lx + 1, barY + BAR_HEIGHT, SEG_GAP_COLOR);
+            fillArc(ctx, centerX, centerY, RADIUS + 4, ARC_THICKNESS + 8, 0, barRatio, glow);
         }
     }
 
     /**
-     * Stress color: 0.0=green, 0.5=yellow, 1.0=red
+     * Draw a filled arc segment (semi-circle, top half).
+     * ratio 0 = left (180°), ratio 1 = right (0°/360°)
+     */
+    private static void fillArc(DrawContext ctx, int cx, int cy, int radius, int thickness,
+                                 float startRatio, float endRatio, int color) {
+        int steps = 30;
+        for (int i = 0; i < steps; i++) {
+            float t1 = startRatio + (endRatio - startRatio) * i / steps;
+            float t2 = startRatio + (endRatio - startRatio) * (i + 1) / steps;
+
+            double a1 = Math.PI + t1 * Math.PI;
+            double a2 = Math.PI + t2 * Math.PI;
+
+            // Outer edge
+            int ox1 = cx + (int) (Math.cos(a1) * radius);
+            int oy1 = cy + (int) (Math.sin(a1) * radius);
+            int ox2 = cx + (int) (Math.cos(a2) * radius);
+            int oy2 = cy + (int) (Math.sin(a2) * radius);
+
+            // Inner edge
+            int ix1 = cx + (int) (Math.cos(a1) * (radius - thickness));
+            int iy1 = cy + (int) (Math.sin(a1) * (radius - thickness));
+            int ix2 = cx + (int) (Math.cos(a2) * (radius - thickness));
+            int iy2 = cy + (int) (Math.sin(a2) * (radius - thickness));
+
+            // Fill as a small rect (approximation that works for small arc segments)
+            int minX = Math.min(Math.min(ox1, ox2), Math.min(ix1, ix2));
+            int maxX = Math.max(Math.max(ox1, ox2), Math.max(ix1, ix2));
+            int minY = Math.min(Math.min(oy1, oy2), Math.min(iy1, iy2));
+            int maxY = Math.max(Math.max(oy1, oy2), Math.max(iy1, iy2));
+
+            if (maxX > minX && maxY > minY) {
+                ctx.fill(minX, minY, maxX, maxY, color);
+            }
+        }
+    }
+
+    /**
+     * Draw a line using small filled rects (Bresenham-ish).
+     */
+    private static void drawLine(DrawContext ctx, int x0, int y0, int x1, int y1, int color) {
+        int dx = Math.abs(x1 - x0);
+        int dy = Math.abs(y1 - y0);
+        int sx = x0 < x1 ? 1 : -1;
+        int sy = y0 < y1 ? 1 : -1;
+        int err = dx - dy;
+
+        while (true) {
+            ctx.fill(x0, y0, x0 + 1, y0 + 1, color);
+            if (x0 == x1 && y0 == y1) break;
+            int e2 = 2 * err;
+            if (e2 > -dy) { err -= dy; x0 += sx; }
+            if (e2 < dx) { err += dx; y0 += sy; }
+        }
+    }
+
+    /**
+     * Stress color: 0.0=green, 0.5=yellow/orange, 1.0=red
      */
     private static int getStressColor(float stress) {
         int r, g, b;
-        if (stress < 0.4f) {
-            // Green to Yellow
-            float t = stress / 0.4f;
-            r = (int) (50 + 205 * t);
-            g = (int) (220 + 35 * (1 - t));
-            b = (int) (30 * (1 - t));
-        } else if (stress < 0.7f) {
-            // Yellow to Orange
-            float t = (stress - 0.4f) / 0.3f;
+        if (stress < 0.35f) {
+            float t = stress / 0.35f;
+            r = (int) (30 + 225 * t);
+            g = (int) (200 + 55 * (1 - t));
+            b = (int) (40 * (1 - t));
+        } else if (stress < 0.65f) {
+            float t = (stress - 0.35f) / 0.3f;
             r = 255;
-            g = (int) (220 - 120 * t);
+            g = (int) (230 - 130 * t);
             b = 0;
         } else {
-            // Orange to Red
-            float t = (stress - 0.7f) / 0.3f;
+            float t = (stress - 0.65f) / 0.35f;
             r = 255;
             g = (int) (100 - 100 * t);
-            b = (int) (20 * t);
+            b = (int) (30 * t);
         }
-        return 0xFF000000 | (clamp(r) << 16) | (clamp(g) << 8) | clamp(b);
+        return 0xFF000000 | (cl(r) << 16) | (cl(g) << 8) | cl(b);
     }
 
-    private static int brighten(int color, int amount) {
-        int r = Math.min(255, ((color >> 16) & 0xFF) + amount);
-        int g = Math.min(255, ((color >> 8) & 0xFF) + amount);
-        int b = Math.min(255, (color & 0xFF) + amount);
-        return 0xFF000000 | (r << 16) | (g << 8) | b;
-    }
-
-    private static int darken(int color, int amount) {
-        int r = Math.max(0, ((color >> 16) & 0xFF) - amount);
-        int g = Math.max(0, ((color >> 8) & 0xFF) - amount);
-        int b = Math.max(0, (color & 0xFF) - amount);
-        return 0xFF000000 | (r << 16) | (g << 8) | b;
-    }
-
-    private static int clamp(int v) {
-        return Math.max(0, Math.min(255, v));
-    }
+    private static int cl(int v) { return Math.max(0, Math.min(255, v)); }
 }
