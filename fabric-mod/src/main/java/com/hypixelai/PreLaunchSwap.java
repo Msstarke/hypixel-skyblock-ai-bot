@@ -52,8 +52,16 @@ public class PreLaunchSwap implements PreLaunchEntrypoint {
                 }
             }
 
-            // 2. Check for pending update
+            // 2. Check for pending update — find ANY .update file
             File updateFile = new File(modsDir.toFile(), "hypixelai-mod.jar.update");
+            if (!updateFile.exists()) {
+                // Also check for versioned update files
+                File[] updateFiles = modsDir.toFile().listFiles((dir, name) ->
+                        name.startsWith("hypixelai") && name.endsWith(".update"));
+                if (updateFiles != null && updateFiles.length > 0) {
+                    updateFile = updateFiles[0];
+                }
+            }
             if (!updateFile.exists()) {
                 if (log != null) { log.println("No .jar.update found, nothing to do"); log.println(); log.close(); }
                 return;
