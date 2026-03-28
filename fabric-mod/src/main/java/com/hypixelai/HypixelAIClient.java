@@ -68,11 +68,6 @@ public class HypixelAIClient implements ClientModInitializer {
         final long UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            // Config keybind (Right Shift)
-            if (client.player != null && keyConfig.wasPressed()) {
-                SkyAIConfigScreen.open();
-            }
-
             // Handle feedback keybinds
             if (client.player != null && SkyAIOverlay.hasPendingFeedback()) {
                 if (keyCorrect.wasPressed()) {
@@ -141,7 +136,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 return false;
             }
             if (lower.equals("!aiconfig")) {
-                SkyAIConfigScreen.open();
+                showConfig();
                 return false;
             }
             if (lower.equals("!aihelp") || lower.equals("!commands") || lower.equals("!help")) {
