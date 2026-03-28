@@ -24,7 +24,7 @@ public class CortisolBar implements HudRenderCallback {
     private static float displayedHealth = 20f;
 
     // Colors
-    private static final int BG_COLOR = 0xCC080810;
+    private static final int BG_COLOR = 0x00000000; // transparent — no background arc
     private static final int TICK_COLOR = 0xFF333355;
     private static final int LABEL_COLOR = 0xFFaaaacc;
     private static final int LABEL_DIM = 0xFF555577;
@@ -61,11 +61,8 @@ public class CortisolBar implements HudRenderCallback {
         int centerX = screenW / 2 - 55;
         int centerY = screenH - 36;
 
-        // === Cover vanilla hearts ===
-        ctx.fill(screenW / 2 - 92, screenH - 50, screenW / 2 - 10, screenH - 28, 0xFF080810);
-
-        // === Draw background circle area ===
-        fillArc(ctx, centerX, centerY, RADIUS + 3, ARC_THICKNESS + 6, 0, 1, BG_COLOR);
+        // === Cover vanilla hearts with pure black (matches void behind HUD) ===
+        ctx.fill(screenW / 2 - 92, screenH - 50, screenW / 2 - 10, screenH - 28, 0xFF000000);
 
         // === Draw colored arc segments ===
         for (int i = 0; i < ARC_SEGMENTS; i++) {
