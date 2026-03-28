@@ -1,1 +1,1 @@
-Cortisol health bar added - replaces vanilla hearts with gradient bar
+v2.0.4 test update
