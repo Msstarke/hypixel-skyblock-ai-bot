@@ -3,7 +3,8 @@
     "package": "com.hypixelai.mixin",
     "compatibilityLevel": "JAVA_21",
     "client": [
-        "HideHeartsMixin"
+        "HideHeartsMixin",
+        "HideActionBarMixin"
     ],
     "injectors": {
         "defaultRequire": 1
