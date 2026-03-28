@@ -120,19 +120,34 @@ public class PreLaunchSwap implements PreLaunchEntrypoint {
     }
 
     private static Path findModsDir() {
-        // Standard location
-        Path mods = Path.of("mods");
-        if (Files.isDirectory(mods)) return mods;
-
-        // From class location
+        // First: try from the jar's own location (most reliable — works with all launchers)
         try {
             Path jar = Path.of(PreLaunchSwap.class.getProtectionDomain()
                     .getCodeSource().getLocation().toURI());
             if (jar.toString().endsWith(".jar") && jar.getParent() != null) {
+                System.out.println("[HypixelAI] Pre-launch: mods dir from jar location: " + jar.getParent());
                 return jar.getParent();
             }
         } catch (Exception ignored) {}
 
+        // Fallback: relative path (works when CWD is .minecraft)
+        Path mods = Path.of("mods");
+        if (Files.isDirectory(mods)) {
+            System.out.println("[HypixelAI] Pre-launch: mods dir from CWD: " + mods.toAbsolutePath());
+            return mods;
+        }
+
+        // Fallback: Fabric loader knows the game dir
+        try {
+            Path gameDir = net.fabricmc.loader.api.FabricLoader.getInstance().getGameDir();
+            Path fabricMods = gameDir.resolve("mods");
+            if (Files.isDirectory(fabricMods)) {
+                System.out.println("[HypixelAI] Pre-launch: mods dir from Fabric: " + fabricMods);
+                return fabricMods;
+            }
+        } catch (Exception ignored) {}
+
+        System.out.println("[HypixelAI] Pre-launch: could not find mods dir anywhere");
         return null;
     }
 }
