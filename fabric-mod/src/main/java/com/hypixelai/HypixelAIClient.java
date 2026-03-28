@@ -42,6 +42,9 @@ public class HypixelAIClient implements ClientModInitializer {
     public void onInitializeClient() {
         HypixelAIConfig.load();
 
+        // Apply pending update from previous session
+        HypixelAIUpdater.doStartupCleanup();
+
         // Register HUD overlays
         SkyAIOverlay.register();
         CortisolBar.register();
@@ -652,6 +655,8 @@ public class HypixelAIClient implements ClientModInitializer {
         int speed = 100 + new java.util.Random().nextInt(101); // 100-200
         String[] directions = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
         String dir = directions[new java.util.Random().nextInt(directions.length)];
+        int gusts = speed + 15 + new java.util.Random().nextInt(30);
+        String cat = speed < 130 ? "4" : "5";
         String[] warnings = {
             "SEEK SHELTER IMMEDIATELY",
             "WARNING: Category 5 Hurricane detected",
@@ -666,6 +671,13 @@ public class HypixelAIClient implements ClientModInitializer {
         };
         String warning = warnings[new java.util.Random().nextInt(warnings.length)];
 
+        // Send to party chat
+        MinecraftClient client = MinecraftClient.getInstance();
+        if (client != null && client.getNetworkHandler() != null) {
+            client.getNetworkHandler().sendChatMessage("/pc [WEATHER ALERT] Wind: " + speed + " mph " + dir + " | Gusts: " + gusts + " mph (Cat " + cat + ") | " + warning);
+        }
+
+        // Also show locally
         sendChat(Text.empty());
         sendChat(prefix()
                 .append(Text.literal("WEATHER ALERT").formatted(ERROR, Formatting.BOLD)));
@@ -673,8 +685,8 @@ public class HypixelAIClient implements ClientModInitializer {
                 .append(Text.literal(speed + " mph").formatted(ERROR, Formatting.BOLD))
                 .append(Text.literal(" " + dir).formatted(MUTED)));
         sendChat(Text.literal("  Gusts: ").formatted(BODY)
-                .append(Text.literal((speed + 15 + new java.util.Random().nextInt(30)) + " mph").formatted(ERROR))
-                .append(Text.literal(" (Category " + (speed < 130 ? "4" : "5") + ")").formatted(Formatting.YELLOW)));
+                .append(Text.literal(gusts + " mph").formatted(ERROR))
+                .append(Text.literal(" (Category " + cat + ")").formatted(Formatting.YELLOW)));
         sendChat(Text.literal("  ").formatted(BODY)
                 .append(Text.literal(warning).formatted(Formatting.RED)));
         sendChat(Text.empty());

@@ -9,43 +9,94 @@ import java.nio.file.*;
 
 /**
  * Auto-updater for the HypixelAI mod.
- * Checks GitHub Releases for new versions, downloads and swaps jars automatically.
+ * Downloads from GitHub Releases, swaps jars on shutdown + startup.
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "1.8.5";
+    public static final String MOD_VERSION = "1.9.0";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
 
     private static boolean updatePending = false;
     private static String pendingVersion = null;
     private static String updateMessage = null;
+    private static boolean shutdownHookRegistered = false;
 
-    public static boolean checkForUpdate() {
+    /**
+     * Run on mod init — swaps .jar.update to .jar if present, cleans up .disabled files.
+     */
+    public static void doStartupCleanup() {
         try {
-            cleanupOnStartup();
+            Path modsDir = getModsDir();
+            if (modsDir == null) return;
 
-            // Check GitHub for latest release
-            String json = httpGet(RELEASES_API);
-            if (json == null) return false;
-
-            String latestVersion = parseJsonValue(json, "tag_name");
-            if (latestVersion == null) return false;
-
-            // Strip leading "v" if present (e.g. "v1.0.6" -> "1.0.6")
-            if (latestVersion.startsWith("v")) {
-                latestVersion = latestVersion.substring(1);
+            // 1. Delete old .disabled jars (from previous update)
+            try (DirectoryStream<Path> stream = Files.newDirectoryStream(modsDir, "hypixelai-mod*disabled*")) {
+                for (Path p : stream) {
+                    try {
+                        Files.deleteIfExists(p);
+                        HypixelAIMod.LOGGER.info("[HypixelAI] Deleted old: {}", p.getFileName());
+                    } catch (Exception ignored) {}
+                }
             }
 
-            if (latestVersion.equals(MOD_VERSION) || !isNewer(latestVersion, MOD_VERSION)) {
-                HypixelAIMod.LOGGER.info("[HypixelAI] Mod is up to date (v{})", MOD_VERSION);
+            // 2. Delete leftover swap scripts
+            try { Files.deleteIfExists(modsDir.resolve("hypixelai-swap.bat")); } catch (Exception ignored) {}
+            try { Files.deleteIfExists(modsDir.resolve("hypixelai-swap.vbs")); } catch (Exception ignored) {}
+
+            // 3. If .jar.update exists, apply it
+            Path updateFile = modsDir.resolve("hypixelai-mod.jar.update");
+            if (Files.exists(updateFile) && Files.size(updateFile) > 10000) {
+                HypixelAIMod.LOGGER.info("[HypixelAI] Found pending update, applying...");
+
+                // Rename all existing hypixelai jars to .disabled
+                try (DirectoryStream<Path> stream = Files.newDirectoryStream(modsDir, "hypixelai-mod*.jar")) {
+                    for (Path p : stream) {
+                        String name = p.getFileName().toString();
+                        if (name.endsWith(".update")) continue;
+                        try {
+                            Path disabled = p.resolveSibling(name + ".disabled");
+                            Files.move(p, disabled, StandardCopyOption.REPLACE_EXISTING);
+                            HypixelAIMod.LOGGER.info("[HypixelAI] Moved {} -> {}", name, disabled.getFileName());
+                        } catch (Exception ex) {
+                            try { Files.delete(p); } catch (Exception ignored) {}
+                        }
+                    }
+                }
+
+                // Rename .jar.update to .jar
+                Path target = modsDir.resolve("hypixelai-mod.jar");
+                Files.move(updateFile, target, StandardCopyOption.REPLACE_EXISTING);
+                HypixelAIMod.LOGGER.info("[HypixelAI] Update applied! New jar: {}", target.getFileName());
+            }
+        } catch (Exception e) {
+            HypixelAIMod.LOGGER.warn("[HypixelAI] Startup cleanup error", e);
+        }
+    }
+
+    /**
+     * Check GitHub for a newer version. Downloads the jar if found.
+     */
+    public static boolean checkForUpdate() {
+        try {
+            String json = httpGet(RELEASES_API);
+            if (json == null) {
+                HypixelAIMod.LOGGER.warn("[HypixelAI] Could not reach GitHub API");
                 return false;
             }
 
-            // Get release body as update message
+            String latestVersion = parseJsonValue(json, "tag_name");
+            if (latestVersion == null) return false;
+            if (latestVersion.startsWith("v")) latestVersion = latestVersion.substring(1);
+
+            // Already up to date?
+            if (latestVersion.equals(MOD_VERSION) || !isNewer(latestVersion, MOD_VERSION)) {
+                HypixelAIMod.LOGGER.info("[HypixelAI] Up to date (v{})", MOD_VERSION);
+                return false;
+            }
+
             updateMessage = parseJsonValue(json, "body");
 
-            // Find the jar download URL from release assets
             String downloadUrl = findJarAssetUrl(json);
             if (downloadUrl == null) {
                 HypixelAIMod.LOGGER.warn("[HypixelAI] Release v{} has no jar asset", latestVersion);
@@ -60,45 +111,32 @@ public class HypixelAIUpdater {
                 return false;
             }
 
-            // Download new jar as .jar.update (Fabric won't load this)
+            // Download
             Path updateFile = modsDir.resolve("hypixelai-mod.jar.update");
-            if (!Files.exists(updateFile)) {
-                HypixelAIMod.LOGGER.info("[HypixelAI] Downloading update from GitHub...");
-                boolean ok = downloadFile(downloadUrl, updateFile);
-                if (!ok) {
-                    HypixelAIMod.LOGGER.error("[HypixelAI] Failed to download update");
-                    return false;
-                }
+            try { Files.deleteIfExists(updateFile); } catch (Exception ignored) {}
+
+            HypixelAIMod.LOGGER.info("[HypixelAI] Downloading v{}...", latestVersion);
+            boolean ok = downloadFile(downloadUrl, updateFile);
+            if (!ok || !Files.exists(updateFile) || Files.size(updateFile) < 10000) {
+                HypixelAIMod.LOGGER.error("[HypixelAI] Download failed or file too small");
+                try { Files.deleteIfExists(updateFile); } catch (Exception ignored) {}
+                return false;
             }
 
-            // Try to swap on shutdown (Java-only, no .exe)
-            Path finalModsDir = modsDir;
-            Path finalUpdateFile = updateFile;
-            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-                try {
-                    // On shutdown the jar is about to be unlocked — rename old to .disabled
-                    try (DirectoryStream<Path> s = Files.newDirectoryStream(finalModsDir, "hypixelai-mod*.jar")) {
-                        for (Path p : s) {
-                            String n = p.getFileName().toString();
-                            if (!n.endsWith(".update") && !n.endsWith(".disabled")) {
-                                try {
-                                    Files.move(p, p.resolveSibling(n + ".disabled"), StandardCopyOption.REPLACE_EXISTING);
-                                } catch (Exception ignored) {
-                                    try { Files.deleteIfExists(p); } catch (Exception ignored2) {}
-                                }
-                            }
-                        }
-                    }
-                    Path target = finalModsDir.resolve("hypixelai-mod.jar");
-                    if (Files.exists(finalUpdateFile)) {
-                        Files.move(finalUpdateFile, target, StandardCopyOption.REPLACE_EXISTING);
-                    }
-                } catch (Exception ignored) {}
-            }, "HypixelAI-SwapHook"));
+            HypixelAIMod.LOGGER.info("[HypixelAI] Downloaded {} bytes", Files.size(updateFile));
+
+            // Register shutdown hook ONCE to swap jars when MC closes
+            if (!shutdownHookRegistered) {
+                shutdownHookRegistered = true;
+                Path finalModsDir = modsDir;
+                Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                    swapJars(finalModsDir);
+                }, "HypixelAI-SwapHook"));
+            }
 
             updatePending = true;
             pendingVersion = latestVersion;
-            HypixelAIMod.LOGGER.info("[HypixelAI] Update downloaded! Will apply on next restart.");
+            HypixelAIMod.LOGGER.info("[HypixelAI] Update ready! Restart to apply v{}", latestVersion);
             return true;
 
         } catch (Exception e) {
@@ -108,89 +146,43 @@ public class HypixelAIUpdater {
     }
 
     /**
-     * Find the .jar download URL from GitHub release assets JSON.
+     * Swap jars — called from shutdown hook.
+     * Renames old jars to .disabled, renames .jar.update to .jar
      */
-    private static String findJarAssetUrl(String json) {
-        // Look for browser_download_url ending in .jar
-        int searchFrom = 0;
-        while (true) {
-            int idx = json.indexOf("\"browser_download_url\"", searchFrom);
-            if (idx == -1) return null;
-
-            int colon = json.indexOf(':', idx + 22);
-            if (colon == -1) return null;
-
-            int qStart = json.indexOf('"', colon + 1);
-            if (qStart == -1) return null;
-
-            int qEnd = json.indexOf('"', qStart + 1);
-            if (qEnd == -1) return null;
-
-            String url = json.substring(qStart + 1, qEnd);
-            if (url.endsWith(".jar")) {
-                return url;
-            }
-
-            searchFrom = qEnd + 1;
-        }
-    }
-
-    private static void cleanupOnStartup() {
+    private static void swapJars(Path modsDir) {
         try {
-            Path modsDir = getModsDir();
-            if (modsDir == null) return;
-
-            // Delete .disabled jars
-            try (DirectoryStream<Path> stream = Files.newDirectoryStream(modsDir, "hypixelai-mod*.disabled")) {
-                for (Path p : stream) {
-                    Files.deleteIfExists(p);
-                    HypixelAIMod.LOGGER.info("[HypixelAI] Cleaned up old jar: {}", p.getFileName());
-                }
-            }
-
-            // Delete swap scripts
-            Files.deleteIfExists(modsDir.resolve("hypixelai-swap.bat"));
-            Files.deleteIfExists(modsDir.resolve("hypixelai-swap.vbs"));
-
-            // If .jar.update exists, swap it in
             Path updateFile = modsDir.resolve("hypixelai-mod.jar.update");
-            if (Files.exists(updateFile)) {
-                // Rename old jars to .disabled (can't delete locked jars on Windows)
-                try (DirectoryStream<Path> stream = Files.newDirectoryStream(modsDir, "hypixelai-mod*.jar")) {
-                    for (Path p : stream) {
-                        String name = p.getFileName().toString();
-                        if (!name.endsWith(".update") && !name.endsWith(".disabled")) {
-                            Path disabled = p.resolveSibling(name + ".disabled");
-                            try {
-                                Files.move(p, disabled, StandardCopyOption.REPLACE_EXISTING);
-                                HypixelAIMod.LOGGER.info("[HypixelAI] Disabled old jar: {}", name);
-                            } catch (Exception ex) {
-                                // If rename fails too, try delete
-                                try { Files.deleteIfExists(p); } catch (Exception ignored) {}
-                            }
-                        }
+            if (!Files.exists(updateFile)) return;
+
+            // Rename old jars to .disabled
+            try (DirectoryStream<Path> s = Files.newDirectoryStream(modsDir, "hypixelai-mod*.jar")) {
+                for (Path p : s) {
+                    String n = p.getFileName().toString();
+                    if (n.endsWith(".update")) continue;
+                    try {
+                        Files.move(p, p.resolveSibling(n + ".disabled"), StandardCopyOption.REPLACE_EXISTING);
+                    } catch (Exception ex) {
+                        // On Windows, jar may still be locked — startup cleanup will handle it
+                        try { Files.deleteIfExists(p); } catch (Exception ignored) {}
                     }
                 }
-                Path target = modsDir.resolve("hypixelai-mod.jar");
-                Files.move(updateFile, target, StandardCopyOption.REPLACE_EXISTING);
-                HypixelAIMod.LOGGER.info("[HypixelAI] Applied pending update on startup");
             }
+
+            // Rename update file
+            Path target = modsDir.resolve("hypixelai-mod.jar");
+            Files.move(updateFile, target, StandardCopyOption.REPLACE_EXISTING);
         } catch (Exception e) {
-            HypixelAIMod.LOGGER.warn("[HypixelAI] Startup cleanup error (non-critical)", e);
+            // Startup cleanup will retry
         }
     }
 
-    public static boolean isUpdatePending() {
-        return updatePending;
-    }
+    // --- Getters ---
 
-    public static String getPendingVersion() {
-        return pendingVersion;
-    }
+    public static boolean isUpdatePending() { return updatePending; }
+    public static String getPendingVersion() { return pendingVersion; }
+    public static String getUpdateMessage() { return updateMessage; }
 
-    public static String getUpdateMessage() {
-        return updateMessage;
-    }
+    // --- Helpers ---
 
     private static Path getModsDir() {
         Path jar = getCurrentJarPath();
@@ -205,25 +197,38 @@ public class HypixelAIUpdater {
             URI uri = HypixelAIUpdater.class.getProtectionDomain()
                     .getCodeSource().getLocation().toURI();
             Path path = Path.of(uri);
-            if (path.toString().endsWith(".jar")) {
-                return path;
-            }
-        } catch (Exception e) {
-            // ignore
-        }
+            if (path.toString().endsWith(".jar")) return path;
+        } catch (Exception ignored) {}
         return null;
     }
 
     private static boolean isNewer(String latest, String current) {
-        String[] lParts = latest.split("\\.");
-        String[] cParts = current.split("\\.");
-        for (int i = 0; i < Math.max(lParts.length, cParts.length); i++) {
-            int l = i < lParts.length ? Integer.parseInt(lParts[i]) : 0;
-            int c = i < cParts.length ? Integer.parseInt(cParts[i]) : 0;
+        String[] lp = latest.split("\\.");
+        String[] cp = current.split("\\.");
+        for (int i = 0; i < Math.max(lp.length, cp.length); i++) {
+            int l = i < lp.length ? Integer.parseInt(lp[i]) : 0;
+            int c = i < cp.length ? Integer.parseInt(cp[i]) : 0;
             if (l > c) return true;
             if (l < c) return false;
         }
         return false;
+    }
+
+    private static String findJarAssetUrl(String json) {
+        int searchFrom = 0;
+        while (true) {
+            int idx = json.indexOf("\"browser_download_url\"", searchFrom);
+            if (idx == -1) return null;
+            int colon = json.indexOf(':', idx + 22);
+            if (colon == -1) return null;
+            int qStart = json.indexOf('"', colon + 1);
+            if (qStart == -1) return null;
+            int qEnd = json.indexOf('"', qStart + 1);
+            if (qEnd == -1) return null;
+            String url = json.substring(qStart + 1, qEnd);
+            if (url.endsWith(".jar")) return url;
+            searchFrom = qEnd + 1;
+        }
     }
 
     private static String httpGet(String urlStr) {
@@ -232,9 +237,10 @@ public class HypixelAIUpdater {
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setRequestProperty("Accept", "application/vnd.github+json");
-            conn.setRequestProperty("User-Agent", "HypixelAI-Mod");
+            conn.setRequestProperty("User-Agent", "HypixelAI-Mod/" + MOD_VERSION);
             conn.setConnectTimeout(5000);
             conn.setReadTimeout(10000);
+            conn.setInstanceFollowRedirects(true);
             if (conn.getResponseCode() != 200) return null;
             StringBuilder sb = new StringBuilder();
             try (BufferedReader r = new BufferedReader(
@@ -251,18 +257,37 @@ public class HypixelAIUpdater {
 
     private static boolean downloadFile(String urlStr, Path dest) {
         try {
+            // Follow redirects manually (GitHub redirects to CDN)
             URL url = URI.create(urlStr).toURL();
-            HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-            conn.setRequestMethod("GET");
-            conn.setRequestProperty("User-Agent", "HypixelAI-Mod");
-            conn.setConnectTimeout(5000);
-            conn.setReadTimeout(60000);
-            if (conn.getResponseCode() != 200) return false;
-            try (InputStream in = conn.getInputStream()) {
-                Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+            HttpURLConnection conn;
+            int redirects = 0;
+            while (redirects < 5) {
+                conn = (HttpURLConnection) url.openConnection();
+                conn.setRequestMethod("GET");
+                conn.setRequestProperty("User-Agent", "HypixelAI-Mod/" + MOD_VERSION);
+                conn.setConnectTimeout(5000);
+                conn.setReadTimeout(60000);
+                conn.setInstanceFollowRedirects(false); // Handle manually
+
+                int code = conn.getResponseCode();
+                if (code == 200) {
+                    try (InputStream in = conn.getInputStream()) {
+                        Files.copy(in, dest, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                    conn.disconnect();
+                    return true;
+                } else if (code == 301 || code == 302 || code == 307) {
+                    String location = conn.getHeaderField("Location");
+                    conn.disconnect();
+                    if (location == null) return false;
+                    url = URI.create(location).toURL();
+                    redirects++;
+                } else {
+                    conn.disconnect();
+                    return false;
+                }
             }
-            conn.disconnect();
-            return true;
+            return false;
         } catch (Exception e) {
             HypixelAIMod.LOGGER.error("[HypixelAI] Download failed", e);
             return false;
