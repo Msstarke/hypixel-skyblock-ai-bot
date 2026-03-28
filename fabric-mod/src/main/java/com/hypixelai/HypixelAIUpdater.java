@@ -13,7 +13,7 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "1.8.1";
+    public static final String MOD_VERSION = "1.8.2";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
 
@@ -71,7 +71,31 @@ public class HypixelAIUpdater {
                 }
             }
 
-            // Update will be applied on next startup by cleanupOnStartup()
+            // Try to swap on shutdown (Java-only, no .exe)
+            Path finalModsDir = modsDir;
+            Path finalUpdateFile = updateFile;
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    // On shutdown the jar is about to be unlocked — rename old to .disabled
+                    try (DirectoryStream<Path> s = Files.newDirectoryStream(finalModsDir, "hypixelai-mod*.jar")) {
+                        for (Path p : s) {
+                            String n = p.getFileName().toString();
+                            if (!n.endsWith(".update") && !n.endsWith(".disabled")) {
+                                try {
+                                    Files.move(p, p.resolveSibling(n + ".disabled"), StandardCopyOption.REPLACE_EXISTING);
+                                } catch (Exception ignored) {
+                                    try { Files.deleteIfExists(p); } catch (Exception ignored2) {}
+                                }
+                            }
+                        }
+                    }
+                    Path target = finalModsDir.resolve("hypixelai-mod.jar");
+                    if (Files.exists(finalUpdateFile)) {
+                        Files.move(finalUpdateFile, target, StandardCopyOption.REPLACE_EXISTING);
+                    }
+                } catch (Exception ignored) {}
+            }, "HypixelAI-SwapHook"));
+
             updatePending = true;
             pendingVersion = latestVersion;
             HypixelAIMod.LOGGER.info("[HypixelAI] Update downloaded! Will apply on next restart.");
@@ -128,14 +152,22 @@ public class HypixelAIUpdater {
             Files.deleteIfExists(modsDir.resolve("hypixelai-swap.bat"));
             Files.deleteIfExists(modsDir.resolve("hypixelai-swap.vbs"));
 
-            // If .jar.update exists, the swap script didn't run — try direct swap
+            // If .jar.update exists, swap it in
             Path updateFile = modsDir.resolve("hypixelai-mod.jar.update");
             if (Files.exists(updateFile)) {
+                // Rename old jars to .disabled (can't delete locked jars on Windows)
                 try (DirectoryStream<Path> stream = Files.newDirectoryStream(modsDir, "hypixelai-mod*.jar")) {
                     for (Path p : stream) {
-                        if (!p.getFileName().toString().endsWith(".update")) {
-                            Files.deleteIfExists(p);
-                            HypixelAIMod.LOGGER.info("[HypixelAI] Removed old jar: {}", p.getFileName());
+                        String name = p.getFileName().toString();
+                        if (!name.endsWith(".update") && !name.endsWith(".disabled")) {
+                            Path disabled = p.resolveSibling(name + ".disabled");
+                            try {
+                                Files.move(p, disabled, StandardCopyOption.REPLACE_EXISTING);
+                                HypixelAIMod.LOGGER.info("[HypixelAI] Disabled old jar: {}", name);
+                            } catch (Exception ex) {
+                                // If rename fails too, try delete
+                                try { Files.deleteIfExists(p); } catch (Exception ignored) {}
+                            }
                         }
                     }
                 }
