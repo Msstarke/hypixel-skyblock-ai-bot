@@ -10,6 +10,7 @@
     "icon": "",
     "environment": "*",
     "entrypoints": {
+        "preLaunch": ["com.hypixelai.PreLaunchSwap"],
         "main": ["com.hypixelai.HypixelAIMod"],
         "client": ["com.hypixelai.HypixelAIClient"]
     },

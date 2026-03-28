@@ -42,9 +42,6 @@ public class HypixelAIClient implements ClientModInitializer {
     public void onInitializeClient() {
         HypixelAIConfig.load();
 
-        // Apply pending update from previous session
-        HypixelAIUpdater.doStartupCleanup();
-
         // Register HUD overlays
         SkyAIOverlay.register();
         CortisolBar.register();
