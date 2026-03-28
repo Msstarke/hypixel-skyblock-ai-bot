@@ -69,7 +69,7 @@ public class HypixelAIClient implements ClientModInitializer {
         final boolean[] autoRegistered = {false};
         final boolean[] wasInWorld = {false};
         final long[] lastUpdateCheck = {0};
-        final long UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+        final long UPDATE_CHECK_INTERVAL = 30 * 60 * 1000; // 30 minutes
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Handle feedback keybinds

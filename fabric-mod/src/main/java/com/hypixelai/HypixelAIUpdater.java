@@ -13,9 +13,10 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "1.9.3";
+    public static final String MOD_VERSION = "1.9.4";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
+    private static final String VERSION_CHECK_URL = "https://sky-ai.uk/api/mod/version";
 
     private static boolean updatePending = false;
     private static String pendingVersion = null;
@@ -79,15 +80,27 @@ public class HypixelAIUpdater {
      */
     public static boolean checkForUpdate() {
         try {
-            String json = httpGet(RELEASES_API);
-            if (json == null) {
-                HypixelAIMod.LOGGER.warn("[HypixelAI] Could not reach GitHub API");
-                return false;
+            // Step 1: Quick version check via Railway (no rate limit)
+            String versionJson = httpGet(VERSION_CHECK_URL);
+            String latestVersion = null;
+            if (versionJson != null) {
+                latestVersion = parseJsonValue(versionJson, "version");
+                updateMessage = parseJsonValue(versionJson, "message");
             }
 
-            String latestVersion = parseJsonValue(json, "tag_name");
-            if (latestVersion == null) return false;
-            if (latestVersion.startsWith("v")) latestVersion = latestVersion.substring(1);
+            // Fallback to GitHub if Railway didn't work
+            String githubJson = null;
+            if (latestVersion == null) {
+                githubJson = httpGet(RELEASES_API);
+                if (githubJson == null) {
+                    HypixelAIMod.LOGGER.warn("[HypixelAI] Could not reach version API");
+                    return false;
+                }
+                latestVersion = parseJsonValue(githubJson, "tag_name");
+                if (latestVersion == null) return false;
+                if (latestVersion.startsWith("v")) latestVersion = latestVersion.substring(1);
+                updateMessage = parseJsonValue(githubJson, "body");
+            }
 
             // Already up to date?
             if (latestVersion.equals(MOD_VERSION) || !isNewer(latestVersion, MOD_VERSION)) {
@@ -95,9 +108,16 @@ public class HypixelAIUpdater {
                 return false;
             }
 
-            updateMessage = parseJsonValue(json, "body");
+            // Step 2: Need download URL — hit GitHub only now
+            if (githubJson == null) {
+                githubJson = httpGet(RELEASES_API);
+                if (githubJson == null) {
+                    HypixelAIMod.LOGGER.warn("[HypixelAI] Could not reach GitHub for download URL");
+                    return false;
+                }
+            }
 
-            String downloadUrl = findJarAssetUrl(json);
+            String downloadUrl = findJarAssetUrl(githubJson);
             if (downloadUrl == null) {
                 HypixelAIMod.LOGGER.warn("[HypixelAI] Release v{} has no jar asset", latestVersion);
                 return false;
