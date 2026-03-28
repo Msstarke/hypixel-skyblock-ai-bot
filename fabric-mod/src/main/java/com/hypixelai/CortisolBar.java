@@ -40,6 +40,7 @@ public class CortisolBar implements HudRenderCallback {
     public void onHudRender(DrawContext ctx, RenderTickCounter tickCounter) {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.player == null || client.options.hudHidden) return;
+        if (!HypixelAIConfig.isCortisolBar()) return;
 
         PlayerEntity player = client.player;
         float health = player.getHealth();

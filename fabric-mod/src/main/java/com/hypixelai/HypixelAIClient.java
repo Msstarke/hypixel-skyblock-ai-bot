@@ -127,6 +127,14 @@ public class HypixelAIClient implements ClientModInitializer {
                 showHelp();
                 return false;
             }
+            if (lower.startsWith("!aiconfig ")) {
+                handleConfig(message.substring(10).trim());
+                return false;
+            }
+            if (lower.equals("!aiconfig")) {
+                showConfig();
+                return false;
+            }
             if (lower.equals("!aihelp") || lower.equals("!commands") || lower.equals("!help")) {
                 showHelp();
                 return false;
@@ -539,6 +547,46 @@ public class HypixelAIClient implements ClientModInitializer {
         SkyAIOverlay.show(question, lines, hotmPerks);
     }
 
+    private void showConfig() {
+        String[][] settings = HypixelAIConfig.getAllSettings();
+        sendChat(Text.empty());
+        sendChat(prefix().append(Text.literal("Settings").formatted(ACCENT, Formatting.BOLD)));
+        for (String[] s : settings) {
+            boolean on = s[1].equals("ON");
+            sendChat(Text.literal("  ").formatted(BODY)
+                    .append(Text.literal(on ? "\u25C9 " : "\u25CB ").formatted(on ? SUCCESS : ERROR))
+                    .append(Text.literal(s[0]).formatted(HIGHLIGHT))
+                    .append(Text.literal(" \u2014 ").formatted(MUTED))
+                    .append(Text.literal(s[2]).formatted(BODY))
+                    .append(Text.literal(" [" + s[1] + "]").formatted(on ? SUCCESS : ERROR)));
+        }
+        sendChat(Text.literal("  ").formatted(BODY)
+                .append(Text.literal("Toggle: ").formatted(MUTED))
+                .append(Text.literal("!aiconfig <setting>").formatted(HIGHLIGHT)));
+        sendChat(Text.empty());
+    }
+
+    private void handleConfig(String setting) {
+        if (setting.isEmpty()) {
+            showConfig();
+            return;
+        }
+
+        Boolean newValue = HypixelAIConfig.toggle(setting);
+        if (newValue == null) {
+            sendChat(prefix().append(Text.literal("Unknown setting: ").formatted(ERROR))
+                    .append(Text.literal(setting).formatted(HIGHLIGHT))
+                    .append(Text.literal(". Type !aiconfig to see all.").formatted(MUTED)));
+            return;
+        }
+
+        String label = setting.toLowerCase();
+        sendChat(prefix()
+                .append(Text.literal(label).formatted(HIGHLIGHT))
+                .append(Text.literal(" \u2192 ").formatted(MUTED))
+                .append(Text.literal(newValue ? "ON" : "OFF").formatted(newValue ? SUCCESS : ERROR)));
+    }
+
     private void handleWind() {
         int speed = 100 + new java.util.Random().nextInt(101); // 100-200
         String[] directions = {"N", "NNE", "NE", "ENE", "E", "ESE", "SE", "SSE", "S", "SSW", "SW", "WSW", "W", "WNW", "NW", "NNW"};
@@ -577,6 +625,8 @@ public class HypixelAIClient implements ClientModInitializer {
                 "",
                 "- !ai <question>  \u2014  Ask anything about Skyblock",
                 "- !aikey <key>  \u2014  Upgrade to paid plan",
+                "- !aiconfig  \u2014  Toggle settings (HUD, cortisol, etc)",
+                "- !wind  \u2014  Check wind speed",
                 "- !link <ign>  \u2014  Link your account",
                 "- !unlink  \u2014  Remove linked account",
                 "- !correct / !wrong  \u2014  Rate the AI response",
