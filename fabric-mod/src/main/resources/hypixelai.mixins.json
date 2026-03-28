@@ -5,7 +5,8 @@
     "client": [
         "HideHeartsMixin",
         "HideActionBarMixin",
-        "HideArmorBarMixin"
+        "HideArmorBarMixin",
+        "HideHungerMixin"
     ],
     "injectors": {
         "defaultRequire": 1

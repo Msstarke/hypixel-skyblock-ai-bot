@@ -58,8 +58,8 @@ public class CortisolBar implements HudRenderCallback {
         int screenW = ctx.getScaledWindowWidth();
         int screenH = ctx.getScaledWindowHeight();
 
-        // Position: raised up, above hotbar
-        int centerX = screenW / 2 - 50;
+        // Position: centered above hotbar
+        int centerX = screenW / 2;
         int centerY = screenH - 52;
 
         // === Draw colored arc segments ===
