@@ -13,7 +13,7 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "2.4.1";
+    public static final String MOD_VERSION = "2.5.0";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
     // Try Railway direct first (bypasses Cloudflare), then custom domain

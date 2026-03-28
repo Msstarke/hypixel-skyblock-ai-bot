@@ -169,33 +169,51 @@ public class PreLaunchSwap implements PreLaunchEntrypoint {
     private static void setupPrismPreLaunch(Path modsDir) {
         if (modsDir == null) return;
         try {
-            // Walk up from mods/ -> .minecraft/ -> instance dir to find instance.cfg
-            Path mcDir = modsDir.getParent(); // .minecraft
+            Path mcDir = modsDir.getParent();
             if (mcDir == null) return;
-            Path instanceDir = mcDir.getParent(); // instance root
+            Path instanceDir = mcDir.getParent();
             if (instanceDir == null) return;
 
             File instanceCfg = new File(instanceDir.toFile(), "instance.cfg");
-            if (!instanceCfg.exists()) return; // Not PrismLauncher/MultiMC
+            if (!instanceCfg.exists()) return;
 
-            // Read current config
             String config = new String(java.nio.file.Files.readAllBytes(instanceCfg.toPath()), java.nio.charset.StandardCharsets.UTF_8);
 
-            // Check if we already configured it
+            // Already configured?
             if (config.contains("hypixelai-mod.jar.update")) {
                 System.out.println("[HypixelAI] Pre-launch: PrismLauncher already configured");
                 return;
             }
 
-            // Build the pre-launch command
-            String cmd = "cmd /c \"cd /d \\\"$INST_MC_DIR\\mods\\\" && if exist hypixelai-mod.jar.update (for %%f in (hypixelai-mod*.jar) do del /f /q \\\"%%f\\\" 2>nul & ren \\\"hypixelai-mod.jar.update\\\" \\\"hypixelai-mod.jar\\\")\"";
+            System.out.println("[HypixelAI] Pre-launch: Will configure PrismLauncher on shutdown (after it saves config)");
 
-            // Update config
-            config = config.replace("OverrideCommands=false", "OverrideCommands=true");
-            config = config.replace("PreLaunchCommand=", "PreLaunchCommand=" + cmd);
+            // Register a shutdown hook that writes the config AFTER PrismLauncher saves
+            final File cfgFile = instanceCfg;
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    // Wait for PrismLauncher to save its config first
+                    Thread.sleep(3000);
 
-            java.nio.file.Files.writeString(instanceCfg.toPath(), config, java.nio.charset.StandardCharsets.UTF_8);
-            System.out.println("[HypixelAI] Pre-launch: Configured PrismLauncher pre-launch command automatically!");
+                    String cfg = new String(java.nio.file.Files.readAllBytes(cfgFile.toPath()), java.nio.charset.StandardCharsets.UTF_8);
+
+                    // Don't overwrite if already configured (by another run)
+                    if (cfg.contains("hypixelai-mod.jar.update")) return;
+
+                    String cmd = "cmd /c \"cd /d \"$INST_MC_DIR\\mods\" && if exist hypixelai-mod.jar.update (del /f /q hypixelai-mod.jar 2>nul & ren hypixelai-mod.jar.update hypixelai-mod.jar)\"";
+
+                    cfg = cfg.replace("OverrideCommands=false", "OverrideCommands=true");
+
+                    // Handle both empty and non-empty PreLaunchCommand
+                    if (cfg.contains("PreLaunchCommand=\n") || cfg.contains("PreLaunchCommand=\r")) {
+                        cfg = cfg.replaceFirst("PreLaunchCommand=", "PreLaunchCommand=" + cmd);
+                    }
+
+                    java.nio.file.Files.writeString(cfgFile.toPath(), cfg, java.nio.charset.StandardCharsets.UTF_8);
+                    System.out.println("[HypixelAI] Shutdown: Configured PrismLauncher pre-launch command!");
+                } catch (Exception e) {
+                    System.out.println("[HypixelAI] Shutdown: Failed to configure PrismLauncher: " + e.getMessage());
+                }
+            }, "HypixelAI-PrismConfig"));
 
         } catch (Exception e) {
             System.out.println("[HypixelAI] Pre-launch: Could not configure PrismLauncher: " + e.getMessage());
