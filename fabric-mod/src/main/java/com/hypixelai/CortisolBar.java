@@ -117,8 +117,8 @@ public class CortisolBar implements HudRenderCallback {
         ctx.drawText(tr, val, centerX - valW / 2, centerY + 3, valColor, false);
 
         // "0" on left, "20" on right
-        ctx.drawText(tr, "0", centerX - RADIUS - 2, centerY - 4, LABEL_DIM, false);
-        ctx.drawText(tr, "20", centerX + RADIUS - 6, centerY - 4, LABEL_DIM, false);
+        ctx.drawText(tr, "0", centerX - RADIUS - 10, centerY - 4, LABEL_DIM, false);
+        ctx.drawText(tr, "20", centerX + RADIUS + 3, centerY - 4, LABEL_DIM, false);
 
         // "CORTISOL" label above
         String label = "CORTISOL";
