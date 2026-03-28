@@ -64,6 +64,7 @@ public class HypixelAIClient implements ClientModInitializer {
 
         // Update checking + notifications
         final boolean[] autoRegistered = {false};
+        final boolean[] wasInWorld = {false};
         final long[] lastUpdateCheck = {0};
         final long UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
@@ -76,6 +77,30 @@ public class HypixelAIClient implements ClientModInitializer {
                 if (keyWrong.wasPressed()) {
                     handleFeedback("down");
                 }
+            }
+
+            // Detect joining a world/server
+            if (client.player != null && !wasInWorld[0]) {
+                wasInWorld[0] = true;
+                // Show mod info on every world join
+                sendChat(Text.empty());
+                sendChat(prefix()
+                        .append(Text.literal("SkyAI").formatted(BRAND, Formatting.BOLD))
+                        .append(Text.literal(" v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED))
+                        .append(Text.literal(" | ").formatted(MUTED))
+                        .append(Text.literal("!ai <question>").formatted(BODY))
+                        .append(Text.literal(" | ").formatted(MUTED))
+                        .append(Text.literal("!aihelp").formatted(BODY)));
+                if (HypixelAIUpdater.isUpdatePending()) {
+                    sendChat(prefix()
+                            .append(Text.literal("Update ready! ").formatted(SUCCESS))
+                            .append(Text.literal("v" + HypixelAIUpdater.getPendingVersion()).formatted(SUCCESS, Formatting.BOLD))
+                            .append(Text.literal(" — restart to apply.").formatted(MUTED)));
+                }
+                sendChat(Text.empty());
+            }
+            if (client.player == null && wasInWorld[0]) {
+                wasInWorld[0] = false; // Reset when leaving world
             }
 
             // Auto-register/activate when player joins world
