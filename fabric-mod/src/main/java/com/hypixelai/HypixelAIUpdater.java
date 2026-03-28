@@ -13,7 +13,7 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "2.3.1";
+    public static final String MOD_VERSION = "2.3.2";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
     // Try Railway direct first (bypasses Cloudflare), then custom domain
@@ -186,38 +186,54 @@ public class HypixelAIUpdater {
      * Swap jars — called from shutdown hook.
      * Renames old jars to .disabled, renames .jar.update to .jar
      */
+    /**
+     * Swap jars on shutdown — SkyHanni/libautoupdate approach.
+     * At shutdown the JVM releases file locks, so we can delete + rename.
+     * Retries with a short delay if the lock hasn't released yet.
+     */
     private static void swapJars(Path modsDir) {
         try {
             Path updateFile = modsDir.resolve("hypixelai-mod.jar.update");
             if (!Files.exists(updateFile)) return;
 
-            // Write a swap script — PreLaunch runs it BEFORE Fabric locks the jar next boot
-            String modsPath = modsDir.toAbsolutePath().toString();
-            String script = "@echo off\r\n"
-                    + "cd /d \"" + modsPath + "\"\r\n"
-                    + "if not exist \"hypixelai-mod.jar.update\" goto :done\r\n"
-                    + "for %%f in (hypixelai-mod*.jar) do del /f /q \"%%f\" 2>nul\r\n"
-                    + "ren \"hypixelai-mod.jar.update\" \"hypixelai-mod.jar\"\r\n"
-                    + ":done\r\n"
-                    + "del /f /q \"%~f0\" 2>nul\r\n";
-            Path scriptPath = modsDir.resolve("hypixelai-swap.cmd");
-            Files.writeString(scriptPath, script, java.nio.charset.StandardCharsets.UTF_8);
+            // Wait a moment for classloaders to fully release
+            try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
 
-            // Also try direct swap (works if JVM released the lock)
-            try (DirectoryStream<Path> s = Files.newDirectoryStream(modsDir, "hypixelai-mod*.jar")) {
-                for (Path p : s) {
-                    if (p.getFileName().toString().endsWith(".update")) continue;
-                    try { Files.deleteIfExists(p); } catch (Exception ignored) {}
+            // Delete ALL old hypixelai jars (retry up to 5 times)
+            for (int attempt = 0; attempt < 5; attempt++) {
+                boolean allDeleted = true;
+                try (DirectoryStream<Path> s = Files.newDirectoryStream(modsDir, "hypixelai-mod*.jar")) {
+                    for (Path p : s) {
+                        if (p.getFileName().toString().endsWith(".update")) continue;
+                        try {
+                            Files.delete(p);
+                        } catch (Exception ex) {
+                            allDeleted = false;
+                        }
+                    }
                 }
+                if (allDeleted) break;
+                try { Thread.sleep(500); } catch (InterruptedException ignored) {}
             }
+
+            // Rename update file
             Path target = modsDir.resolve("hypixelai-mod.jar");
             if (!Files.exists(target)) {
                 Files.move(updateFile, target, StandardCopyOption.REPLACE_EXISTING);
-                Files.deleteIfExists(scriptPath);
+            } else {
+                // Old jar still locked — write swap script as fallback for PreLaunch
+                String modsPath = modsDir.toAbsolutePath().toString();
+                String script = "@echo off\r\n"
+                        + "cd /d \"" + modsPath + "\"\r\n"
+                        + "if not exist \"hypixelai-mod.jar.update\" goto :done\r\n"
+                        + "for %%f in (hypixelai-mod*.jar) do del /f /q \"%%f\" 2>nul\r\n"
+                        + "ren \"hypixelai-mod.jar.update\" \"hypixelai-mod.jar\"\r\n"
+                        + ":done\r\n"
+                        + "del /f /q \"%~f0\" 2>nul\r\n";
+                Path scriptPath = modsDir.getParent().resolve("hypixelai-swap.cmd");
+                Files.writeString(scriptPath, script, java.nio.charset.StandardCharsets.UTF_8);
             }
-        } catch (Exception e) {
-            // PreLaunch + swap script will handle it next boot
-        }
+        } catch (Exception ignored) {}
     }
 
     // --- Getters ---

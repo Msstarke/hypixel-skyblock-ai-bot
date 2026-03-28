@@ -20,9 +20,10 @@ public class PreLaunchSwap implements PreLaunchEntrypoint {
         try {
             Path modsDir = findModsDir();
 
-            // Write debug log to mods folder so we can see what happened
-            if (modsDir != null) {
-                log = new PrintWriter(new FileWriter(new File(modsDir.toFile(), "hypixelai-update.log"), true));
+            // Write debug log to .minecraft folder (NOT mods — Fabric tries to load everything in mods)
+            File mcDir = modsDir != null ? modsDir.toFile().getParentFile() : null;
+            if (mcDir != null) {
+                log = new PrintWriter(new FileWriter(new File(mcDir, "hypixelai-update.log"), true));
                 log.println("=== PreLaunch " + LocalDateTime.now() + " ===");
             }
 
@@ -60,8 +61,8 @@ public class PreLaunchSwap implements PreLaunchEntrypoint {
                 if (updateFiles != null && updateFiles.length > 0) updateFile = updateFiles[0];
             }
 
-            // 3. Check for swap script from previous shutdown hook
-            File swapScript = new File(modsDir.toFile(), "hypixelai-swap.cmd");
+            // 3. Check for swap script from previous shutdown hook (stored in .minecraft, not mods)
+            File swapScript = new File(mcDir, "hypixelai-swap.cmd");
             if (swapScript.exists() && updateFile.exists()) {
                 if (log != null) log.println("Running swap script before Fabric loads...");
                 try {
