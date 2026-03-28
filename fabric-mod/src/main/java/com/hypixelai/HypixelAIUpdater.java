@@ -13,7 +13,7 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "1.7.2";
+    public static final String MOD_VERSION = "1.7.3";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
 
@@ -71,15 +71,10 @@ public class HypixelAIUpdater {
                 }
             }
 
-            // Register shutdown hook to swap jars when Minecraft closes
-            Path currentJar = getCurrentJarPath();
-            if (currentJar != null) {
-                registerSwapOnShutdown(modsDir, currentJar, updateFile);
-            }
-
+            // Update will be applied on next startup by cleanupOnStartup()
             updatePending = true;
             pendingVersion = latestVersion;
-            HypixelAIMod.LOGGER.info("[HypixelAI] Update ready! Will apply when Minecraft closes.");
+            HypixelAIMod.LOGGER.info("[HypixelAI] Update downloaded! Will apply on next restart.");
             return true;
 
         } catch (Exception e) {
@@ -151,47 +146,6 @@ public class HypixelAIUpdater {
         } catch (Exception e) {
             HypixelAIMod.LOGGER.warn("[HypixelAI] Startup cleanup error (non-critical)", e);
         }
-    }
-
-    private static void registerSwapOnShutdown(Path modsDir, Path currentJar, Path updateFile) {
-        String modsPath = modsDir.toAbsolutePath().toString().replace("/", "\\");
-
-        // Batch script to swap jars after Minecraft closes
-        String batScript = "@echo off\r\n"
-                + "timeout /t 3 /nobreak >nul\r\n"
-                + "cd /d \"" + modsPath + "\"\r\n"
-                + "for %%f in (hypixelai-mod*.jar) do (\r\n"
-                + "  del /f /q \"%%f\" 2>nul\r\n"
-                + ")\r\n"
-                + "if exist \"hypixelai-mod.jar.update\" (\r\n"
-                + "  ren \"hypixelai-mod.jar.update\" \"hypixelai-mod.jar\"\r\n"
-                + ")\r\n"
-                + "del /f /q \"" + modsPath + "\\hypixelai-swap.vbs\" 2>nul\r\n"
-                + "del /f /q \"%~f0\" 2>nul\r\n";
-
-        Path batPath = modsDir.resolve("hypixelai-swap.bat");
-
-        // VBS wrapper to run the bat file completely hidden (no console window)
-        String vbsScript = "CreateObject(\"WScript.Shell\").Run \"cmd.exe /c \"\""
-                + batPath.toAbsolutePath().toString().replace("\\", "\\\\")
-                + "\"\"\", 0, False\r\n";
-
-        Path vbsPath = modsDir.resolve("hypixelai-swap.vbs");
-
-        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            try {
-                Files.writeString(batPath, batScript, StandardCharsets.UTF_8);
-                Files.writeString(vbsPath, vbsScript, StandardCharsets.UTF_8);
-                new ProcessBuilder("wscript.exe", "//B", "//Nologo",
-                        vbsPath.toAbsolutePath().toString())
-                        .directory(modsDir.toFile())
-                        .redirectErrorStream(true)
-                        .start();
-                HypixelAIMod.LOGGER.info("[HypixelAI] Swap script launched (hidden)");
-            } catch (Exception e) {
-                HypixelAIMod.LOGGER.error("[HypixelAI] Failed to launch swap script", e);
-            }
-        }, "HypixelAI-SwapHook"));
     }
 
     public static boolean isUpdatePending() {
