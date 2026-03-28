@@ -1,1 +1,1 @@
-NanoVG smooth rendering for UI
+NanoVG config GUI + cortisol bar + Right Shift keybind
