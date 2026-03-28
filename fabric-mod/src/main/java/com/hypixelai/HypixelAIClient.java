@@ -58,9 +58,11 @@ public class HypixelAIClient implements ClientModInitializer {
         // Check for updates in background
         new Thread(() -> HypixelAIUpdater.checkForUpdate(), "HypixelAI-Updater").start();
 
-        // Show update message when player joins a world
-        final boolean[] notified = {false};
+        // Update checking + notifications
         final boolean[] autoRegistered = {false};
+        final long[] lastUpdateCheck = {0};
+        final long UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
+
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             // Handle feedback keybinds
             if (client.player != null && SkyAIOverlay.hasPendingFeedback()) {
@@ -77,29 +79,39 @@ public class HypixelAIClient implements ClientModInitializer {
                 autoRegistered[0] = true;
                 new Thread(() -> {
                     if (!HypixelAIConfig.getLicenseKey().isEmpty()) {
-                        // Has a key — just re-activate session
                         activateLicense(HypixelAIConfig.getLicenseKey(), true);
                     } else {
-                        // No key — auto-register for free tier
                         autoRegister();
                     }
                 }, "HypixelAI-Auth").start();
             }
 
-            if (!notified[0] && client.player != null && HypixelAIUpdater.isUpdatePending()) {
-                notified[0] = true;
-                sendChat(Text.empty());
-                sendChat(prefix()
-                        .append(Text.literal("Update available! ").styled(s -> s.withColor(Formatting.GREEN)))
-                        .append(Text.literal("v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED))
-                        .append(Text.literal(" \u2192 ").formatted(MUTED))
-                        .append(Text.literal("v" + HypixelAIUpdater.getPendingVersion()).formatted(SUCCESS, Formatting.BOLD)));
-                String msg = HypixelAIUpdater.getUpdateMessage();
-                if (msg != null && !msg.isEmpty()) {
-                    sendChat(Text.literal("   " + msg).formatted(BODY));
+            // Periodic update check while running
+            if (client.player != null) {
+                long now = System.currentTimeMillis();
+                if (now - lastUpdateCheck[0] > UPDATE_CHECK_INTERVAL) {
+                    lastUpdateCheck[0] = now;
+                    if (!HypixelAIUpdater.isUpdatePending()) {
+                        new Thread(() -> {
+                            boolean found = HypixelAIUpdater.checkForUpdate();
+                            if (found) {
+                                // Notify immediately in chat
+                                sendChat(Text.empty());
+                                sendChat(prefix()
+                                        .append(Text.literal("Update downloaded! ").styled(s -> s.withColor(Formatting.GREEN)))
+                                        .append(Text.literal("v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED))
+                                        .append(Text.literal(" \u2192 ").formatted(MUTED))
+                                        .append(Text.literal("v" + HypixelAIUpdater.getPendingVersion()).formatted(SUCCESS, Formatting.BOLD)));
+                                String msg = HypixelAIUpdater.getUpdateMessage();
+                                if (msg != null && !msg.isEmpty()) {
+                                    sendChat(Text.literal("   " + msg).formatted(BODY));
+                                }
+                                sendChat(Text.literal("   Restart your game to apply.").formatted(MUTED));
+                                sendChat(Text.empty());
+                            }
+                        }, "HypixelAI-UpdateCheck").start();
+                    }
                 }
-                sendChat(Text.literal("   Restart your game to apply.").formatted(MUTED));
-                sendChat(Text.empty());
             }
         });
 
