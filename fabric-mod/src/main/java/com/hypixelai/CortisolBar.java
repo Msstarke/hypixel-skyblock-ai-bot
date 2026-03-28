@@ -45,15 +45,22 @@ public class CortisolBar implements HudRenderCallback {
         PlayerEntity player = client.player;
         float health = player.getHealth();
         float maxHealth = player.getMaxHealth();
+        float absorption = player.getAbsorptionAmount();
+        float totalHealth = health + absorption;
 
         // Smooth animation
-        displayedHealth += (health - displayedHealth) * 0.1f;
+        displayedHealth += (totalHealth - displayedHealth) * 0.1f;
 
-        // Cortisol: 0 = calm, 20 = dying
-        float healthRatio = Math.max(0, Math.min(1, displayedHealth / Math.max(maxHealth, 1)));
-        float cortisol = 20f * (1f - healthRatio);
-        float barRatio = Math.max(0, Math.min(1, cortisol / 20f));
+        // Cortisol: 0 = calm (full HP), 20 = dying, negative = overflow (absorption/overheal)
+        // At full HP: cortisol = 0. Below max: cortisol = positive. Above max (absorption): cortisol = negative.
+        float cortisol = 20f * (1f - displayedHealth / Math.max(maxHealth, 1));
         float displayCortisol = Math.round(cortisol * 10f) / 10f;
+
+        // barRatio: 0-1 for the main gauge (0=calm, 1=dying)
+        float barRatio = Math.max(0, Math.min(1, cortisol / 20f));
+
+        // overflowRatio: how far into negative (0 = no overflow, 1 = max overflow display)
+        float overflowRatio = cortisol < 0 ? Math.min(1f, -cortisol / 20f) : 0f;
 
         int screenW = ctx.getScaledWindowWidth();
         int screenH = ctx.getScaledWindowHeight();
@@ -62,7 +69,23 @@ public class CortisolBar implements HudRenderCallback {
         int centerX = screenW / 2;
         int centerY = screenH - 55;
 
-        // === Draw colored arc segments ===
+        // === Draw overflow arc (left side, for absorption/overheal) ===
+        if (overflowRatio > 0) {
+            // Overflow extends from 180° backwards (leftward/downward)
+            int overflowSegs = (int) (ARC_SEGMENTS * 0.4f); // max 40% extra arc
+            int filledOverflow = (int) (overflowSegs * overflowRatio);
+            for (int i = 0; i < filledOverflow; i++) {
+                float segStart = (float) i / overflowSegs;
+                float segEnd = (float) (i + 1) / overflowSegs;
+                // Draw below the left side: from 180° going to 180°+90° (downward)
+                float a1 = 0.0f - segEnd * 0.4f; // negative = before the 0 mark
+                float a2 = 0.0f - segStart * 0.4f;
+                int color = getOverflowColor(segStart);
+                fillArc(ctx, centerX, centerY, RADIUS, ARC_THICKNESS, a1, a2, color);
+            }
+        }
+
+        // === Draw main colored arc segments ===
         for (int i = 0; i < ARC_SEGMENTS; i++) {
             float segStart = (float) i / ARC_SEGMENTS;
             float segEnd = (float) (i + 1) / ARC_SEGMENTS;
@@ -79,7 +102,7 @@ public class CortisolBar implements HudRenderCallback {
         // === Draw tick marks around the arc ===
         for (int i = 0; i <= 10; i++) {
             float t = (float) i / 10;
-            double angle = Math.PI + t * Math.PI; // 180° to 360°
+            double angle = Math.PI + t * Math.PI;
             int tickInner = RADIUS - ARC_THICKNESS - 2;
             int tickOuter = RADIUS - ARC_THICKNESS - (i % 5 == 0 ? 5 : 3);
 
@@ -93,14 +116,27 @@ public class CortisolBar implements HudRenderCallback {
         }
 
         // === Draw needle ===
-        // Needle angle: 0 ratio = left (180°), 1 ratio = right (360°/0°)
-        double needleAngle = Math.PI + barRatio * Math.PI;
+        // Needle can go past 0 into negative for overflow
+        float needleRatio;
+        if (cortisol >= 0) {
+            needleRatio = barRatio; // 0-1 maps to left-right
+        } else {
+            // Negative cortisol: needle goes past left into overflow zone
+            needleRatio = -overflowRatio * 0.4f; // extends left
+        }
+        double needleAngle = Math.PI + needleRatio * Math.PI;
         int nx = centerX + (int) (Math.cos(needleAngle) * NEEDLE_LEN);
         int ny = centerY + (int) (Math.sin(needleAngle) * NEEDLE_LEN);
 
-        // Draw needle as a line (shadow then main)
         drawLine(ctx, centerX + 1, centerY + 1, nx + 1, ny + 1, NEEDLE_SHADOW);
-        int needleCol = barRatio > 0.7f ? getStressColor(barRatio) : NEEDLE_COLOR;
+        int needleCol;
+        if (cortisol < 0) {
+            needleCol = getOverflowColor(overflowRatio);
+        } else if (barRatio > 0.7f) {
+            needleCol = getStressColor(barRatio);
+        } else {
+            needleCol = NEEDLE_COLOR;
+        }
         drawLine(ctx, centerX, centerY, nx, ny, needleCol);
 
         // Center dot
@@ -113,7 +149,12 @@ public class CortisolBar implements HudRenderCallback {
         // Cortisol value centered below gauge
         String val = String.format("%.1f", displayCortisol);
         int valW = tr.getWidth(val);
-        int valColor = getStressColor(barRatio);
+        int valColor;
+        if (cortisol < 0) {
+            valColor = getOverflowColor(overflowRatio);
+        } else {
+            valColor = getStressColor(barRatio);
+        }
         ctx.drawText(tr, val, centerX - valW / 2, centerY + 3, valColor, false);
 
         // "0" on left, "20" on right
@@ -123,7 +164,14 @@ public class CortisolBar implements HudRenderCallback {
         // "CORTISOL" label above
         String label = "CORTISOL";
         int lblW = tr.getWidth(label);
-        int lblColor = barRatio > 0.6f ? getStressColor(barRatio) : LABEL_COLOR;
+        int lblColor;
+        if (cortisol < 0) {
+            lblColor = getOverflowColor(overflowRatio);
+        } else if (barRatio > 0.6f) {
+            lblColor = getStressColor(barRatio);
+        } else {
+            lblColor = LABEL_COLOR;
+        }
         ctx.drawText(tr, label, centerX - lblW / 2, centerY - RADIUS - 10, lblColor, false);
 
         // === Pulsing glow when high stress ===
@@ -134,6 +182,17 @@ public class CortisolBar implements HudRenderCallback {
             int glow = (Math.min(alpha, 255) << 24) | 0x00FF2020;
             fillArc(ctx, centerX, centerY, RADIUS + 4, ARC_THICKNESS + 8, 0, barRatio, glow);
         }
+    }
+
+    /**
+     * Overflow color: cyan to blue (for absorption/overheal).
+     * 0.0 = light cyan, 1.0 = deep blue
+     */
+    private static int getOverflowColor(float t) {
+        int r = (int) (20 + 30 * (1 - t));
+        int g = (int) (200 + 55 * (1 - t));
+        int b = (int) (220 + 35 * (1 - t));
+        return 0xFF000000 | (cl(r) << 16) | (cl(g) << 8) | cl(b);
     }
 
     /**
