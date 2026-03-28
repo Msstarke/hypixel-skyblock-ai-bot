@@ -24,9 +24,10 @@ public class HypixelAIClient implements ClientModInitializer {
     private static long lastRequest = 0;
     private static final long COOLDOWN_MS = 3000;
 
-    // Keybinds for feedback
+    // Keybinds
     private static KeyBinding keyCorrect;
     private static KeyBinding keyWrong;
+    private static KeyBinding keyConfig;
 
     // Color scheme
     private static final Formatting ACCENT = Formatting.GOLD;
@@ -54,6 +55,9 @@ public class HypixelAIClient implements ClientModInitializer {
         keyWrong = KeyBindingHelper.registerKeyBinding(new KeyBinding(
                 "key.hypixelai.wrong", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_N,
                 skyaiCategory));
+        keyConfig = KeyBindingHelper.registerKeyBinding(new KeyBinding(
+                "key.hypixelai.config", InputUtil.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT,
+                skyaiCategory));
 
         // Check for updates in background
         new Thread(() -> HypixelAIUpdater.checkForUpdate(), "HypixelAI-Updater").start();
@@ -64,6 +68,11 @@ public class HypixelAIClient implements ClientModInitializer {
         final long UPDATE_CHECK_INTERVAL = 5 * 60 * 1000; // 5 minutes
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
+            // Config keybind (Right Shift)
+            if (client.player != null && keyConfig.wasPressed()) {
+                SkyAIConfigScreen.open();
+            }
+
             // Handle feedback keybinds
             if (client.player != null && SkyAIOverlay.hasPendingFeedback()) {
                 if (keyCorrect.wasPressed()) {
@@ -132,7 +141,7 @@ public class HypixelAIClient implements ClientModInitializer {
                 return false;
             }
             if (lower.equals("!aiconfig")) {
-                showConfig();
+                SkyAIConfigScreen.open();
                 return false;
             }
             if (lower.equals("!aihelp") || lower.equals("!commands") || lower.equals("!help")) {
