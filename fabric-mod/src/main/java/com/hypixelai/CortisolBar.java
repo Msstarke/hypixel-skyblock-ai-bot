@@ -8,25 +8,31 @@ import net.minecraft.client.render.RenderTickCounter;
 import net.minecraft.entity.player.PlayerEntity;
 
 /**
- * Cortisol meter — replaces the vanilla health bar with a gradient bar.
- * Green (full) → Yellow (mid) → Red (low).
- * Renders in the same spot as vanilla hearts (bottom left, above hotbar).
+ * Cortisol meter — replaces vanilla health hearts with a modern stress bar.
+ * Inverted: 0 = calm (full HP), 20 = max stress (dying).
+ * Wide bar with segments, gradient fill, label + value display.
  */
 public class CortisolBar implements HudRenderCallback {
 
-    private static final int BAR_WIDTH = 81;  // Same width as 10 hearts (8px each + 1px gap)
-    private static final int BAR_HEIGHT = 5;
-    private static final int BG_HEIGHT = 9;   // Background height to cover hearts
-    private static final int LABEL_OFFSET_Y = -10;
+    // Bar dimensions — wider and thicker than vanilla hearts
+    private static final int BAR_WIDTH = 100;
+    private static final int BAR_HEIGHT = 8;
+    private static final int COVER_W = 100;  // Width to cover vanilla hearts
+    private static final int COVER_H = 12;   // Height to cover vanilla hearts
+
+    // Segment count for the segmented look
+    private static final int SEGMENTS = 20;
 
     // Colors
-    private static final int BG_COLOR = 0xFF0a0a18;
-    private static final int BG_BORDER = 0xFF16162a;
-    private static final int LABEL_COLOR = 0xFF8892a8;
+    private static final int BG_DARK = 0xFF080810;
+    private static final int BG_BORDER = 0xFF1a1a2e;
+    private static final int BG_INNER = 0xFF0c0c18;
+    private static final int LABEL_COLOR = 0xFFaaaacc;
+    private static final int LABEL_DIM = 0xFF555577;
+    private static final int SEG_GAP_COLOR = 0xFF0a0a14;
 
     // Smooth animation
     private static float displayedHealth = 20f;
-    private static float displayedMaxHealth = 20f;
 
     public static void register() {
         HudRenderCallback.EVENT.register(new CortisolBar());
@@ -40,98 +46,143 @@ public class CortisolBar implements HudRenderCallback {
         PlayerEntity player = client.player;
         float health = player.getHealth();
         float maxHealth = player.getMaxHealth();
-        float absorption = player.getAbsorptionAmount();
 
         // Smooth animation
-        displayedHealth += (health - displayedHealth) * 0.15f;
-        displayedMaxHealth = maxHealth;
+        displayedHealth += (health - displayedHealth) * 0.12f;
 
-        // Cortisol is INVERTED: full health = 0, dying = 20
-        // healthRatio: 1.0 = full HP, 0.0 = dead
+        // Cortisol: 0 = calm, 20 = dying
         float healthRatio = Math.max(0, Math.min(1, displayedHealth / Math.max(maxHealth, 1)));
-        // cortisol: 0 = calm (full HP), 20 = max stress (dying)
         float cortisol = 20f * (1f - healthRatio);
-        // barRatio: how full the bar is (0 = empty/calm, 1 = full/dying)
-        float barRatio = cortisol / 20f;
-
-        // Smooth the displayed cortisol
+        float barRatio = Math.max(0, Math.min(1, cortisol / 20f));
         float displayCortisol = Math.round(cortisol * 10f) / 10f;
 
         int screenW = ctx.getScaledWindowWidth();
         int screenH = ctx.getScaledWindowHeight();
 
-        // Position: same as vanilla hearts — left of center, above hotbar
-        int heartX = screenW / 2 - 91;
-        int heartY = screenH - 39;
+        // Position — same area as vanilla hearts
+        int baseX = screenW / 2 - 91;
+        int baseY = screenH - 40;
 
-        // Cover vanilla hearts with background
-        ctx.fill(heartX - 1, heartY - 1, heartX + BAR_WIDTH + 1, heartY + BG_HEIGHT + 1, BG_COLOR);
+        // === Cover vanilla hearts ===
+        ctx.fill(baseX - 2, baseY - 12, baseX + COVER_W + 2, baseY + COVER_H + 2, BG_DARK);
 
-        // Draw bar background (dark)
-        int barX = heartX;
-        int barY = heartY + 2;
+        // === Label row: "CORTISOL" left, "12.5 / 20" right ===
+        TextRenderer tr = client.textRenderer;
+        int labelY = baseY - 10;
+
+        // Label color shifts with stress
+        int lColor = barRatio > 0.6f ? getStressColor(barRatio) : LABEL_COLOR;
+        ctx.drawText(tr, "CORTISOL", baseX, labelY, lColor, false);
+
+        // Value
+        String val = String.format("%.1f", displayCortisol);
+        String max = " / 20";
+        int valColor = getStressColor(barRatio);
+        int valW = tr.getWidth(val);
+        int maxW = tr.getWidth(max);
+        ctx.drawText(tr, val, baseX + BAR_WIDTH - valW - maxW, labelY, valColor, false);
+        ctx.drawText(tr, max, baseX + BAR_WIDTH - maxW, labelY, LABEL_DIM, false);
+
+        // === Bar background ===
+        int barX = baseX;
+        int barY = baseY + 1;
+
+        // Outer border
         ctx.fill(barX - 1, barY - 1, barX + BAR_WIDTH + 1, barY + BAR_HEIGHT + 1, BG_BORDER);
-        ctx.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT, 0xFF060612);
+        // Inner background
+        ctx.fill(barX, barY, barX + BAR_WIDTH, barY + BAR_HEIGHT, BG_INNER);
 
-        // Draw filled portion — bar fills up as you take damage
+        // === Filled segments ===
         int filledWidth = (int) (BAR_WIDTH * barRatio);
-        if (filledWidth > 0) {
-            for (int i = 0; i < filledWidth; i++) {
-                float pixelRatio = (float) i / BAR_WIDTH;
-                int color = getStressColor(pixelRatio);
-                ctx.fill(barX + i, barY, barX + i + 1, barY + BAR_HEIGHT, color);
+        int segW = BAR_WIDTH / SEGMENTS; // 5px per segment
+
+        for (int s = 0; s < SEGMENTS; s++) {
+            int sx = barX + s * segW;
+            int sw = segW - 1; // 1px gap between segments
+            int segEnd = sx + sw;
+
+            if (sx >= barX + filledWidth) break; // Past the filled area
+
+            // Clamp to filled width
+            if (segEnd > barX + filledWidth) {
+                sw = (barX + filledWidth) - sx;
+                if (sw <= 0) break;
             }
 
-            // Subtle highlight on top edge
-            for (int i = 0; i < filledWidth; i++) {
-                float pixelT = (float) i / Math.max(filledWidth, 1);
-                int highlight = ((int)(15 * (1f - pixelT)) << 24) | 0x00FFFFFF;
-                ctx.fill(barX + i, barY, barX + i + 1, barY + 1, highlight);
-            }
+            // Color based on segment position
+            float segRatio = (float) s / SEGMENTS;
+            int color = getStressColor(segRatio);
+
+            // Main fill
+            ctx.fill(sx, barY, sx + sw, barY + BAR_HEIGHT, color);
+
+            // Top highlight (lighter)
+            int highlight = brighten(color, 40);
+            ctx.fill(sx, barY, sx + sw, barY + 1, highlight);
+
+            // Bottom shadow (darker)
+            int shadow = darken(color, 30);
+            ctx.fill(sx, barY + BAR_HEIGHT - 1, sx + sw, barY + BAR_HEIGHT, shadow);
         }
 
-        // Pulsing glow when cortisol is high (low health)
+        // === Pulsing red glow when high stress ===
         if (barRatio > 0.7f) {
-            long pulse = System.currentTimeMillis() % 800;
-            float pulseAlpha = (float) (Math.sin(pulse / 800.0 * Math.PI * 2) * 0.35 + 0.35);
-            int glowAlpha = (int) (pulseAlpha * 255 * barRatio);
-            int glow = (glowAlpha << 24) | 0x00FF0000;
+            long t = System.currentTimeMillis() % 1000;
+            float pulse = (float) (Math.sin(t / 1000.0 * Math.PI * 2) * 0.3 + 0.3);
+            int alpha = (int) (pulse * 200 * barRatio);
+            int glow = (Math.min(alpha, 255) << 24) | 0x00FF2020;
             ctx.fill(barX - 2, barY - 2, barX + BAR_WIDTH + 2, barY + BAR_HEIGHT + 2, glow);
         }
 
-        // Label
-        TextRenderer tr = client.textRenderer;
-        String label = "CORTISOL";
-        int labelX = heartX;
-        int labelY = heartY + LABEL_OFFSET_Y;
-        int labelColor = barRatio > 0.7f ? getStressColor(barRatio) : LABEL_COLOR;
-        ctx.drawText(tr, label, labelX, labelY, labelColor, false);
-
-        // Cortisol value (right-aligned) — shows 0.0 to 20.0
-        String valueText = String.format("%.1f / 20", displayCortisol);
-        int valueWidth = tr.getWidth(valueText);
-        ctx.drawText(tr, valueText, heartX + BAR_WIDTH - valueWidth, labelY, getStressColor(barRatio), false);
+        // === Segment divider lines (on top of everything for crisp look) ===
+        for (int s = 1; s < SEGMENTS; s++) {
+            int lx = barX + s * segW - 1;
+            ctx.fill(lx, barY, lx + 1, barY + BAR_HEIGHT, SEG_GAP_COLOR);
+        }
     }
 
     /**
-     * Get color based on stress level.
-     * 0.0 = calm (green), 0.5 = moderate (yellow), 1.0 = max stress (red)
+     * Stress color: 0.0=green, 0.5=yellow, 1.0=red
      */
     private static int getStressColor(float stress) {
         int r, g, b;
-        if (stress < 0.5f) {
-            // Green to Yellow (0.0 → 0.5)
-            float t = stress * 2;
-            r = (int) (255 * t);
-            g = 255;
+        if (stress < 0.4f) {
+            // Green to Yellow
+            float t = stress / 0.4f;
+            r = (int) (50 + 205 * t);
+            g = (int) (220 + 35 * (1 - t));
+            b = (int) (30 * (1 - t));
+        } else if (stress < 0.7f) {
+            // Yellow to Orange
+            float t = (stress - 0.4f) / 0.3f;
+            r = 255;
+            g = (int) (220 - 120 * t);
             b = 0;
         } else {
-            // Yellow to Red (0.5 → 1.0)
-            float t = (stress - 0.5f) * 2;
+            // Orange to Red
+            float t = (stress - 0.7f) / 0.3f;
             r = 255;
-            g = (int) (255 * (1 - t));
-            b = 0;
+            g = (int) (100 - 100 * t);
+            b = (int) (20 * t);
         }
+        return 0xFF000000 | (clamp(r) << 16) | (clamp(g) << 8) | clamp(b);
+    }
+
+    private static int brighten(int color, int amount) {
+        int r = Math.min(255, ((color >> 16) & 0xFF) + amount);
+        int g = Math.min(255, ((color >> 8) & 0xFF) + amount);
+        int b = Math.min(255, (color & 0xFF) + amount);
         return 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+
+    private static int darken(int color, int amount) {
+        int r = Math.max(0, ((color >> 16) & 0xFF) - amount);
+        int g = Math.max(0, ((color >> 8) & 0xFF) - amount);
+        int b = Math.max(0, (color & 0xFF) - amount);
+        return 0xFF000000 | (r << 16) | (g << 8) | b;
+    }
+
+    private static int clamp(int v) {
+        return Math.max(0, Math.min(255, v));
     }
 }
