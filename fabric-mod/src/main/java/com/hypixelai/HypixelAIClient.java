@@ -188,6 +188,14 @@ public class HypixelAIClient implements ClientModInitializer {
                 handleWind();
                 return false;
             }
+            if (lower.equals("!version") || lower.equals("!aiversion")) {
+                sendChat(Text.empty());
+                sendChat(prefix().append(Text.literal("SkyAI").formatted(BRAND, Formatting.BOLD))
+                        .append(Text.literal(" v" + HypixelAIUpdater.MOD_VERSION).formatted(HIGHLIGHT)));
+                sendChat(Text.literal("  MC 1.21.10 | Fabric | sky-ai.uk").formatted(MUTED));
+                sendChat(Text.empty());
+                return false;
+            }
             if (lower.equals("!aiupdate")) {
                 sendChat(prefix().append(Text.literal("Checking for updates...").formatted(BODY)));
                 new Thread(() -> {
