@@ -41,8 +41,9 @@ public class HypixelAIClient implements ClientModInitializer {
     public void onInitializeClient() {
         HypixelAIConfig.load();
 
-        // Register HUD overlay
+        // Register HUD overlays
         SkyAIOverlay.register();
+        CortisolBar.register();
 
         // Register feedback keybinds
         KeyBinding.Category skyaiCategory = KeyBinding.Category.create(
