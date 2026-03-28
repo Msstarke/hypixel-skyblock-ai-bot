@@ -98,6 +98,24 @@ public class HypixelAIClient implements ClientModInitializer {
                             .append(Text.literal(" — restart to apply.").formatted(MUTED)));
                 }
                 sendChat(Text.empty());
+
+                // Check for updates immediately on world join
+                if (!HypixelAIUpdater.isUpdatePending()) {
+                    lastUpdateCheck[0] = System.currentTimeMillis();
+                    new Thread(() -> {
+                        boolean found = HypixelAIUpdater.checkForUpdate();
+                        if (found) {
+                            sendChat(Text.empty());
+                            sendChat(prefix()
+                                    .append(Text.literal("Update downloaded! ").styled(s -> s.withColor(Formatting.GREEN)))
+                                    .append(Text.literal("v" + HypixelAIUpdater.MOD_VERSION).formatted(MUTED))
+                                    .append(Text.literal(" \u2192 ").formatted(MUTED))
+                                    .append(Text.literal("v" + HypixelAIUpdater.getPendingVersion()).formatted(SUCCESS, Formatting.BOLD)));
+                            sendChat(prefix().append(Text.literal("Restart to apply.").formatted(MUTED)));
+                            sendChat(Text.empty());
+                        }
+                    }, "HypixelAI-JoinUpdate").start();
+                }
             }
             if (client.player == null && wasInWorld[0]) {
                 wasInWorld[0] = false; // Reset when leaving world
