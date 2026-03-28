@@ -13,10 +13,12 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "2.0.2";
+    public static final String MOD_VERSION = "2.0.3";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
-    private static final String VERSION_CHECK_URL = "https://sky-ai.uk/api/mod/version";
+    // Try Railway direct first (bypasses Cloudflare), then custom domain
+    private static final String VERSION_CHECK_URL = "https://worker-production-f916.up.railway.app/api/mod/version";
+    private static final String VERSION_CHECK_URL_2 = "https://sky-ai.uk/api/mod/version";
 
     private static boolean updatePending = false;
     private static String pendingVersion = null;
@@ -80,15 +82,26 @@ public class HypixelAIUpdater {
      */
     public static boolean checkForUpdate() {
         try {
-            // Step 1: Quick version check via Railway (no rate limit)
+            // Step 1: Quick version check via Railway direct URL (bypasses Cloudflare)
             String versionJson = httpGet(VERSION_CHECK_URL);
             String latestVersion = null;
             if (versionJson != null) {
                 latestVersion = parseJsonValue(versionJson, "version");
                 updateMessage = parseJsonValue(versionJson, "message");
+                HypixelAIMod.LOGGER.info("[HypixelAI] Railway version check: {}", latestVersion);
             }
 
-            // Fallback to GitHub if Railway didn't work
+            // Fallback: try custom domain
+            if (latestVersion == null) {
+                versionJson = httpGet(VERSION_CHECK_URL_2);
+                if (versionJson != null) {
+                    latestVersion = parseJsonValue(versionJson, "version");
+                    updateMessage = parseJsonValue(versionJson, "message");
+                    HypixelAIMod.LOGGER.info("[HypixelAI] Domain version check: {}", latestVersion);
+                }
+            }
+
+            // Fallback to GitHub if both didn't work
             String githubJson = null;
             if (latestVersion == null) {
                 githubJson = httpGet(RELEASES_API);
