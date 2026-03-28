@@ -1523,11 +1523,11 @@ class AIHandler:
                 sb_year = int((now - sb_epoch) / 446400) + 1
                 # Each SB year = 446400 seconds. Late Spring 1st is roughly 25% through the year.
                 year_start = sb_epoch + (sb_year - 1) * 446400
-                # Late Spring 1st ≈ day 93 of 124 days. Each SB day = 1200s real. Late Spring = month 10 of 12.
-                # SB months: Early Spring(1-3), Spring(4-6), Late Spring(7-9), Early Summer(10-12)...
-                # Actually: 12 months, 31 days each = 372 SB days per year. Late Spring = month 6.
-                # Late Spring day 1 = SB day (5*31)+1 = 156. Each SB day = 20 min real = 1200s.
-                shen_offset = 155 * 1200  # Late Spring 1st (day 156, 0-indexed 155)
+                # SB months: 1=Early Spring, 2=Spring, 3=Late Spring, 4=Early Summer,
+                # 5=Summer, 6=Late Summer, 7=Early Autumn, 8=Autumn, 9=Late Autumn,
+                # 10=Early Winter, 11=Winter, 12=Late Winter. Each = 31 days, 1200s/day.
+                # Late Spring = month 3. Day 1 of Late Spring = (2*31) = day 62 (0-indexed).
+                shen_offset = 62 * 1200  # Late Spring 1st
                 next_shen = year_start + shen_offset
                 if next_shen < now:
                     # Already passed this year, next year
