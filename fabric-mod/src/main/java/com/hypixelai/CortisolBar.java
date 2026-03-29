@@ -39,6 +39,8 @@ public class CortisolBar implements HudRenderCallback {
         MinecraftClient client = MinecraftClient.getInstance();
         if (client == null || client.player == null || client.options.hudHidden) return;
         if (!HypixelAIConfig.isCortisolBar()) return;
+        // Don't render when a screen is open (inventory, chat, etc.)
+        if (client.currentScreen != null) return;
 
         PlayerEntity player = client.player;
         float health = player.getHealth();
@@ -61,6 +63,11 @@ public class CortisolBar implements HudRenderCallback {
         float centerY = screenH - 55f;
 
         TextRenderer tr = client.textRenderer;
+
+        // Initialize NVG on first render
+        if (!NVGRenderer.isReady()) {
+            NVGRenderer.init();
+        }
 
         if (NVGRenderer.isReady()) {
             renderNVG(ctx, tr, centerX, centerY, barRatio, overflowRatio, cortisol, displayCortisol);
