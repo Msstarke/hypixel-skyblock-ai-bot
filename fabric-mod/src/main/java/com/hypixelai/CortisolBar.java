@@ -64,14 +64,18 @@ public class CortisolBar implements HudRenderCallback {
 
         TextRenderer tr = client.textRenderer;
 
-        // Initialize NVG on first render
+        // Initialize NVG for text rendering
         if (!NVGRenderer.isReady()) {
             NVGRenderer.init();
         }
 
+        // Render shapes with NVG (smooth arcs), text with NVG font
         if (NVGRenderer.isReady()) {
             renderNVG(ctx, tr, centerX, centerY, barRatio, overflowRatio, cortisol, displayCortisol);
-        } else {
+        }
+
+        // If NVG didn't render (or shapes failed), use legacy as fallback
+        if (!NVGRenderer.isReady()) {
             renderLegacy(ctx, tr, centerX, centerY, barRatio, overflowRatio, cortisol, displayCortisol);
         }
     }
@@ -160,11 +164,12 @@ public class CortisolBar implements HudRenderCallback {
             NVGRenderer.text("20", centerX + RADIUS + 3, centerY - 4, 10, LABEL_DIM, 1f);
         }
 
-        NVGRenderer.endFrame();
-
-        // MC text fallback
+        // Text — always use NVG font if available, MC fallback otherwise
         if (!NVGRenderer.hasFont()) {
+            NVGRenderer.endFrame();
             drawTextMC(ctx, tr, centerX, centerY, displayCortisol, valColor, lblColor);
+        } else {
+            NVGRenderer.endFrame();
         }
     }
 

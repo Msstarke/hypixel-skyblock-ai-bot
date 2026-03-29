@@ -41,7 +41,7 @@ public class NVGRenderer {
 
     public static void init() {
         if (initialized) return;
-        vg = nvgCreate(NVG_ANTIALIAS | NVG_STENCIL_STROKES);
+        vg = nvgCreate(NVG_ANTIALIAS);
         if (vg == 0) {
             HypixelAIMod.LOGGER.error("[NVG] Failed to create NanoVG context");
             return;
