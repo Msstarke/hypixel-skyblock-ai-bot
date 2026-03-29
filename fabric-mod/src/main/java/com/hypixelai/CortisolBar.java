@@ -69,15 +69,9 @@ public class CortisolBar implements HudRenderCallback {
             NVGRenderer.init();
         }
 
-        // Render shapes with NVG (smooth arcs), text with NVG font
-        if (NVGRenderer.isReady()) {
-            renderNVG(ctx, tr, centerX, centerY, barRatio, overflowRatio, cortisol, displayCortisol);
-        }
-
-        // If NVG didn't render (or shapes failed), use legacy as fallback
-        if (!NVGRenderer.isReady()) {
-            renderLegacy(ctx, tr, centerX, centerY, barRatio, overflowRatio, cortisol, displayCortisol);
-        }
+        // Use legacy DrawContext for shapes (NVG corrupts MC's GL state)
+        // Use NVG ONLY for text (Inter font)
+        renderLegacy(ctx, tr, centerX, centerY, barRatio, overflowRatio, cortisol, displayCortisol);
     }
 
     private void renderNVG(DrawContext ctx, TextRenderer tr, float centerX, float centerY,
@@ -251,6 +245,24 @@ public class CortisolBar implements HudRenderCallback {
     private void drawTextMC(DrawContext ctx, TextRenderer tr, float centerX, float centerY,
                             float displayCortisol, int valColor, int lblColor) {
         int cx = (int) centerX, cy = (int) centerY;
+
+        // Try NVG for smooth Inter font text
+        if (NVGRenderer.isReady() && NVGRenderer.hasFont()) {
+            try {
+                NVGRenderer.beginFrame();
+                NVGRenderer.textCentered(String.format("%.1f", displayCortisol), centerX, centerY + 3, 12, valColor, 1f);
+                NVGRenderer.textCentered("CORTISOL", centerX, centerY - RADIUS - 10, 10, lblColor, 1f);
+                NVGRenderer.text("0", centerX - RADIUS - 10, centerY - 4, 10, LABEL_DIM, 1f);
+                NVGRenderer.text("20", centerX + RADIUS + 3, centerY - 4, 10, LABEL_DIM, 1f);
+                NVGRenderer.endFrame();
+                return;
+            } catch (Exception e) {
+                // NVG text failed, fall through to MC text
+                try { NVGRenderer.endFrame(); } catch (Exception ignored) {}
+            }
+        }
+
+        // MC text fallback
         String val = String.format("%.1f", displayCortisol);
         ctx.drawText(tr, val, cx - tr.getWidth(val) / 2, cy + 3, valColor, false);
         ctx.drawText(tr, "0", cx - RADIUS - 10, cy - 4, LABEL_DIM, false);
@@ -263,7 +275,7 @@ public class CortisolBar implements HudRenderCallback {
 
     private static void fillArcLegacy(DrawContext ctx, int cx, int cy, int radius, int thickness,
                                       float startRatio, float endRatio, int color) {
-        int steps = 30;
+        int steps = 60; // more steps = smoother arcs
         for (int i = 0; i < steps; i++) {
             float t1 = startRatio + (endRatio - startRatio) * i / steps;
             float t2 = startRatio + (endRatio - startRatio) * (i + 1) / steps;

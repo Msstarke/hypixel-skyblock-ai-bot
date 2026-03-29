@@ -19,7 +19,7 @@ import java.nio.file.*;
  */
 public class HypixelAIUpdater {
 
-    public static final String MOD_VERSION = "2.8.0";
+    public static final String MOD_VERSION = "2.8.1";
     private static final String GITHUB_REPO = "Msstarke/hypixel-skyblock-ai-bot";
     private static final String RELEASES_API = "https://api.github.com/repos/" + GITHUB_REPO + "/releases/latest";
     private static final String VERSION_CHECK_URL = "https://worker-production-f916.up.railway.app/api/mod/version";
