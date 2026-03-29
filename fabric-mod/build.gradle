@@ -10,8 +10,8 @@ repositories {
     mavenCentral()
 }
 
-// Must match the LWJGL version bundled with your Minecraft version
-def lwjglVersion = "3.3.4"
+// Must match the LWJGL version bundled with your Minecraft version (1.21.10 uses 3.3.3)
+def lwjglVersion = "3.3.3"
 
 configurations {
     bundle
